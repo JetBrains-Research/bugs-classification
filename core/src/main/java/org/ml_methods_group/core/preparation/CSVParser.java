@@ -2,29 +2,105 @@ package org.ml_methods_group.core.preparation;
 
 import au.com.bytecode.opencsv.CSVReader;
 import org.ml_methods_group.core.Solution.Verdict;
-import org.ml_methods_group.core.SolutionDatabase;
-import org.ml_methods_group.core.basic.BasicSolution;
 
 import java.io.*;
+import java.util.NoSuchElementException;
 
 public class CSVParser {
     private static final char UNEXCITING_SYMBOL = (char) 255;
+    private final int[] indexes = new int[Column.values().length];
+    private final CSVReader reader;
+    private String[] buffer;
+    private String[] next;
 
-    public static void parse(File file, SolutionDatabase database) throws IOException {
-        database.clear();
-        database.create();
-        try (InputStream resourceStream = new FileInputStream(file);
-             InputStreamReader resourceStreamReader = new InputStreamReader(resourceStream);
-             CSVReader reader = new CSVReader(resourceStreamReader, ',', '\"', UNEXCITING_SYMBOL)) {
-            reader.readNext(); // read header
-            while (true) {
-                String[] data = reader.readNext();
-                if (data == null) {
-                    break;
+
+    public CSVParser(File file) throws IOException {
+        this(new FileInputStream(file));
+    }
+
+    public CSVParser(InputStream stream) throws IOException {
+        reader = new CSVReader(new InputStreamReader(stream), ',', '\"', UNEXCITING_SYMBOL);
+        parseHeader(reader.readNext());
+        next = reader.readNext();
+    }
+
+    private void parseHeader(String[] header) {
+        for (int i = 0; i < header.length; i++) {
+            indexes[Column.byName(header[i].trim()).ordinal()] = i;
+        }
+    }
+
+    private void readLine() throws IOException {
+        buffer = next;
+        if (next != null) {
+            next = reader.readNext();
+        }
+    }
+
+    private String getToken(Column column) {
+        if (buffer == null) {
+            throw new IllegalStateException("Parser isn't ready!");
+        }
+        return buffer[indexes[column.ordinal()]];
+    }
+
+    public void nextLine() throws IOException {
+        if (next != null) {
+            readLine();
+        } else {
+            throw new NoSuchElementException();
+        }
+    }
+
+    public boolean hasNextLine() {
+        return next != null;
+    }
+
+    public String getCode() {
+        return getToken(Column.CODE);
+    }
+
+    public String getProblemText() {
+        return getToken(Column.PROBLEM_TEXT);
+    }
+
+    public String getLanguage() {
+        return getToken(Column.LANGUAGE);
+    }
+
+    public int getSessionId() {
+        return Integer.parseInt(getToken(Column.SESSION_ID));
+    }
+
+    public int getProblemId() {
+        return Integer.parseInt(getToken(Column.PROBLEM_ID));
+    }
+
+    public Verdict getVerdict() {
+        return getToken(Column.VERDICT).charAt(0) == '0' ? Verdict.FAIL : Verdict.OK;
+    }
+
+    private enum Column {
+        SESSION_ID("data_id"),
+        PROBLEM_ID("step_id"),
+        PROBLEM_TEXT("step_text"),
+        VERDICT("status"),
+        LANGUAGE("language"),
+        CODE("code");
+
+        final String name;
+
+        Column(String name) {
+            this.name = name;
+        }
+
+        static Column byName(String name) {
+            for (Column column : values()) {
+                if (column.name.equals(name)) {
+                    return column;
                 }
-                database.insertSolution(new BasicSolution(data[5], Integer.parseInt(data[1]), Integer.parseInt(data[0]),
-                        data[3].charAt(0) == '1' ? Verdict.OK : Verdict.FAIL));
             }
+            throw new NoSuchElementException();
         }
     }
 }

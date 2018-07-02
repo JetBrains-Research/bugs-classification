@@ -19,4 +19,6 @@ public interface IndexDatabase {
     default Map<String, String> loadIndex(String name) {
         return loadIndex(name, Function.identity(), Function.identity());
     }
+
+    void dropIndex(String name);
 }

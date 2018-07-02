@@ -1,6 +1,7 @@
 package org.ml_methods_group.clusterization;
 
 import org.ml_methods_group.core.Clusterer;
+import org.ml_methods_group.core.DistanceFunction;
 
 import java.util.*;
 import java.util.concurrent.*;

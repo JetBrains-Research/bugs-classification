@@ -1,10 +1,10 @@
-package org.ml_methods_group.database;
+package org.ml_methods_group.database.primitives;
 
 public class TableHeader {
     final Column[] columns;
     final String table;
 
-    TableHeader(String table, Column... columns) {
+    public TableHeader(String table, Column... columns) {
         this.columns = columns;
         this.table = table;
     }

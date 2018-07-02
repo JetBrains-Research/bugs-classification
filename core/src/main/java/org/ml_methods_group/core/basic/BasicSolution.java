@@ -17,21 +17,21 @@ public class BasicSolution implements Solution {
 
     @Override
     public String getCode() {
-        return null;
+        return code;
     }
 
     @Override
     public int getProblemId() {
-        return 0;
+        return problemId;
     }
 
     @Override
     public int getSessionId() {
-        return 0;
+        return sessionId;
     }
 
     @Override
     public Verdict getVerdict() {
-        return null;
+        return verdict;
     }
 }

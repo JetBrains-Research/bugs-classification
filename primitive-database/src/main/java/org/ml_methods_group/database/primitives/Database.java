@@ -1,4 +1,4 @@
-package org.ml_methods_group.database;/*
+package org.ml_methods_group.database.primitives;/*
  * Copyright 2017 Machine Learning Methods in Software Engineering Group of JetBrains Research
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -35,7 +35,7 @@ public class Database implements AutoCloseable {
     }
 
     public void createTable(TableHeader header) throws SQLException {
-        final StringBuilder request = new StringBuilder("CREATE TABLE " + header.table + " (\n");
+        final StringBuilder request = new StringBuilder("CREATE TABLE IF NOT EXISTS " + header.table + " (\n");
         final String columnsDeclarations = Stream.of(header.columns)
                 .map(Column::toSQL)
                 .collect(Collectors.joining(",\n"));

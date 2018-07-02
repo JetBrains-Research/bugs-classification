@@ -1,4 +1,4 @@
-package org.ml_methods_group.database;
+package org.ml_methods_group.database.primitives;
 
 import com.google.common.collect.ImmutableSet;
 

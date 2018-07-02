@@ -17,7 +17,7 @@ public interface AtomicChange {
     }
 
     default String getLabel() {
-        return null;
+        return "";
     }
 
     default int getOldParentType() {
@@ -29,7 +29,7 @@ public interface AtomicChange {
     }
 
     default String getOldLabel() {
-        return null;
+        return "";
     }
 
     enum ChangeType {

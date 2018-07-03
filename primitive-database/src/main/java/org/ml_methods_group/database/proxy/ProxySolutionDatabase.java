@@ -104,7 +104,8 @@ public class ProxySolutionDatabase implements SolutionDatabase {
     @Override
     public List<SolutionDiff> findByProblem(int problemId) {
         final List<SolutionDiff> result = new ArrayList<>();
-        codes.find("problem_id", problemId, "verdict", Verdict.OK.ordinal());
+        transformToSolutionDiff(codes.find("problem_id", problemId, "verdict", Verdict.OK.ordinal()))
+            .forEachRemaining(result::add);
         return result;
     }
 

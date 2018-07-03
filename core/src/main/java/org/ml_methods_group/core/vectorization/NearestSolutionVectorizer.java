@@ -5,9 +5,10 @@ import org.ml_methods_group.core.changes.AtomicChange;
 import org.ml_methods_group.core.preparation.ChangesBuilder;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.List;
 
-public class NearestSolutionVectorizer {
+public class NearestSolutionVectorizer implements Serializable {
     private final List<SolutionDiff> samples;
     private final VectorTemplate<AtomicChange> template;
     private final ChangesBuilder builder;

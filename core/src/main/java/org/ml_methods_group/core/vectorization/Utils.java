@@ -42,4 +42,24 @@ public class Utils {
                 .map(x -> x * x)
                 .sum();
     }
+
+    public static double squaredEuclideanDistance(double[] first, double[] second) {
+        double result = 0;
+        for (int i = 0; i < first.length; i++) {
+            result += (first[i] - second[i]) * (first[i] - second[i]);
+        }
+        return result;
+    }
+
+    public static double euclideanDistance(double[] first, double[] second) {
+        return Math.sqrt(squaredEuclideanDistance(first, second));
+    }
+
+    public static double manhattanDistance(double[] first, double[] second) {
+        double result = 0;
+        for (int i = 0; i < first.length; i++) {
+            result += Math.abs(first[i] - second[i]);
+        }
+        return result;
+    }
 }

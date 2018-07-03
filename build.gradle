@@ -24,7 +24,7 @@ dependencies {
     // https://mvnrepository.com/artifact/com.querydsl/querydsl-sql
     compile group: 'com.querydsl', name: 'querydsl-sql', version: '4.2.1'
     compile project(':core')
-    compile project(':vectorization')
     compile project(':primitive-database')
     compile project(':own-clusterers')
+    compile project(':own-classifiers')
 }

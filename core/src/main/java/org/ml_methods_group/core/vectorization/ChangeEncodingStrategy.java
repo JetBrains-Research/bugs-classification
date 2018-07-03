@@ -8,14 +8,18 @@ import java.util.*;
 
 public class ChangeEncodingStrategy implements EncodingStrategy<AtomicChange> {
 
-    private final Map<String, Integer> dictionary;
+    private final Map<String, Long> dictionary;
     private final Set<ChangeAttribute> attributes;
     private final int encodingType;
 
-    public ChangeEncodingStrategy(Map<String, Integer> dictionary, int encodingType, ChangeAttribute... attributes) {
+    public ChangeEncodingStrategy(Map<String, Long> dictionary, int encodingType, ChangeAttribute... attributes) {
         this.dictionary = dictionary;
         this.encodingType = encodingType;
         this.attributes = new HashSet<>(Arrays.asList(attributes));
+    }
+
+    public ChangeEncodingStrategy(Map<String, Long> dictionary, ChangeAttribute... attributes) {
+        this(dictionary, 1, attributes);
     }
 
     @Override
@@ -61,11 +65,11 @@ public class ChangeEncodingStrategy implements EncodingStrategy<AtomicChange> {
             case OLD_PARENT_OF_PARENT_TYPE:
                 return 1 + change.getOldParentOfParentType();
             case LABEL_TYPE:
-                return 2 + dictionary.getOrDefault(change.getLabel(), -1);
+                return 1 + dictionary.getOrDefault(change.getLabel(), 0L).intValue();
             case OLD_LABEL_TYPE:
-                return 2 + dictionary.getOrDefault(change.getOldLabel(), -1);
+                return 1 + dictionary.getOrDefault(change.getOldLabel(), 0L).intValue();
             case ENCODING_TYPE:
-                return encodingType;
+                return 1 + encodingType;
         }
         throw new RuntimeException("Unexpected attribute type");
     }

@@ -1,19 +1,24 @@
 package org.ml_methods_group.database;
 
-import org.ml_methods_group.core.IndexDatabase;
+import org.ml_methods_group.core.IndexStorage;
 import org.ml_methods_group.database.primitives.*;
+import sun.security.pkcs11.wrapper.Functions;
 
-import java.sql.SQLException;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Function;
 
-public class BasicIndexDatabase implements IndexDatabase {
+public class BasicIndexStorage implements IndexStorage {
 
     private final Database database;
 
-    public BasicIndexDatabase(Database database) {
+    public BasicIndexStorage() {
+        this(new Database());
+    }
+
+    public BasicIndexStorage(Database database) {
         this.database = database;
     }
 
@@ -25,7 +30,7 @@ public class BasicIndexDatabase implements IndexDatabase {
             database.createTable(header);
             final Table table = database.getTable(header);
             for (Entry<K, Long> entry : index.entrySet()) {
-                table.insert(new Object[]{keyToString.apply(entry.getKey()), entry.getValue()});
+                table.insert(new Object[]{keyToString.apply(entry.getKey()), entry.getValue().intValue()});
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -41,12 +46,12 @@ public class BasicIndexDatabase implements IndexDatabase {
             for (Table.ResultWrapper wrapper : table) {
                 index.put(
                         keyParser.apply(wrapper.getStringValue("key")),
-                        Long.parseLong(wrapper.getStringValue("value"))
+                        (long) wrapper.getIntValue("value")
                 );
             }
             return index;
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            return Collections.emptyMap();
         }
     }
 
@@ -60,6 +65,6 @@ public class BasicIndexDatabase implements IndexDatabase {
     public static TableHeader crateHeader(String name) {
         return new TableHeader("index_database_" + name,
                 new Column("key", Type.TEXT, true),
-                new Column("value", Type.TEXT));
+                new Column("value", Type.INTEGER));
     }
 }

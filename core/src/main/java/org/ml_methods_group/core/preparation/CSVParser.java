@@ -81,12 +81,12 @@ public class CSVParser {
     }
 
     private enum Column {
-        SESSION_ID("data_id"),
-        PROBLEM_ID("step_id"),
-        PROBLEM_TEXT("step_text"),
-        VERDICT("status"),
-        LANGUAGE("language"),
-        CODE("code");
+        SESSION_ID("\\S*data_id\\S*"),
+        PROBLEM_ID("\\S*step_id\\S*"),
+        PROBLEM_TEXT("\\S*step_text\\S*"),
+        VERDICT("\\S*status\\S*"),
+        LANGUAGE("\\S*language\\S*"),
+        CODE("\\S*code\\S*");
 
         final String name;
 
@@ -96,11 +96,13 @@ public class CSVParser {
 
         static Column byName(String name) {
             for (Column column : values()) {
-                if (column.name.equals(name)) {
+//                System.out.println(name.length() + " " + column.name.length());
+//                System.out.println(column.name + " " + name + " " + name.equals(column.name));
+                if (name.matches(column.name)) {
                     return column;
                 }
             }
-            throw new NoSuchElementException();
+            throw new NoSuchElementException(name);
         }
     }
 }

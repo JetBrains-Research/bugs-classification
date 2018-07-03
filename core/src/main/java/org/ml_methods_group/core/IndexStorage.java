@@ -3,7 +3,7 @@ package org.ml_methods_group.core;
 import java.util.Map;
 import java.util.function.Function;
 
-public interface IndexDatabase {
+public interface IndexStorage {
     <K> void saveIndex(String name, Map<K, Long> index,
                           Function<K, String> keyToString);
 

@@ -4,4 +4,6 @@ include 'vectorization'
 include 'preparation'
 include 'own-clusterers'
 include 'primitive-database'
+include 'own-classifiers'
+include 'ef'
 

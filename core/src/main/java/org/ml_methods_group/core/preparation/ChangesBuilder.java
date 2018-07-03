@@ -14,11 +14,11 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-public class DiffBuilder {
+public class ChangesBuilder {
     private final Matchers matchers;
     private final TreeGenerator generator;
 
-    public DiffBuilder() {
+    public ChangesBuilder() {
         matchers = Matchers.getInstance();
         generator = new JdtTreeGenerator();
     }
@@ -34,7 +34,7 @@ public class DiffBuilder {
         matcher.match();
         final ActionGenerator actions = new ActionGenerator(treeBefore, treeAfter, matcher.getMappings());
         return actions.generate().stream()
-                .map(DiffBuilder::fromAction)
+                .map(ChangesBuilder::fromAction)
                 .collect(Collectors.toList());
     }
 

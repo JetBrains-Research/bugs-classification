@@ -124,7 +124,7 @@ public class ProxySolutionDatabase implements SolutionDatabase {
     public void insertSolution(Solution solution) {
         codes.insert(new Object[]{
                 solution.getSessionId(),
-                solution.getVerdict(),
+                solution.getVerdict().ordinal(),
                 solution.getCode(),
                 solution.getProblemId()});
     }
@@ -151,6 +151,7 @@ public class ProxySolutionDatabase implements SolutionDatabase {
         for (AtomicChange change : solutionDiff.getChanges()) {
             diffs.insert(new Object[]{
                     solutionDiff.getSessionId(),
+                    change.getChangeType().ordinal(),
                     change.getNodeType(),
                     change.getParentType(),
                     change.getParentOfParentType(),

@@ -1,5 +1,7 @@
 package org.ml_methods_group.core.vectorization;
 
-public interface EncodingStrategy<T> {
+import java.io.Serializable;
+
+public interface EncodingStrategy<T> extends Serializable {
     long encode(T value);
 }

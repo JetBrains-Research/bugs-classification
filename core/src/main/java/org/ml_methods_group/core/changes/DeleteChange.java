@@ -4,14 +4,14 @@ public class DeleteChange implements AtomicChange {
 
     private final int nodeType;
     private final String label;
-    private final int oldParentType;
-    private final int oldParentOfParentType;
+    private final int parentType;
+    private final int parentOfParentType;
 
-    public DeleteChange(int nodeType, String label, int oldParentType, int oldParentOfParentType) {
+    public DeleteChange(int nodeType, String label, int parentType, int parentOfParentType) {
         this.nodeType = nodeType;
         this.label = label;
-        this.oldParentType = oldParentType;
-        this.oldParentOfParentType = oldParentOfParentType;
+        this.parentType = parentType;
+        this.parentOfParentType = parentOfParentType;
     }
 
     @Override
@@ -30,12 +30,12 @@ public class DeleteChange implements AtomicChange {
     }
 
     @Override
-    public int getOldParentType() {
-        return oldParentType;
+    public int getParentType() {
+        return parentType;
     }
 
     @Override
-    public int getOldParentOfParentType() {
-        return oldParentOfParentType;
+    public int getParentOfParentType() {
+        return parentOfParentType;
     }
 }

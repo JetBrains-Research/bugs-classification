@@ -1,20 +1,26 @@
 package org.ml_methods_group.core.vectorization;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class VectorTemplate<T> {
-    private final List<EncodingStrategy<? super T>> strategies;
+public class VectorTemplate<T> implements Serializable {
+    private final List<EncodingStrategy<T>> strategies;
     private final Map<Long, Integer> codeToIndex = new HashMap<>();
     private final Postprocessor postprocessor;
 
     @SafeVarargs
     public VectorTemplate(List<Long> acceptable, Postprocessor postprocessor,
-                          EncodingStrategy<? super T>... strategies) {
+                          EncodingStrategy<T>... strategies) {
+        this(acceptable, postprocessor, Arrays.asList(strategies));
+    }
+
+    public VectorTemplate(List<Long> acceptable, Postprocessor postprocessor,
+                          List<EncodingStrategy<T>> strategies) {
         this.postprocessor = postprocessor;
-        this.strategies = Arrays.asList(strategies);
+        this.strategies = strategies;
         acceptable.forEach(code -> codeToIndex.putIfAbsent(code, codeToIndex.size()));
     }
 
@@ -43,7 +49,7 @@ public class VectorTemplate<T> {
 
 
 
-    public interface Postprocessor {
+    public interface Postprocessor extends Serializable {
         void process(List<?> features, double[] vector);
     }
 

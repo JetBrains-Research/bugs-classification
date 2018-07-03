@@ -1,7 +1,8 @@
 package org.ml_methods_group.core.preparation;
 
-import org.ml_methods_group.core.IndexDatabase;
+import org.ml_methods_group.core.IndexStorage;
 import org.ml_methods_group.core.SolutionDatabase;
+import org.ml_methods_group.core.Utils;
 import org.ml_methods_group.core.changes.AtomicChange;
 
 import java.util.HashMap;
@@ -13,21 +14,21 @@ import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 
 public class LabelsIndexer {
 
     private final SolutionDatabase database;
-    private final IndexDatabase storage;
+    private final IndexStorage storage;
 
-    public LabelsIndexer(SolutionDatabase database, IndexDatabase storage) {
+    public LabelsIndexer(SolutionDatabase database, IndexStorage storage) {
         this.database = database;
         this.storage = storage;
     }
 
-    public void indexLabels(String indexName, Predicate<String> accept) {
-        final Iterator<AtomicChange> changes = database.iterateChanges();
-        final Map<String, Long> counters = Stream.generate(() -> changes.hasNext() ? changes.next() : null)
+    public void indexLabels(String indexName, Predicate<? super String> accept) {
+        final Map<String, Long> counters = Utils.toStream(database.iterateChanges())
                 .flatMap(change -> Stream.of(change.getLabel(), change.getOldLabel()))
                 .filter(Objects::nonNull)
                 .filter(accept)
@@ -37,7 +38,7 @@ public class LabelsIndexer {
     }
 
     public void generateIds(String labelsIndexName, String idsIndexName,
-                            BiPredicate<String, Long> skip) {
+                            BiPredicate<? super String, ? super Long> skip) {
         long idGenerator = 1;
         final Map<String, Long> ids = new HashMap<>();
         for (Map.Entry<String, Long> entry : storage.loadIndex(labelsIndexName).entrySet()) {

@@ -1,4 +1,4 @@
-package org.ml_methods_group.vectorization.index;
+package org.ml_methods_group.core.preparation;
 
 import org.ml_methods_group.core.IndexDatabase;
 import org.ml_methods_group.core.SolutionDatabase;
@@ -6,22 +6,32 @@ import org.ml_methods_group.core.SolutionDiff;
 import org.ml_methods_group.core.changes.AtomicChange;
 import org.ml_methods_group.core.vectorization.EncodingStrategy;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class DiffIndexer {
-    public static void indexDiffs(SolutionDatabase solutions,
-                                  List<EncodingStrategy<AtomicChange>> strategies,
-                                  IndexDatabase storage, String indexName) {
+
+    private final SolutionDatabase database;
+    private final IndexDatabase storage;
+
+    public DiffIndexer(SolutionDatabase database, IndexDatabase storage) {
+        this.database = database;
+        this.storage = storage;
+    }
+
+    @SafeVarargs
+    public final void indexDiffs(String indexName, EncodingStrategy<AtomicChange>... strategies) {
+        indexDiffs(indexName, Arrays.asList(strategies));
+    }
+
+    public void indexDiffs(String indexName, List<EncodingStrategy<AtomicChange>> strategies) {
         final Map<Long, Long> index = new HashMap<>();
         for (EncodingStrategy<AtomicChange> strategy : strategies) {
-            final Map<Long, Long> buffer = solutions.getDiffs().stream()
-                    .map(SolutionDiff::getChanges)
-                    .flatMap(List::stream)
+            final Iterator<AtomicChange> changes = database.iterateChanges();
+            final Map<Long, Long> buffer = Stream.generate(() -> changes.hasNext() ? changes.next() : null)
                     .map(strategy::encode)
                     .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
             for (Entry<Long, Long> entry : buffer.entrySet()) {
@@ -31,9 +41,7 @@ public class DiffIndexer {
                 }
             }
         }
-    }
-
-    public static Map<Long, Long> getDiffIndex(IndexDatabase storage, String indexName) {
-        return storage.loadIndex(indexName, Long::parseLong, Long::parseLong);
+        storage.dropIndex(indexName);
+        storage.saveIndex(indexName, index);
     }
 }

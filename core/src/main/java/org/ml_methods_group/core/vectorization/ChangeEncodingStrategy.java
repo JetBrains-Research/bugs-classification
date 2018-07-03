@@ -1,4 +1,4 @@
-package org.ml_methods_group.vectorization;
+package org.ml_methods_group.core.vectorization;
 
 import org.ml_methods_group.core.changes.AtomicChange;
 import org.ml_methods_group.core.changes.AtomicChange.ChangeType;
@@ -6,13 +6,13 @@ import org.ml_methods_group.core.vectorization.EncodingStrategy;
 
 import java.util.*;
 
-public class SimpleEncodingStrategy implements EncodingStrategy<AtomicChange> {
+public class ChangeEncodingStrategy implements EncodingStrategy<AtomicChange> {
 
     private final Map<String, Integer> dictionary;
     private final Set<ChangeAttribute> attributes;
     private final int encodingType;
 
-    public SimpleEncodingStrategy(Map<String, Integer> dictionary, int encodingType, ChangeAttribute... attributes) {
+    public ChangeEncodingStrategy(Map<String, Integer> dictionary, int encodingType, ChangeAttribute... attributes) {
         this.dictionary = dictionary;
         this.encodingType = encodingType;
         this.attributes = new HashSet<>(Arrays.asList(attributes));

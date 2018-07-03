@@ -17,4 +17,6 @@ dependencies {
 
     // https://mvnrepository.com/artifact/net.sf.opencsv/opencsv
     compile group: 'net.sf.opencsv', name: 'opencsv', version: '2.3'
+    // https://mvnrepository.com/artifact/com.google.guava/guava
+    compile group: 'com.google.guava', name: 'guava', version: '11.0.2'
 }

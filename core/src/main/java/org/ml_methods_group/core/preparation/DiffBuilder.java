@@ -1,7 +1,8 @@
-package org.ml_methods_group.database;
+package org.ml_methods_group.core.preparation;
 
 import com.github.gumtreediff.actions.ActionGenerator;
 import com.github.gumtreediff.actions.model.*;
+import com.github.gumtreediff.gen.TreeGenerator;
 import com.github.gumtreediff.gen.jdt.JdtTreeGenerator;
 import com.github.gumtreediff.matchers.Matcher;
 import com.github.gumtreediff.matchers.Matchers;
@@ -13,23 +14,31 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-public class Utils {
-    public static List<AtomicChange> calculateChanges(String before, String after) throws IOException {
+public class DiffBuilder {
+    private final Matchers matchers;
+    private final TreeGenerator generator;
+
+    public DiffBuilder() {
+        matchers = Matchers.getInstance();
+        generator = new JdtTreeGenerator();
+    }
+
+    public List<AtomicChange> findChanges(String before, String after) throws IOException {
         if (!before.contains("class ") && !after.contains("class ")) {
             before = "public class MY_MAGIC_CLASS_NAME {\n" + before + "\n}";
             after = "public class MY_MAGIC_CLASS_NAME {\n" + after + "\n}";
         }
-        final ITree treeBefore = new JdtTreeGenerator().generateFromString(before).getRoot();
-        final ITree treeAfter = new JdtTreeGenerator().generateFromString(after).getRoot();
-        final Matcher matcher = Matchers.getInstance().getMatcher(treeBefore, treeAfter);
+        final ITree treeBefore = generator.generateFromString(before).getRoot();
+        final ITree treeAfter = generator.generateFromString(after).getRoot();
+        final Matcher matcher = matchers.getMatcher(treeBefore, treeAfter);
         matcher.match();
-        final ActionGenerator g = new ActionGenerator(treeBefore, treeAfter, matcher.getMappings());
-        return g.generate().stream()
-                .map(Utils::fromAction)
+        final ActionGenerator actions = new ActionGenerator(treeBefore, treeAfter, matcher.getMappings());
+        return actions.generate().stream()
+                .map(DiffBuilder::fromAction)
                 .collect(Collectors.toList());
     }
 
-    static String normalize(String label) {
+    private static String normalize(String label) {
         return label.replaceAll("[^a-zA-Z0-9.,?:;\\\\<>=!+\\-^@~*/%&|(){}\\[\\]]", "").trim();
     }
 

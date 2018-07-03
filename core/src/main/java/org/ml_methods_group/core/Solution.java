@@ -9,5 +9,5 @@ public interface Solution {
 
     Verdict getVerdict();
 
-    enum Verdict {OK, FAIL, UNKNOWN}
+    enum Verdict {FAIL, OK, UNKNOWN}
 }

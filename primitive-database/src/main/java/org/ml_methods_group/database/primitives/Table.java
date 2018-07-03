@@ -1,12 +1,14 @@
 package org.ml_methods_group.database.primitives;
 
 import com.google.common.collect.ImmutableSet;
+import org.ml_methods_group.database.DatabaseException;
 
 import java.io.UnsupportedEncodingException;
 import java.sql.*;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -18,7 +20,7 @@ public class Table implements Iterable<Table.ResultWrapper> {
     private final Column[] columns;
     private final int idIndex;
 
-    public Table(Connection connection, TableHeader header) {
+    Table(Connection connection, TableHeader header) {
         this.connection = connection;
         this.table = header.table;
         this.columns = header.columns;
@@ -37,7 +39,7 @@ public class Table implements Iterable<Table.ResultWrapper> {
                 ") VALUES (" + templates + ")";
     }
 
-    public void insert(Object[] values) throws SQLException, UnsupportedEncodingException {
+    public void insert(Object[] values) {
         try (PreparedStatement statement = connection.prepareStatement(insertTemplate)) {
             for (int i = 0; i < values.length; i++) {
                 switch (columns[i].type) {
@@ -59,100 +61,127 @@ public class Table implements Iterable<Table.ResultWrapper> {
                 }
             }
             statement.execute();
+        } catch (SQLException | UnsupportedEncodingException e) {
+            throw new DatabaseException(e);
         }
     }
 
-    public void delete(Object id) throws SQLException {
-        final String request = "DELETE FROM " + table + " WHERE " +
-                table + "." + columns[idIndex].name + " = '" + id + "';";
-        try (Statement dataQuery = connection.createStatement()) {
-            dataQuery.execute(request);
-        }
+    public Optional<ResultWrapper> findFirst(String column, Object value) {
+        return Optional.ofNullable(findFirstOrNull(column, value));
     }
 
-    public ResultWrapper findFirst(Object id) throws SQLException, UnsupportedEncodingException {
-        final ResultWrapper result = findFirstOrNull(id);
-        if (result == null) {
-            throw new NoSuchElementException();
-        }
-        return result;
-    }
-
-    public ResultWrapper findFirstOrNull(Object id) throws SQLException, UnsupportedEncodingException {
+    public ResultWrapper findFirstOrNull(String column, Object value) {
         final String request = "SELECT * FROM " + table + " WHERE " +
-                table + "." + columns[idIndex].name + " = '" + id + "';";
+                table + "." + column + " = '" + value + "';";
+        return findFirstOrNull(request);
+    }
+
+    public Optional<ResultWrapper> findFirst(String column1, Object value1, String column2, Object value2) {
+        return Optional.ofNullable(findFirstOrNull(column1, value1, column2, value2));
+    }
+
+    public ResultWrapper findFirstOrNull(String column1, Object value1, String column2, Object value2) {
+        final String request = "SELECT * FROM " + table + " WHERE " +
+                table + "." + column1 + " = '" + value1 + "' AND " +
+                table + "." + column2 + " = '" + value2 + "';";
+        return findFirstOrNull(request);
+    }
+
+    private ResultWrapper findFirstOrNull(String request) {
         try (PreparedStatement query = connection.prepareStatement(request);
              ResultSet rs = query.executeQuery()) {
             return rs.next() ? new ResultWrapper(rs) : null;
+        } catch (SQLException | UnsupportedEncodingException e) {
+            throw new DatabaseException(e);
         }
     }
 
-    public Iterator<ResultWrapper> find(int columnId, Object value) throws SQLException {
+    public Iterator<ResultWrapper> find(int columnId, Object value) {
         return find(columns[columnId].name, value);
     }
 
-    public Iterator<ResultWrapper> find(String column, Object value) throws SQLException {
+    public Iterator<ResultWrapper> find(String column, Object value) {
         final String request = "SELECT * FROM " + table + " WHERE " +
                 table + "." + column + " = '" + value + "';";
-        final PreparedStatement query = connection.prepareStatement(request);
-        final ResultSet resultSet = query.executeQuery();
-        return new Iterator<ResultWrapper>() {
-            private ResultWrapper next;
-
-            {
-                tryReadNext();
-            }
-
-            @Override
-            public boolean hasNext() {
-                return next != null;
-            }
-
-            @Override
-            public ResultWrapper next() {
-                final ResultWrapper result = next;
-                tryReadNext();
-                return result;
-            }
-
-            private void tryReadNext() {
-                try {
-                    if (resultSet.next()) {
-                        next = new ResultWrapper(resultSet);
-                    } else {
-                        next = null;
-                        resultSet.close();
-                        query.close();
-                    }
-                } catch (Exception e) {
-                    try {
-                        resultSet.close();
-                        query.close();
-                    } catch (SQLException ignored) {
-                    }
-                    next = null;
-                }
-            }
-        };
+        return find(request);
     }
 
-    public boolean containsKey(Object id) throws SQLException {
+    public Iterator<ResultWrapper> find(String column1, Object value1, String column2, Object value2) {
+        final String request = "SELECT * FROM " + table + " WHERE " +
+                table + "." + column1 + " = '" + value1 + "' AND " +
+                table + "." + column2 + " = '" + value2 + "';";
+        return find(request);
+    }
+
+    private Iterator<ResultWrapper> find(String request) {
+        try {
+            final PreparedStatement query;
+            query = connection.prepareStatement(request);
+            final ResultSet resultSet = query.executeQuery();
+            return new Iterator<ResultWrapper>() {
+                private ResultWrapper next;
+
+                {
+                    tryReadNext();
+                }
+
+                @Override
+                public boolean hasNext() {
+                    return next != null;
+                }
+
+                @Override
+                public ResultWrapper next() {
+                    final ResultWrapper result = next;
+                    tryReadNext();
+                    return result;
+                }
+
+                private void tryReadNext() {
+                    try {
+                        if (resultSet.next()) {
+                            next = new ResultWrapper(resultSet);
+                        } else {
+                            next = null;
+                            resultSet.close();
+                            query.close();
+                        }
+                    } catch (Exception e) {
+                        try {
+                            resultSet.close();
+                            query.close();
+                        } catch (SQLException ignored) {
+                        }
+                        next = null;
+                    }
+                }
+            };
+        } catch (SQLException e) {
+            throw new DatabaseException(e);
+        }
+    }
+
+    public boolean containsKey(Object id) {
         final String request = "SELECT * FROM " + table + " WHERE " +
                 table + "." + columns[idIndex].name + " = '" + id + "';";
         try (PreparedStatement query =
                      connection.prepareStatement(request);
              ResultSet rs = query.executeQuery()) {
             return rs.next();
+        } catch (SQLException e) {
+            throw new DatabaseException(e);
         }
     }
 
-    public int size() throws SQLException {
+    public int size() {
         final String request = "SELECT COUNT(1) FROM " + table + ";";
         try (PreparedStatement query =
                      connection.prepareStatement(request);
              ResultSet rs = query.executeQuery()) {
             rs.next();
             return rs.getInt(1);
+        } catch (SQLException e) {
+            throw new DatabaseException(e);
         }
     }
 
@@ -160,48 +189,9 @@ public class Table implements Iterable<Table.ResultWrapper> {
         return columns.length;
     }
 
-    public Iterator<ResultWrapper> listAll() throws SQLException {
+    public Iterator<ResultWrapper> listAll() {
         final String request = "SELECT * FROM " + table + ";";
-        final PreparedStatement query = connection.prepareStatement(request);
-        final ResultSet resultSet = query.executeQuery();
-        return new Iterator<ResultWrapper>() {
-            private ResultWrapper next;
-
-            {
-                tryReadNext();
-            }
-
-            @Override
-            public boolean hasNext() {
-                return next != null;
-            }
-
-            @Override
-            public ResultWrapper next() {
-                final ResultWrapper result = next;
-                tryReadNext();
-                return result;
-            }
-
-            private void tryReadNext() {
-                try {
-                    if (resultSet.next()) {
-                        next = new ResultWrapper(resultSet);
-                    } else {
-                        next = null;
-                        resultSet.close();
-                        query.close();
-                    }
-                } catch (Exception e) {
-                    try {
-                        resultSet.close();
-                        query.close();
-                    } catch (SQLException ignored) {
-                    }
-                    next = null;
-                }
-            }
-        };
+        return find(request);
     }
 
     private int getIndex(String columnName) {
@@ -254,12 +244,12 @@ public class Table implements Iterable<Table.ResultWrapper> {
             return results;
         }
 
-        public double getDoubleValue(String columnName) throws SQLException {
+        public double getDoubleValue(String columnName) {
             final int index = getIndex(columnName);
             return getDoubleValue(index);
         }
 
-        public double getDoubleValue(int index) throws SQLException {
+        public double getDoubleValue(int index) {
             switch (columns[index].type) {
                 case FLOAT:
                     return (Double) results[index];
@@ -272,23 +262,23 @@ public class Table implements Iterable<Table.ResultWrapper> {
             }
         }
 
-        public String getStringValue(String columnName) throws SQLException {
+        public String getStringValue(String columnName) {
             final int index = getIndex(columnName);
             return getStringValue(index);
         }
 
-        public String getStringValue(int index) throws SQLException {
+        public String getStringValue(int index) {
             return results[index].toString();
         }
 
-        public int getIntValue(String columnName) throws SQLException {
+        public int getIntValue(String columnName) {
             final int index = getIndex(columnName);
             return getIntValue(index);
         }
 
-        public int getIntValue(int index) throws SQLException {
+        public int getIntValue(int index) {
             if (columns[index].type == Type.FLOAT) {
-                throw new RuntimeException("Cant cast float to int");
+                throw new DatabaseException("Cant cast float to int");
             } else if (columns[index].type == Type.INTEGER) {
                 return (Integer) results[index];
             } else {
@@ -296,12 +286,12 @@ public class Table implements Iterable<Table.ResultWrapper> {
             }
         }
 
-        public long getBigIntValue(String columnName) throws SQLException {
+        public long getBigIntValue(String columnName) {
             final int index = getIndex(columnName);
             return getBigIntValue(index);
         }
 
-        public long getBigIntValue(int index) throws SQLException {
+        public long getBigIntValue(int index) {
             if (columns[index].type == Type.FLOAT) {
                 throw new RuntimeException("Cant cast float to int");
             } else if (columns[index].type == Type.INTEGER) {

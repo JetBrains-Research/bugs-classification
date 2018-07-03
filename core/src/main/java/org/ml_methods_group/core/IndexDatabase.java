@@ -4,20 +4,18 @@ import java.util.Map;
 import java.util.function.Function;
 
 public interface IndexDatabase {
-    <K, V> void saveIndex(String name, Map<K, V> index,
-                          Function<K, String> keyToString,
-                          Function<V, String> valueToString);
+    <K> void saveIndex(String name, Map<K, Long> index,
+                          Function<K, String> keyToString);
 
-    default <K, V> void saveIndex(String name, Map<K, V> index) {
-        saveIndex(name, index, Object::toString, Object::toString);
+    default <K> void saveIndex(String name, Map<K, Long> index) {
+        saveIndex(name, index, Object::toString);
     }
 
-    <K, V> Map<K, V> loadIndex(String name,
-                               Function<String, K> keyParser,
-                               Function<String, V> valueParser);
+    <K> Map<K, Long> loadIndex(String name,
+                               Function<String, K> keyParser);
 
-    default Map<String, String> loadIndex(String name) {
-        return loadIndex(name, Function.identity(), Function.identity());
+    default Map<String, Long> loadIndex(String name) {
+        return loadIndex(name, Function.identity());
     }
 
     void dropIndex(String name);

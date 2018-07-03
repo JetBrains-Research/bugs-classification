@@ -5,7 +5,8 @@ import org.ml_methods_group.core.changes.AtomicChange;
 import java.util.List;
 
 public interface SolutionDiff {
-    Solution getWrongSolution();
-    Solution getCorrectSolution();
+    String getCodeBefore();
+    String getCodeAfter();
+    int getSessionId();
     List<AtomicChange> getChanges();
 }

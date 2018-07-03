@@ -15,6 +15,7 @@ package org.ml_methods_group.database.primitives;/*
  */
 
 
+import org.ml_methods_group.database.DatabaseException;
 import org.postgresql.Driver;
 
 import java.sql.Connection;
@@ -28,13 +29,17 @@ public class Database implements AutoCloseable {
 
     private final Connection connection;
 
-    public Database() throws SQLException {
-        DriverManager.registerDriver(new Driver());
-        connection = DriverManager
-                .getConnection("jdbc:postgresql://localhost/database?user=myRole&ssl=false");
+    public Database() {
+        try {
+            DriverManager.registerDriver(new Driver());
+            connection = DriverManager
+                    .getConnection("jdbc:postgresql://localhost/database?user=myRole&ssl=false");
+        } catch (SQLException e) {
+            throw new DatabaseException(e);
+        }
     }
 
-    public void createTable(TableHeader header) throws SQLException {
+    public void createTable(TableHeader header) {
         final StringBuilder request = new StringBuilder("CREATE TABLE IF NOT EXISTS " + header.table + " (\n");
         final String columnsDeclarations = Stream.of(header.columns)
                 .map(Column::toSQL)
@@ -43,12 +48,16 @@ public class Database implements AutoCloseable {
         request.append("\n);");
         try (Statement dataQuery = connection.createStatement()) {
             dataQuery.execute(request.toString());
+        } catch (SQLException e) {
+            throw new DatabaseException(e);
         }
     }
 
-    public void dropTable(TableHeader header) throws SQLException {
+    public void dropTable(TableHeader header) {
         try (Statement dataQuery = connection.createStatement()) {
             dataQuery.execute("DROP TABLE IF EXISTS " + header.table + ";");
+        } catch (SQLException e) {
+            throw new DatabaseException(e);
         }
     }
 
@@ -56,7 +65,11 @@ public class Database implements AutoCloseable {
         return new Table(connection, header);
     }
 
-    public void close() throws SQLException {
-        connection.close();
+    public void close() {
+        try {
+            connection.close();
+        } catch (SQLException e) {
+            throw new DatabaseException(e);
+        }
     }
 }

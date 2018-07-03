@@ -15,23 +15,17 @@ public class BasicIndexDatabase implements IndexDatabase {
 
     public BasicIndexDatabase(Database database) {
         this.database = database;
-        try {
-            database.createTable(Tables.codes_header);
-            database.createTable(Tables.diff_header);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     @Override
-    public <K, V> void saveIndex(String name, Map<K, V> index, Function<K, String> keyToString, Function<V, String> valueToString) {
+    public <K> void saveIndex(String name, Map<K, Long> index, Function<K, String> keyToString) {
         try {
             final TableHeader header = crateHeader(name);
             database.dropTable(header);
             database.createTable(header);
             final Table table = database.getTable(header);
-            for (Entry<K, V> entry : index.entrySet()) {
-                table.insert(new Object[]{keyToString.apply(entry.getKey()), valueToString.apply(entry.getValue())});
+            for (Entry<K, Long> entry : index.entrySet()) {
+                table.insert(new Object[]{keyToString.apply(entry.getKey()), entry.getValue()});
             }
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -39,15 +33,15 @@ public class BasicIndexDatabase implements IndexDatabase {
     }
 
     @Override
-    public <K, V> Map<K, V> loadIndex(String name, Function<String, K> keyParser, Function<String, V> valueParser) {
+    public <K> Map<K, Long> loadIndex(String name, Function<String, K> keyParser) {
         try {
             final TableHeader header = crateHeader(name);
             final Table table = database.getTable(header);
-            final Map<K, V> index = new HashMap<>();
+            final Map<K, Long> index = new HashMap<>();
             for (Table.ResultWrapper wrapper : table) {
                 index.put(
                         keyParser.apply(wrapper.getStringValue("key")),
-                        valueParser.apply(wrapper.getStringValue("value"))
+                        Long.parseLong(wrapper.getStringValue("value"))
                 );
             }
             return index;
@@ -58,12 +52,9 @@ public class BasicIndexDatabase implements IndexDatabase {
 
     @Override
     public void dropIndex(String name) {
-        try {
-            final TableHeader header = crateHeader(name);
-            database.dropTable(header);
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+        final TableHeader header = crateHeader(name);
+        database.dropTable(header);
+
     }
 
     public static TableHeader crateHeader(String name) {

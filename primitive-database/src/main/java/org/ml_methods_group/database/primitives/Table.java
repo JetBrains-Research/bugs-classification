@@ -4,15 +4,18 @@ import com.google.common.collect.ImmutableSet;
 import org.ml_methods_group.database.DatabaseException;
 
 import java.io.UnsupportedEncodingException;
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Collections;
 import java.util.Iterator;
-import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+@SuppressWarnings("unused")
 public class Table implements Iterable<Table.ResultWrapper> {
     private final Connection connection;
     private final String table;
@@ -44,7 +47,7 @@ public class Table implements Iterable<Table.ResultWrapper> {
             for (int i = 0; i < values.length; i++) {
                 switch (columns[i].type) {
                     case TEXT:
-                        statement.setString(i + 1, (String) values[i]);
+                        statement.setString(i + 1, values[i].toString());
                         break;
                     case INTEGER:
                         statement.setInt(i + 1, (Integer) values[i]);
@@ -56,7 +59,7 @@ public class Table implements Iterable<Table.ResultWrapper> {
                         statement.setDouble(i + 1, (Double) values[i]);
                         break;
                     case BYTEA:
-                        statement.setBytes(i + 1, ((String) values[i]).getBytes("UTF-8"));
+                        statement.setBytes(i + 1, (values[i].toString()).getBytes("UTF-8"));
                         break;
                 }
             }
@@ -259,6 +262,20 @@ public class Table implements Iterable<Table.ResultWrapper> {
                     return (Long) results[index];
                 default:
                     return Double.valueOf((String) results[index]);
+            }
+        }
+
+        public <T extends Enum<T>> T getEnumValue(String columnName, Class<T> enumType) {
+            final int index = getIndex(columnName);
+            return getEnumValue(index, enumType);
+        }
+
+        public <T extends Enum<T>> T getEnumValue(int index, Class<T> enumType) {
+            switch (columns[index].type) {
+                case TEXT:
+                    return Enum.valueOf(enumType, (String) results[index]);
+                default:
+                    throw new RuntimeException("String type expected");
             }
         }
 

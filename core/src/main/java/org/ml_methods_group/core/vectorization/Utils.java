@@ -4,7 +4,7 @@ import java.util.Arrays;
 import java.util.List;
 
 public class Utils {
-    public void standardize(List<double[]> vectors) {
+    public static void standardize(List<double[]> vectors) {
         if (vectors.isEmpty()) {
             return;
         }
@@ -26,18 +26,18 @@ public class Utils {
         }
     }
 
-    public void normalize(double[] vector) {
+    public static void normalize(double[] vector) {
         final double norm = norm(vector);
         for (int i = 0; i < vector.length; i++) {
             vector[i] /= norm;
         }
     }
 
-    public double norm(double[] vector) {
+    public static double norm(double[] vector) {
         return Math.sqrt(squaredNorm(vector));
     }
 
-    public double squaredNorm(double[] vector) {
+    public static double squaredNorm(double[] vector) {
         return Arrays.stream(vector)
                 .map(x -> x * x)
                 .sum();

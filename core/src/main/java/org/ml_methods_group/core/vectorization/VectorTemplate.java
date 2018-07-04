@@ -1,10 +1,16 @@
 package org.ml_methods_group.core.vectorization;
 
+import org.ml_methods_group.core.vectorization.ChangeEncodingStrategy.ChangeAttribute;
+
+import java.io.FileNotFoundException;
+import java.io.PrintWriter;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static org.ml_methods_group.core.vectorization.ChangeEncodingStrategy.ChangeAttribute.values;
 
 public class VectorTemplate<T> implements Serializable {
     private final List<EncodingStrategy<T>> strategies;
@@ -22,6 +28,24 @@ public class VectorTemplate<T> implements Serializable {
         this.postprocessor = postprocessor;
         this.strategies = strategies;
         acceptable.forEach(code -> codeToIndex.putIfAbsent(code, codeToIndex.size()));
+        try {
+            PrintWriter out = new PrintWriter("codes.csv");
+            out.print("code");
+            for (ChangeAttribute attribute : values()) {
+                out.print("," + attribute.name());
+            }
+            out.println();
+            for (long code : acceptable) {
+                out.print(code);
+                for (ChangeAttribute attribute : values()) {
+                    out.print("," + ChangeEncodingStrategy.decode(code, attribute));
+                }
+                out.println();
+            }
+            out.close();
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
     }
 
     public double[] process(List<T> features) {
@@ -70,10 +94,7 @@ public class VectorTemplate<T> implements Serializable {
         STANDARD {
             @Override
             public void process(List<?> features, double[] vector) {
-                final double squaredNorma = Arrays.stream(vector)
-                        .map(x -> x * x)
-                        .sum();
-                final double norma = Math.sqrt(squaredNorma);
+                final double norma = Utils.norm(vector);
                 for (int i = 0; i < vector.length; i++) {
                     vector[i] /= norma;
                 }

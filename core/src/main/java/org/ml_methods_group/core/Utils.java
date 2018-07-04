@@ -87,8 +87,8 @@ public class Utils {
 
     public static List<EncodingStrategy<AtomicChange>> defaultStrategies(Map<String, Long> dictionary) {
         return Arrays.asList(
-                new ChangeEncodingStrategy(dictionary,
-                        CHANGE_TYPE, NODE_TYPE),
+//                new ChangeEncodingStrategy(dictionary,
+//                        CHANGE_TYPE, NODE_TYPE),
                 new ChangeEncodingStrategy(dictionary,
                         CHANGE_TYPE, NODE_TYPE, PARENT_TYPE),
                 new ChangeEncodingStrategy(dictionary,

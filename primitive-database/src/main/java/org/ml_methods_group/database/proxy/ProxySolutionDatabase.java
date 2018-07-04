@@ -134,6 +134,7 @@ public class ProxySolutionDatabase implements SolutionDatabase {
     public void clear() {
         database.dropTable(Tables.CODES_HEADER);
         database.dropTable(Tables.DIFF_HEADER);
+        ;
     }
 
     @Override
@@ -144,7 +145,7 @@ public class ProxySolutionDatabase implements SolutionDatabase {
 
     @Override
     public Iterator<SolutionDiff> iterator() {
-        return transformToSolutionDiff(codes.listAll());
+        return transformToSolutionDiff(codes.find("verdict", Verdict.OK.ordinal()));
     }
 
     @Override

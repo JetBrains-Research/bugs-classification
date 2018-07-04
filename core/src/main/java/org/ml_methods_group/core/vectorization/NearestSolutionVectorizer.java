@@ -5,13 +5,15 @@ import org.ml_methods_group.core.changes.AtomicChange;
 import org.ml_methods_group.core.preparation.ChangesBuilder;
 
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.List;
 
 public class NearestSolutionVectorizer implements Serializable {
-    private final List<SolutionDiff> samples;
-    private final VectorTemplate<AtomicChange> template;
-    private final ChangesBuilder builder;
+    private List<SolutionDiff> samples;
+    private VectorTemplate<AtomicChange> template;
+    private ChangesBuilder builder;
 
     public NearestSolutionVectorizer(List<SolutionDiff> samples, VectorTemplate<AtomicChange> template,
                                      ChangesBuilder builder) {
@@ -31,5 +33,17 @@ public class NearestSolutionVectorizer implements Serializable {
             }
         }
         return template.process(changes);
+    }
+
+    private void writeObject(ObjectOutputStream stream) throws IOException {
+        stream.writeObject(samples);
+        stream.writeObject(template);
+    }
+
+    @SuppressWarnings("unchecked")
+    private void readObject(ObjectInputStream stream) throws IOException, ClassNotFoundException {
+        samples = (List<SolutionDiff>) stream.readObject();
+        template = (VectorTemplate<AtomicChange>) stream.readObject();
+        builder = new ChangesBuilder();
     }
 }

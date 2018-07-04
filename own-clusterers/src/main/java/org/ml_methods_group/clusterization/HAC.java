@@ -140,7 +140,7 @@ public class HAC<T> implements AutoCloseable, Clusterer<T> {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         executor.shutdown();
     }
 

@@ -43,6 +43,14 @@ public class ChangeEncodingStrategy implements EncodingStrategy<AtomicChange> {
         return (long) code << shift;
     }
 
+    public static int decode(long code, ChangeAttribute attribute) {
+        final int action = decode(code, ChangeAttribute.CHANGE_TYPE.offset, ChangeAttribute.CHANGE_TYPE.limit);
+        if (!attribute.isApplicable(action)) {
+            return -1;
+        }
+        return decode(code, attribute.offset, attribute.limit);
+    }
+
     private static int decode(long code, int shift, int limit) {
         return (int) ((code >>> shift) & ((1 << limit) - 1));
     }

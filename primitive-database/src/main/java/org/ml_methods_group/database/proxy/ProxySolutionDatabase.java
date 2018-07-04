@@ -15,7 +15,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
 
-import static org.ml_methods_group.core.changes.AtomicChange.ChangeType.*;
+import static org.ml_methods_group.core.changes.ChangeType.*;
 
 public class ProxySolutionDatabase implements SolutionDatabase {
 
@@ -53,37 +53,37 @@ public class ProxySolutionDatabase implements SolutionDatabase {
     }
 
     private AtomicChange fromResultWrapper(Table.ResultWrapper wrapper) {
-        final int actionType = wrapper.getIntValue("action_type");
-        if (actionType == DELETE.ordinal()) {
-            return new DeleteChange(
-                    wrapper.getIntValue("node_type"),
-                    wrapper.getStringValue("label"),
-                    wrapper.getIntValue("old_parent_type"),
-                    wrapper.getIntValue("old_parent_of_parent_type"));
-        } else if (actionType == INSERT.ordinal()) {
-            return new InsertChange(
-                    wrapper.getIntValue("node_type"),
-                    wrapper.getStringValue("label"),
-                    wrapper.getIntValue("parent_type"),
-                    wrapper.getIntValue("parent_of_parent_type"));
-        } else if (actionType == MOVE.ordinal()) {
-            return new MoveChange(
-                    wrapper.getIntValue("node_type"),
-                    wrapper.getStringValue("label"),
-                    wrapper.getIntValue("parent_type"),
-                    wrapper.getIntValue("parent_of_parent_type"),
-                    wrapper.getIntValue("old_parent_type"),
-                    wrapper.getIntValue("old_parent_of_parent_type")
-            );
-        } else if (actionType == UPDATE.ordinal()) {
-            return new UpdateChange(
-                    wrapper.getIntValue("node_type"),
-                    wrapper.getStringValue("label"),
-                    wrapper.getIntValue("parent_type"),
-                    wrapper.getIntValue("parent_of_parent_type"),
-                    wrapper.getStringValue("old_label"));
+        final ChangeType type = wrapper.getEnumValue("action_type", ChangeType.class);
+        switch (type) {
+            case DELETE:
+                return new DeleteChange(
+                        wrapper.getEnumValue("node_type", NodeType.class),
+                        wrapper.getEnumValue("parent_type", NodeType.class),
+                        wrapper.getEnumValue("parent_of_parent_type", NodeType.class),
+                        wrapper.getStringValue("label"));
+            case INSERT:
+                return new InsertChange(
+                        wrapper.getEnumValue("node_type", NodeType.class),
+                        wrapper.getEnumValue("parent_type", NodeType.class),
+                        wrapper.getEnumValue("parent_of_parent_type", NodeType.class),
+                        wrapper.getStringValue("label"));
+            case MOVE:
+                return new MoveChange(
+                        wrapper.getEnumValue("node_type", NodeType.class),
+                        wrapper.getEnumValue("parent_type", NodeType.class),
+                        wrapper.getEnumValue("parent_of_parent_type", NodeType.class),
+                        wrapper.getEnumValue("old_parent_type", NodeType.class),
+                        wrapper.getEnumValue("old_parent_of_parent_type", NodeType.class),
+                        wrapper.getStringValue("label"));
+            case UPDATE:
+                return new UpdateChange(
+                        wrapper.getEnumValue("node_type", NodeType.class),
+                        wrapper.getEnumValue("parent_type", NodeType.class),
+                        wrapper.getEnumValue("parent_of_parent_type", NodeType.class),
+                        wrapper.getStringValue("label"),
+                        wrapper.getStringValue("old_label"));
         }
-        throw new DatabaseException("Unexpected action type: " + actionType);
+        throw new DatabaseException("Unexpected action type: " + type);
     }
 
     @Override
@@ -105,7 +105,7 @@ public class ProxySolutionDatabase implements SolutionDatabase {
     public List<SolutionDiff> findByProblem(int problemId) {
         final List<SolutionDiff> result = new ArrayList<>();
         transformToSolutionDiff(codes.find("problem_id", problemId, "verdict", Verdict.OK.ordinal()))
-            .forEachRemaining(result::add);
+                .forEachRemaining(result::add);
         return result;
     }
 
@@ -153,7 +153,7 @@ public class ProxySolutionDatabase implements SolutionDatabase {
         for (AtomicChange change : solutionDiff.getChanges()) {
             diffs.insert(new Object[]{
                     solutionDiff.getSessionId(),
-                    change.getChangeType().ordinal(),
+                    change.getChangeType(),
                     change.getNodeType(),
                     change.getParentType(),
                     change.getParentOfParentType(),

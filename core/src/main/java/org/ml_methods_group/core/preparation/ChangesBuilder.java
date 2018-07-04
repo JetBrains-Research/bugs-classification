@@ -11,7 +11,6 @@ import org.ml_methods_group.core.changes.*;
 
 import java.io.IOException;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class ChangesBuilder {
@@ -42,7 +41,7 @@ public class ChangesBuilder {
         return label.replaceAll("[^a-zA-Z0-9.,?:;\\\\<>=!+\\-^@~*/%&|(){}\\[\\]]", "").trim();
     }
 
-    public static AtomicChange fromAction(Action action) {
+    private static AtomicChange fromAction(Action action) {
         if (action.getClass() == Insert.class) {
             return fromAction((Insert) action);
         } else if (action.getClass() == Delete.class) {
@@ -54,42 +53,57 @@ public class ChangesBuilder {
         }
     }
 
-    public static InsertChange fromAction(Insert insert) {
+    private static InsertChange fromAction(Insert insert) {
+        final ITree node = insert.getNode();
         return new InsertChange(
-                insert.getNode().getType(),
-                normalize(insert.getNode().getLabel()),
-                Optional.of(insert.getNode().getParent()).map(ITree::getType).orElse(0),
-                Optional.of(insert.getNode().getParent()).map(ITree::getParent).map(ITree::getType).orElse(0)
+                getNodeType(node, 0),
+                getNodeType(node, 1),
+                getNodeType(node, 2),
+                normalize(node.getLabel())
         );
     }
 
-    public static DeleteChange fromAction(Delete delete) {
+    private static DeleteChange fromAction(Delete delete) {
+        final ITree node = delete.getNode();
         return new DeleteChange(
-                delete.getNode().getType(),
-                normalize(delete.getNode().getLabel()),
-                Optional.of(delete.getNode().getParent()).map(ITree::getType).orElse(0),
-                Optional.of(delete.getNode().getParent()).map(ITree::getParent).map(ITree::getType).orElse(0)
+                getNodeType(node, 0),
+                getNodeType(node, 1),
+                getNodeType(node, 2),
+                normalize(node.getLabel())
         );
     }
 
-    public static MoveChange fromAction(Move move) {
+    private static MoveChange fromAction(Move move) {
+        final ITree node = move.getNode();
+        final ITree parent = move.getParent();
         return new MoveChange(
-                move.getNode().getType(),
-                normalize(move.getNode().getLabel()),
-                move.getParent().getType(),
-                Optional.of(move.getParent()).map(ITree::getParent).map(ITree::getType).orElse(0),
-                Optional.of(move.getNode().getParent()).map(ITree::getType).orElse(0),
-                Optional.of(move.getNode().getParent()).map(ITree::getParent).map(ITree::getType).orElse(0)
+                getNodeType(node, 0),
+                getNodeType(parent, 0),
+                getNodeType(parent, 1),
+                getNodeType(node, 1),
+                getNodeType(node, 2),
+                normalize(node.getLabel())
         );
     }
 
-    public static UpdateChange fromAction(Update update) {
+    private static UpdateChange fromAction(Update update) {
+        final ITree node = update.getNode();
         return new UpdateChange(
-                update.getNode().getType(),
+                getNodeType(node, 0),
+                getNodeType(node, 1),
+                getNodeType(node, 2),
                 normalize(update.getValue()),
-                update.getNode().getParent().getType(),
-                Optional.of(update.getNode().getParent()).map(ITree::getType).orElse(0),
-                normalize(update.getNode().getLabel())
+                normalize(node.getLabel())
         );
+    }
+
+    private static NodeType getNodeType(ITree node, int steps) {
+        if (node == null) {
+            return NodeType.NONE;
+        }
+        if (steps == 0) {
+            return NodeType.valueOf(node.getType());
+        }
+        return getNodeType(node.getParent(), steps - 1);
     }
 }

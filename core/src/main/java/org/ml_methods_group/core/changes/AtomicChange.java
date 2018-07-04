@@ -4,35 +4,31 @@ public interface AtomicChange {
 
     ChangeType getChangeType();
 
-    default int getNodeType() {
-        return -1;
+    default NodeType getNodeType() {
+        return NodeType.NONE;
     }
 
-    default int getParentType() {
-        return -1;
+    default NodeType getParentType() {
+        return NodeType.NONE;
     }
 
-    default int getParentOfParentType() {
-        return -1;
+    default NodeType getParentOfParentType() {
+        return NodeType.NONE;
     }
 
     default String getLabel() {
         return "";
     }
 
-    default int getOldParentType() {
-        return -1;
+    default NodeType getOldParentType() {
+        return NodeType.NONE;
     }
 
-    default int getOldParentOfParentType() {
-        return -1;
+    default NodeType getOldParentOfParentType() {
+        return NodeType.NONE;
     }
 
     default String getOldLabel() {
         return "";
-    }
-
-    enum ChangeType {
-        DELETE, INSERT, MOVE, UPDATE
     }
 }

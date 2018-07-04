@@ -1,16 +1,10 @@
 package org.ml_methods_group.core.vectorization;
 
-import org.ml_methods_group.core.vectorization.ChangeEncodingStrategy.ChangeAttribute;
-
-import java.io.FileNotFoundException;
-import java.io.PrintWriter;
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
-import static org.ml_methods_group.core.vectorization.ChangeEncodingStrategy.ChangeAttribute.values;
 
 public class VectorTemplate<T> implements Serializable {
     private final List<EncodingStrategy<T>> strategies;
@@ -28,24 +22,6 @@ public class VectorTemplate<T> implements Serializable {
         this.postprocessor = postprocessor;
         this.strategies = strategies;
         acceptable.forEach(code -> codeToIndex.putIfAbsent(code, codeToIndex.size()));
-        try {
-            PrintWriter out = new PrintWriter("codes.csv");
-            out.print("code");
-            for (ChangeAttribute attribute : values()) {
-                out.print("," + attribute.name());
-            }
-            out.println();
-            for (long code : acceptable) {
-                out.print(code);
-                for (ChangeAttribute attribute : values()) {
-                    out.print("," + ChangeEncodingStrategy.decode(code, attribute));
-                }
-                out.println();
-            }
-            out.close();
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
     }
 
     public double[] process(List<T> features) {
@@ -53,7 +29,10 @@ public class VectorTemplate<T> implements Serializable {
         final HashMap<Long, Integer> buffer = new HashMap<>();
         for (EncodingStrategy<? super T> strategy : strategies) {
             for (T feature : features) {
-                buffer.compute(strategy.encode(feature), (code, old) -> (old == null ? 0 : old) + 1);
+                final long code = strategy.encode(feature);
+                if (code != 0) {
+                    buffer.compute(code, (key, old) -> (old == null ? 0 : old) + 1);
+                }
             }
             for (Map.Entry<Long, Integer> counter : buffer.entrySet()) {
                 final int index = codeToIndex.getOrDefault(counter.getKey(), -1);

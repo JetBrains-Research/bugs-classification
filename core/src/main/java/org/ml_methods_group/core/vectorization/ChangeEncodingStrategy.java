@@ -1,7 +1,7 @@
 package org.ml_methods_group.core.vectorization;
 
 import org.ml_methods_group.core.changes.AtomicChange;
-import org.ml_methods_group.core.changes.AtomicChange.ChangeType;
+import org.ml_methods_group.core.changes.ChangeType;
 import org.ml_methods_group.core.vectorization.EncodingStrategy;
 
 import java.util.*;
@@ -63,15 +63,15 @@ public class ChangeEncodingStrategy implements EncodingStrategy<AtomicChange> {
             case CHANGE_TYPE:
                 return change.getChangeType().ordinal();
             case NODE_TYPE:
-                return 1 + change.getNodeType();
+                return 1 + change.getNodeType().ordinal();
             case PARENT_TYPE:
-                return 1 + change.getParentType();
+                return 1 + change.getParentType().ordinal();
             case PARENT_OF_PARENT_TYPE:
-                return 1 + change.getParentOfParentType();
+                return 1 + change.getParentOfParentType().ordinal();
             case OLD_PARENT_TYPE:
-                return 1 + change.getOldParentType();
+                return 1 + change.getOldParentType().ordinal();
             case OLD_PARENT_OF_PARENT_TYPE:
-                return 1 + change.getOldParentOfParentType();
+                return 1 + change.getOldParentOfParentType().ordinal();
             case LABEL_TYPE:
                 return 1 + dictionary.getOrDefault(change.getLabel(), 0L).intValue();
             case OLD_LABEL_TYPE:

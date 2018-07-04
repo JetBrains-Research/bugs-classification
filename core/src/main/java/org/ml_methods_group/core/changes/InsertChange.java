@@ -2,16 +2,16 @@ package org.ml_methods_group.core.changes;
 
 public class InsertChange implements AtomicChange {
 
-    private final int nodeType;
+    private final NodeType nodeType;
+    private final NodeType parentType;
+    private final NodeType parentOfParentType;
     private final String label;
-    private final int parentType;
-    private final int parentOfParentType;
 
-    public InsertChange(int nodeType, String label, int parentType, int parentOfParentType) {
+    public InsertChange(NodeType nodeType, NodeType parentType, NodeType parentOfParentType, String label) {
         this.nodeType = nodeType;
-        this.label = label;
         this.parentType = parentType;
         this.parentOfParentType = parentOfParentType;
+        this.label = label;
     }
 
     @Override
@@ -20,7 +20,7 @@ public class InsertChange implements AtomicChange {
     }
 
     @Override
-    public int getNodeType() {
+    public NodeType getNodeType() {
         return nodeType;
     }
 
@@ -30,12 +30,12 @@ public class InsertChange implements AtomicChange {
     }
 
     @Override
-    public int getParentType() {
+    public NodeType getParentType() {
         return parentType;
     }
 
     @Override
-    public int getParentOfParentType() {
+    public NodeType getParentOfParentType() {
         return parentOfParentType;
     }
 }

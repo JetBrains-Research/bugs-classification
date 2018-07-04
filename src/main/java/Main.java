@@ -1,6 +1,9 @@
 import org.ml_methods_group.classification.KNearestNeighbors;
 import org.ml_methods_group.clusterization.HAC;
-import org.ml_methods_group.core.*;
+import org.ml_methods_group.core.Classifier;
+import org.ml_methods_group.core.HintGenerator;
+import org.ml_methods_group.core.SolutionDiff;
+import org.ml_methods_group.core.Utils;
 import org.ml_methods_group.core.changes.AtomicChange;
 import org.ml_methods_group.core.preparation.ChangesBuilder;
 import org.ml_methods_group.core.selection.CenterSelector;
@@ -12,7 +15,6 @@ import org.ml_methods_group.database.proxy.ProxySolutionDatabase;
 import org.ml_methods_group.ui.ConsoleIO;
 import org.ml_methods_group.ui.UtilsUI;
 
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -31,7 +33,7 @@ public class Main {
         PrintWriter out = new PrintWriter("out.csv");
         ProxySolutionDatabase database = new ProxySolutionDatabase();
         BasicIndexStorage storage = new BasicIndexStorage();
-//        UtilsUI.loadDatabase(Main.class.getResourceAsStream("/dataset.csv"), database, PROBLEM);
+        Utils.loadDatabase(Main.class.getResourceAsStream("/dataset.csv"), database, PROBLEM);
         final String ids = Utils.indexLabels(database, storage, 50, 100000);
         final Map<String, Long> dictionary = storage.loadIndex(ids);
         VectorTemplate<AtomicChange> template = Utils.generateTemplate(database, storage, defaultStrategies(dictionary),
@@ -49,10 +51,10 @@ public class Main {
             lists = clusterer.buildClusters(wrappers);
         }
         final Map<Wrapper, Integer>mapping=new HashMap<>() ;
-        for (int i = 0; i < lists.size(); i++) {
-            out.write(lists.get(i).size() + "\n");
-            if (lists.get(i).size() > 10 && lists.get(i).size() < 20) {
-                writeCluster(lists.get(i), template);
+        for (List<Wrapper> list : lists) {
+            out.write(list.size() + "\n");
+            if (list.size() > 10 && list.size() < 20) {
+                writeCluster(list, template);
             }
         }
         out.close();

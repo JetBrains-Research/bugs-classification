@@ -2,21 +2,21 @@ package org.ml_methods_group.core.changes;
 
 public class MoveChange implements AtomicChange {
 
-    private final int nodeType;
+    private final NodeType nodeType;
+    private final NodeType parentType;
+    private final NodeType parentOfParentType;
+    private final NodeType oldParentType;
+    private final NodeType oldParentOfParentType;
     private final String label;
-    private final int parentType;
-    private final int parentOfParentType;
-    private final int oldParentType;
-    private final int oldParentOfParentType;
 
-    public MoveChange(int nodeType, String label, int parentType, int parentOfParentType,
-                      int oldParentType, int oldParentOfParentType) {
+    public MoveChange(NodeType nodeType, NodeType parentType, NodeType parentOfParentType,
+                      NodeType oldParentType, NodeType oldParentOfParentType, String label) {
         this.nodeType = nodeType;
-        this.label = label;
         this.parentType = parentType;
         this.parentOfParentType = parentOfParentType;
         this.oldParentType = oldParentType;
         this.oldParentOfParentType = oldParentOfParentType;
+        this.label = label;
     }
 
     @Override
@@ -25,7 +25,7 @@ public class MoveChange implements AtomicChange {
     }
 
     @Override
-    public int getNodeType() {
+    public NodeType getNodeType() {
         return nodeType;
     }
 
@@ -35,22 +35,22 @@ public class MoveChange implements AtomicChange {
     }
 
     @Override
-    public int getParentType() {
+    public NodeType getParentType() {
         return parentType;
     }
 
     @Override
-    public int getParentOfParentType() {
+    public NodeType getParentOfParentType() {
         return parentOfParentType;
     }
 
     @Override
-    public int getOldParentType() {
+    public NodeType getOldParentType() {
         return oldParentType;
     }
 
     @Override
-    public int getOldParentOfParentType() {
+    public NodeType getOldParentOfParentType() {
         return oldParentOfParentType;
     }
 }

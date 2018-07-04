@@ -94,5 +94,11 @@ public enum NodeType {
     CREATION_REFERENCE,
     EXPRESSION_METHOD_REFERENCE,
     SUPER_METHOD_REFERENCE,
-    TYPE_METHOD_REFERENCE
+    TYPE_METHOD_REFERENCE;
+
+    private static final NodeType[] buffer = values();
+
+    public static NodeType valueOf(int value) {
+        return buffer[value];
+    }
 }

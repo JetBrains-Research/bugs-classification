@@ -7,10 +7,12 @@ import org.ml_methods_group.core.Utils;
 import org.ml_methods_group.core.changes.AtomicChange;
 import org.ml_methods_group.core.preparation.ChangesBuilder;
 import org.ml_methods_group.core.selection.CenterSelector;
+import org.ml_methods_group.core.vectorization.LabelWrapper;
 import org.ml_methods_group.core.vectorization.NearestSolutionVectorizer;
 import org.ml_methods_group.core.vectorization.VectorTemplate;
 import org.ml_methods_group.core.vectorization.Wrapper;
-import org.ml_methods_group.database.BasicIndexStorage;
+import org.ml_methods_group.database.ChangeCodeIndex;
+import org.ml_methods_group.database.LabelIndex;
 import org.ml_methods_group.database.proxy.ProxySolutionDatabase;
 import org.ml_methods_group.ui.ConsoleIO;
 import org.ml_methods_group.ui.UtilsUI;
@@ -32,12 +34,15 @@ public class Main {
     public static void main(String[] args) throws SQLException, IOException {
         PrintWriter out = new PrintWriter("out.csv");
         ProxySolutionDatabase database = new ProxySolutionDatabase();
-        BasicIndexStorage storage = new BasicIndexStorage();
-        Utils.loadDatabase(Main.class.getResourceAsStream("/dataset.csv"), database, PROBLEM);
-        final String ids = Utils.indexLabels(database, storage, 50, 100000);
-        final Map<String, Long> dictionary = storage.loadIndex(ids);
-        VectorTemplate<AtomicChange> template = Utils.generateTemplate(database, storage, defaultStrategies(dictionary),
-                "index1", VectorTemplate.BasePostprocessors.STANDARD, 2, Integer.MAX_VALUE);
+        LabelIndex labels= new LabelIndex();
+        ChangeCodeIndex codes = new ChangeCodeIndex();
+        //Utils.loadDatabase(Main.class.getResourceAsStream("/dataset.csv"), database, PROBLEM, labels);
+        final Map<String, Integer> dictionary = labels.getIndex(50, 1000000)
+                .keySet()
+                .stream()
+                .collect(Collectors.toMap(LabelWrapper::getLabel, LabelWrapper::getId));
+        VectorTemplate template = Utils.generateTemplate(database, codes, defaultStrategies(dictionary),
+                VectorTemplate.BasePostprocessors.STANDARD, 2, Integer.MAX_VALUE);
         final List<SolutionDiff> solutions = database.getDiffs();
         System.out.println(solutions.size());
         Collections.shuffle(solutions, new Random(239566));
@@ -79,7 +84,7 @@ public class Main {
         }
     }
 
-    public static void writeCluster(List<Wrapper> wrappers, VectorTemplate<AtomicChange> template) throws FileNotFoundException {
+    public static void writeCluster(List<Wrapper> wrappers, VectorTemplate template) throws FileNotFoundException {
         PrintWriter writer = new PrintWriter("vectors.csv");
         for (int i = 0; i < wrappers.get(0).vector.length; i++) {
             final int index = i;

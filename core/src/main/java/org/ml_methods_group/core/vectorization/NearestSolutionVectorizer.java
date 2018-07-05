@@ -12,10 +12,10 @@ import java.util.List;
 
 public class NearestSolutionVectorizer implements Serializable {
     private List<SolutionDiff> samples;
-    private VectorTemplate<AtomicChange> template;
+    private VectorTemplate template;
     private ChangesBuilder builder;
 
-    public NearestSolutionVectorizer(List<SolutionDiff> samples, VectorTemplate<AtomicChange> template,
+    public NearestSolutionVectorizer(List<SolutionDiff> samples, VectorTemplate template,
                                      ChangesBuilder builder) {
         this.samples = samples;
         this.template = template;
@@ -43,7 +43,7 @@ public class NearestSolutionVectorizer implements Serializable {
     @SuppressWarnings("unchecked")
     private void readObject(ObjectInputStream stream) throws IOException, ClassNotFoundException {
         samples = (List<SolutionDiff>) stream.readObject();
-        template = (VectorTemplate<AtomicChange>) stream.readObject();
+        template = (VectorTemplate) stream.readObject();
         builder = new ChangesBuilder();
     }
 }

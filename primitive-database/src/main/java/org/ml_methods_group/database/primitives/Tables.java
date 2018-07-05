@@ -25,4 +25,22 @@ public final class Tables {
             new Column("old_parent_type", Type.TEXT),
             new Column("old_parent_of_parent_type", Type.TEXT),
             new Column("old_label", Type.TEXT));
+
+    public static final TableHeader CHANGE_CODE_INDEX_HEADER = new TableHeader("code_index",
+            new Column("code", Type.BIGINT),
+            new Column("encoding_type", Type.INTEGER),
+            new Column("count", Type.INTEGER),
+            new Column("change_type", Type.TEXT),
+            new Column("node_type", Type.TEXT),
+            new Column("parent_type", Type.TEXT),
+            new Column("parent_of_parent_type", Type.TEXT),
+            new Column("old_parent_type", Type.TEXT),
+            new Column("old_parent_of_parent_type", Type.TEXT),
+            new Column("label", Type.TEXT),
+            new Column("old_label", Type.TEXT));
+
+    public static final TableHeader LABEL_INDEX_HEADER = new TableHeader("label_index",
+            new Column("label", Type.TEXT),
+            new Column("id", Type.INTEGER),
+            new Column("count", Type.INTEGER));
 }

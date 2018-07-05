@@ -2,28 +2,43 @@ package org.ml_methods_group.core.vectorization;
 
 import org.ml_methods_group.core.changes.AtomicChange;
 import org.ml_methods_group.core.changes.ChangeType;
-import org.ml_methods_group.core.vectorization.EncodingStrategy;
+import org.ml_methods_group.core.changes.NodeType;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
-public class ChangeEncodingStrategy implements EncodingStrategy<AtomicChange> {
+import static org.ml_methods_group.core.vectorization.BasicEncodingStrategy.ChangeAttribute.*;
 
-    private final Map<String, Long> dictionary;
+public class BasicEncodingStrategy implements EncodingStrategy {
+
+    private final Map<String, Integer> dictionary;
+    private final Map<Integer, String> reversed;
     private final Set<ChangeAttribute> attributes;
+    private final Set<ChangeType> types;
     private final int encodingType;
 
-    public ChangeEncodingStrategy(Map<String, Long> dictionary, int encodingType, ChangeAttribute... attributes) {
+    public BasicEncodingStrategy(Map<String, Integer> dictionary, int encodingType,
+                                 List<ChangeAttribute> attributes, List<ChangeType> types) {
         this.dictionary = dictionary;
         this.encodingType = encodingType;
-        this.attributes = new HashSet<>(Arrays.asList(attributes));
+        this.types = new HashSet<>(types);
+        this.attributes = new HashSet<>(attributes);
+        this.attributes.add(ENCODING_TYPE);
+        this.reversed = dictionary.entrySet().stream()
+                .collect(Collectors.toMap(Map.Entry::getValue, Map.Entry::getKey, (a, b) -> a + "|" + b));
     }
 
-    public ChangeEncodingStrategy(Map<String, Long> dictionary, ChangeAttribute... attributes) {
-        this(dictionary, 1, attributes);
+    public BasicEncodingStrategy(Map<String, Integer> dictionary,
+                                 List<ChangeAttribute> attributes, List<ChangeType> types) {
+        this(dictionary, 1, attributes, types);
     }
+
 
     @Override
     public long encode(AtomicChange change) {
+        if (!types.contains(change.getChangeType())) {
+            return 0;
+        }
         long result = 0;
         for (ChangeAttribute attribute : attributes) {
             final int attributeCode = getAttributeCode(change, attribute);
@@ -36,6 +51,22 @@ public class ChangeEncodingStrategy implements EncodingStrategy<AtomicChange> {
         return result;
     }
 
+    @Override
+    public ChangeCodeWrapper decode(long code) {
+        if (encodingType != decode(code, ENCODING_TYPE)) {
+            throw new IllegalArgumentException();
+        }
+        return new ChangeCodeWrapper(code, encodingType,
+                ChangeType.valueOf(decode(code, CHANGE_TYPE)),
+                NodeType.valueOf(decode(code, NODE_TYPE)),
+                NodeType.valueOf(decode(code, PARENT_TYPE)),
+                NodeType.valueOf(decode(code, PARENT_OF_PARENT_TYPE)),
+                NodeType.valueOf(decode(code, OLD_PARENT_TYPE)),
+                NodeType.valueOf(decode(code, OLD_PARENT_OF_PARENT_TYPE)),
+                reversed.getOrDefault(decode(code, LABEL_TYPE), "-"),
+                reversed.getOrDefault(decode(code, OLD_LABEL_TYPE), "-"));
+    }
+
     private static long encode(int code, int shift, int limit) {
         if (code >= (1 << limit)) {
             throw new RuntimeException("Encoding overflow!");
@@ -43,12 +74,14 @@ public class ChangeEncodingStrategy implements EncodingStrategy<AtomicChange> {
         return (long) code << shift;
     }
 
-    public static int decode(long code, ChangeAttribute attribute) {
+    private static int decode(long code, ChangeAttribute attribute) {
         final int action = decode(code, ChangeAttribute.CHANGE_TYPE.offset, ChangeAttribute.CHANGE_TYPE.limit);
-        if (!attribute.isApplicable(action)) {
+        if (attribute == CHANGE_TYPE) {
+            return action;
+        } else if (!attribute.isApplicable(action)) {
             return -1;
         }
-        return decode(code, attribute.offset, attribute.limit);
+        return decode(code, attribute.offset, attribute.limit) - 1;
     }
 
     private static int decode(long code, int shift, int limit) {
@@ -73,9 +106,9 @@ public class ChangeEncodingStrategy implements EncodingStrategy<AtomicChange> {
             case OLD_PARENT_OF_PARENT_TYPE:
                 return 1 + change.getOldParentOfParentType().ordinal();
             case LABEL_TYPE:
-                return 1 + dictionary.getOrDefault(change.getLabel(), 0L).intValue();
+                return 1 + dictionary.getOrDefault(change.getLabel(), 0);
             case OLD_LABEL_TYPE:
-                return 1 + dictionary.getOrDefault(change.getOldLabel(), 0L).intValue();
+                return 1 + dictionary.getOrDefault(change.getOldLabel(), 0);
             case ENCODING_TYPE:
                 return 1 + encodingType;
         }

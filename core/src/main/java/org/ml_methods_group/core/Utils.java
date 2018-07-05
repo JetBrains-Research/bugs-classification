@@ -7,9 +7,7 @@ import org.ml_methods_group.core.preparation.CSVParser;
 import org.ml_methods_group.core.preparation.ChangesBuilder;
 import org.ml_methods_group.core.preparation.DiffIndexer;
 import org.ml_methods_group.core.preparation.LabelsIndexer;
-import org.ml_methods_group.core.vectorization.ChangeEncodingStrategy;
-import org.ml_methods_group.core.vectorization.EncodingStrategy;
-import org.ml_methods_group.core.vectorization.VectorTemplate;
+import org.ml_methods_group.core.vectorization.*;
 import org.ml_methods_group.core.vectorization.VectorTemplate.Postprocessor;
 
 import java.io.IOException;
@@ -20,11 +18,12 @@ import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
 import static org.ml_methods_group.core.Solution.Verdict.OK;
-import static org.ml_methods_group.core.vectorization.ChangeEncodingStrategy.ChangeAttribute.*;
+import static org.ml_methods_group.core.changes.ChangeType.*;
+import static org.ml_methods_group.core.vectorization.BasicEncodingStrategy.ChangeAttribute.*;
 
 public class Utils {
     public static void loadDatabase(InputStream inputStream, SolutionDatabase database,
-                                    int problem) throws IOException {
+                                    int problem, Index<LabelWrapper> index) throws IOException {
         database.clear();
         database.create();
         final CSVParser parser = new CSVParser(inputStream);
@@ -54,70 +53,63 @@ public class Utils {
                     after,
                     builder.findChanges(before, after)));
         }
+        final LabelsIndexer labelsIndexer = new LabelsIndexer(database);
+        labelsIndexer.indexLabels(x -> true, index);
     }
 
-    public static String indexLabels(SolutionDatabase database, IndexStorage storage, int lowerBound, int upperBound) {
-        final LabelsIndexer indexer = new LabelsIndexer(database, storage);
-        indexer.indexLabels("labels", x -> true);
-        final String idsName = "ids_limits_" + lowerBound + "_" + upperBound;
-        indexer.generateIds("labels", idsName,
-                (label, count) -> lowerBound <= count && count < upperBound);
-        return idsName;
-    }
-
-    public static VectorTemplate<AtomicChange> generateTemplate(SolutionDatabase database, IndexStorage storage,
-                                                         List<EncodingStrategy<AtomicChange>> strategies,
-                                                         String indexName, Postprocessor postprocessor,
-                                                         int lowerBound, int upperBound) {
-        final Map<Long, Long> oldIndex = storage.loadIndex(indexName, Long::parseLong);
-        final Map<Long, Long> index;
-        if (oldIndex.isEmpty()) {
-            final DiffIndexer indexer = new DiffIndexer(database, storage);
-            index = indexer.indexDiffs(indexName, strategies);
-        } else {
-            index = oldIndex;
-        }
-        final List<Long> codes = index.entrySet().stream()
+    public static VectorTemplate generateTemplate(SolutionDatabase database,
+                                                                Index<ChangeCodeWrapper> index,
+                                                                List<EncodingStrategy> strategies,
+                                                                Postprocessor postprocessor,
+                                                                int lowerBound, int upperBound) {
+        final DiffIndexer diffIndexer = new DiffIndexer(database);
+        diffIndexer.indexDiffs(index, strategies);
+        final List<Long> codes = index.getIndex()
+                .entrySet()
+                .stream()
                 .filter(e -> e.getValue() < upperBound)
                 .filter(e -> e.getValue() >= lowerBound)
                 .map(Map.Entry::getKey)
+                .map(ChangeCodeWrapper::getCode)
                 .collect(Collectors.toList());
-        return new VectorTemplate<>(codes, postprocessor, strategies);
+        return new VectorTemplate(codes, postprocessor, strategies);
     }
 
-    public static List<EncodingStrategy<AtomicChange>> defaultStrategies(Map<String, Long> dictionary) {
+    public static List<EncodingStrategy> defaultStrategies(Map<String, Integer> dictionary) {
         return Arrays.asList(
-//                new ChangeEncodingStrategy(dictionary,
-//                        CHANGE_TYPE, NODE_TYPE),
-                new ChangeEncodingStrategy(dictionary,
-                        CHANGE_TYPE, NODE_TYPE, PARENT_TYPE),
-                new ChangeEncodingStrategy(dictionary,
-                        CHANGE_TYPE, NODE_TYPE, PARENT_TYPE, PARENT_OF_PARENT_TYPE),
-                new ChangeEncodingStrategy(dictionary,
-                        CHANGE_TYPE, NODE_TYPE, LABEL_TYPE),
-                new ChangeEncodingStrategy(dictionary,
-                        CHANGE_TYPE, NODE_TYPE, PARENT_TYPE, LABEL_TYPE),
-                new ChangeEncodingStrategy(dictionary,
-                        CHANGE_TYPE, NODE_TYPE, PARENT_TYPE, LABEL_TYPE, OLD_PARENT_TYPE),
-                new ChangeEncodingStrategy(dictionary,
-                        CHANGE_TYPE, NODE_TYPE, PARENT_TYPE, OLD_PARENT_TYPE),
-                new ChangeEncodingStrategy(dictionary,
-                        CHANGE_TYPE, NODE_TYPE, PARENT_TYPE, LABEL_TYPE, OLD_PARENT_TYPE),
-                new ChangeEncodingStrategy(dictionary,
-                        CHANGE_TYPE, NODE_TYPE, PARENT_TYPE, PARENT_OF_PARENT_TYPE, OLD_PARENT_TYPE),
-                new ChangeEncodingStrategy(dictionary,
-                        CHANGE_TYPE, NODE_TYPE, PARENT_TYPE, PARENT_OF_PARENT_TYPE, OLD_PARENT_TYPE,
-                        OLD_PARENT_OF_PARENT_TYPE),
-                new ChangeEncodingStrategy(dictionary,
-                        CHANGE_TYPE, NODE_TYPE, LABEL_TYPE, OLD_LABEL_TYPE),
-                new ChangeEncodingStrategy(dictionary,
-                        CHANGE_TYPE, NODE_TYPE, OLD_LABEL_TYPE),
-                new ChangeEncodingStrategy(dictionary,
-                        CHANGE_TYPE, NODE_TYPE, PARENT_TYPE, OLD_LABEL_TYPE),
-                new ChangeEncodingStrategy(dictionary,
-                        CHANGE_TYPE, NODE_TYPE, LABEL_TYPE, OLD_PARENT_TYPE),
-                new ChangeEncodingStrategy(dictionary,
-                        CHANGE_TYPE, NODE_TYPE, LABEL_TYPE, OLD_PARENT_TYPE, OLD_PARENT_OF_PARENT_TYPE)
+                new BasicEncodingStrategy(dictionary, 2,
+                        Arrays.asList(CHANGE_TYPE, NODE_TYPE, PARENT_TYPE, PARENT_OF_PARENT_TYPE),
+                        Arrays.asList(DELETE, INSERT)),
+                new BasicEncodingStrategy(dictionary, 3,
+                        Arrays.asList(CHANGE_TYPE, NODE_TYPE, PARENT_TYPE, PARENT_OF_PARENT_TYPE, LABEL_TYPE),
+                        Arrays.asList(DELETE, INSERT)),
+                new BasicEncodingStrategy(dictionary, 4,
+                        Arrays.asList(CHANGE_TYPE, NODE_TYPE, PARENT_TYPE, OLD_PARENT_TYPE),
+                        Collections.singletonList(MOVE)),
+                new BasicEncodingStrategy(dictionary, 5,
+                        Arrays.asList(CHANGE_TYPE, NODE_TYPE, PARENT_TYPE, PARENT_OF_PARENT_TYPE, OLD_PARENT_TYPE),
+                        Collections.singletonList(MOVE)),
+                new BasicEncodingStrategy(dictionary, 6,
+                        Arrays.asList(CHANGE_TYPE, NODE_TYPE, PARENT_TYPE, PARENT_OF_PARENT_TYPE, OLD_PARENT_TYPE,
+                                OLD_PARENT_OF_PARENT_TYPE),
+                        Collections.singletonList(MOVE)),
+                new BasicEncodingStrategy(dictionary, 7,
+                        Arrays.asList(CHANGE_TYPE, NODE_TYPE, PARENT_TYPE, PARENT_OF_PARENT_TYPE, OLD_PARENT_TYPE,
+                                LABEL_TYPE),
+                        Collections.singletonList(MOVE)),
+                new BasicEncodingStrategy(dictionary, 8,
+                        Arrays.asList(CHANGE_TYPE, NODE_TYPE, PARENT_TYPE, PARENT_OF_PARENT_TYPE,
+                                OLD_PARENT_TYPE, OLD_PARENT_OF_PARENT_TYPE, LABEL_TYPE),
+                        Collections.singletonList(MOVE)),
+                new BasicEncodingStrategy(dictionary, 9,
+                        Arrays.asList(CHANGE_TYPE, NODE_TYPE, PARENT_TYPE, PARENT_OF_PARENT_TYPE, LABEL_TYPE),
+                        Collections.singletonList(UPDATE)),
+                new BasicEncodingStrategy(dictionary, 10,
+                        Arrays.asList(CHANGE_TYPE, NODE_TYPE, PARENT_TYPE, LABEL_TYPE, OLD_LABEL_TYPE),
+                        Collections.singletonList(UPDATE)),
+                new BasicEncodingStrategy(dictionary, 11,
+                        Arrays.asList(CHANGE_TYPE, NODE_TYPE, LABEL_TYPE, OLD_LABEL_TYPE),
+                        Collections.singletonList(UPDATE))
         );
     }
 

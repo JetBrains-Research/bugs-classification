@@ -1,34 +1,35 @@
 package org.ml_methods_group.core.vectorization;
 
+import org.ml_methods_group.core.changes.AtomicChange;
+
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class VectorTemplate<T> implements Serializable {
-    private final List<EncodingStrategy<T>> strategies;
+public class VectorTemplate implements Serializable {
+    private final List<EncodingStrategy> strategies;
     private final Map<Long, Integer> codeToIndex = new HashMap<>();
     private final Postprocessor postprocessor;
 
-    @SafeVarargs
     public VectorTemplate(List<Long> acceptable, Postprocessor postprocessor,
-                          EncodingStrategy<T>... strategies) {
+                          EncodingStrategy... strategies) {
         this(acceptable, postprocessor, Arrays.asList(strategies));
     }
 
     public VectorTemplate(List<Long> acceptable, Postprocessor postprocessor,
-                          List<EncodingStrategy<T>> strategies) {
+                          List<EncodingStrategy> strategies) {
         this.postprocessor = postprocessor;
         this.strategies = strategies;
         acceptable.forEach(code -> codeToIndex.putIfAbsent(code, codeToIndex.size()));
     }
 
-    public double[] process(List<T> features) {
+    public double[] process(List<AtomicChange> features) {
         final double[] result = new double[codeToIndex.size()];
         final HashMap<Long, Integer> buffer = new HashMap<>();
-        for (EncodingStrategy<? super T> strategy : strategies) {
-            for (T feature : features) {
+        for (EncodingStrategy strategy : strategies) {
+            for (AtomicChange feature : features) {
                 final long code = strategy.encode(feature);
                 if (code != 0) {
                     buffer.compute(code, (key, old) -> (old == null ? 0 : old) + 1);
@@ -49,7 +50,6 @@ public class VectorTemplate<T> implements Serializable {
         postprocessor.process(features, result);
         return result;
     }
-
 
 
     public interface Postprocessor extends Serializable {

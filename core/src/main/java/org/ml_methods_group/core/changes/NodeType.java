@@ -99,6 +99,6 @@ public enum NodeType {
     private static final NodeType[] buffer = values();
 
     public static NodeType valueOf(int value) {
-        return buffer[value];
+        return value == -1 ? null : buffer[value];
     }
 }

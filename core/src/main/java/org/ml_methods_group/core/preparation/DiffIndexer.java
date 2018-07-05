@@ -20,7 +20,7 @@ public class DiffIndexer {
         this.database = database;
     }
 
-    public void indexDiffs(Index<ChangeCodeWrapper> index, List<EncodingStrategy> strategies) {
+    public void indexDiffs(Index<ChangeCodeWrapper, Integer> index, List<EncodingStrategy> strategies) {
         index.clean();
         for (EncodingStrategy strategy : strategies) {
             final Map<Long, Long> buffer = Utils.toStream(database.iterateChanges())

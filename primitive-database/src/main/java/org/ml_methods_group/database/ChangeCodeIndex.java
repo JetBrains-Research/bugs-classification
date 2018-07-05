@@ -11,7 +11,7 @@ import org.ml_methods_group.database.primitives.Tables;
 import java.util.HashMap;
 import java.util.Map;
 
-public class ChangeCodeIndex implements Index<ChangeCodeWrapper> {
+public class ChangeCodeIndex implements Index<ChangeCodeWrapper, Integer> {
 
     private final Table index;
 
@@ -25,7 +25,7 @@ public class ChangeCodeIndex implements Index<ChangeCodeWrapper> {
     }
 
     @Override
-    public void insert(ChangeCodeWrapper value, int count) {
+    public void insert(ChangeCodeWrapper value, Integer count) {
         index.insert(new Object[]{
                 value.getCode(),
                 value.getEncodingType(),

@@ -41,6 +41,11 @@ public final class Tables {
 
     public static final TableHeader LABEL_INDEX_HEADER = new TableHeader("label_index",
             new Column("label", Type.TEXT),
+            new Column("type", Type.TEXT),
             new Column("id", Type.INTEGER),
             new Column("count", Type.INTEGER));
+
+    public static final TableHeader STANDARD_LABEL_HEADER = new TableHeader("std_label_index",
+            new Column("label", Type.TEXT, true),
+            new Column("type", Type.TEXT));
 }

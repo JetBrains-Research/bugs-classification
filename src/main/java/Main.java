@@ -6,6 +6,8 @@ import org.ml_methods_group.core.SolutionDiff;
 import org.ml_methods_group.core.Utils;
 import org.ml_methods_group.core.changes.AtomicChange;
 import org.ml_methods_group.core.preparation.ChangesBuilder;
+import org.ml_methods_group.core.preparation.JavaLibIndexer;
+import org.ml_methods_group.core.preparation.LabelType;
 import org.ml_methods_group.core.selection.CenterSelector;
 import org.ml_methods_group.core.vectorization.LabelWrapper;
 import org.ml_methods_group.core.vectorization.NearestSolutionVectorizer;
@@ -13,6 +15,7 @@ import org.ml_methods_group.core.vectorization.VectorTemplate;
 import org.ml_methods_group.core.vectorization.Wrapper;
 import org.ml_methods_group.database.ChangeCodeIndex;
 import org.ml_methods_group.database.LabelIndex;
+import org.ml_methods_group.database.StandardLabelIndex;
 import org.ml_methods_group.database.proxy.ProxySolutionDatabase;
 import org.ml_methods_group.ui.ConsoleIO;
 import org.ml_methods_group.ui.UtilsUI;
@@ -31,15 +34,20 @@ public class Main {
 
     private static final int PROBLEM = 55673;
 
-    public static void main(String[] args) throws SQLException, IOException {
+    public static void main(String[] args) throws SQLException, IOException, ClassNotFoundException {
+        StandardLabelIndex index = new StandardLabelIndex();
+        JavaLibIndexer indexer = new JavaLibIndexer();
+        indexer.index(index);
         PrintWriter out = new PrintWriter("out.csv");
         ProxySolutionDatabase database = new ProxySolutionDatabase();
         LabelIndex labels= new LabelIndex();
         ChangeCodeIndex codes = new ChangeCodeIndex();
-        //Utils.loadDatabase(Main.class.getResourceAsStream("/dataset.csv"), database, PROBLEM, labels);
-        final Map<String, Integer> dictionary = labels.getIndex(50, 1000000)
+        Utils.loadDatabase(Main.class.getResourceAsStream("/dataset.csv"), database,
+                index.getIndex(), PROBLEM, labels);
+        final Map<String, Integer> dictionary = labels.getIndex()
                 .keySet()
                 .stream()
+                .filter(wrapper -> wrapper.getType() != LabelType.UNKNOWN)
                 .collect(Collectors.toMap(LabelWrapper::getLabel, LabelWrapper::getId));
         VectorTemplate template = Utils.generateTemplate(database, codes, defaultStrategies(dictionary),
                 VectorTemplate.BasePostprocessors.STANDARD, 2, Integer.MAX_VALUE);

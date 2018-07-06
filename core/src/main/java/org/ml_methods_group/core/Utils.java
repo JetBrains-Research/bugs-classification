@@ -3,10 +3,7 @@ package org.ml_methods_group.core;
 import org.ml_methods_group.core.basic.BasicSolution;
 import org.ml_methods_group.core.basic.BasicSolutionDiff;
 import org.ml_methods_group.core.changes.AtomicChange;
-import org.ml_methods_group.core.preparation.CSVParser;
-import org.ml_methods_group.core.preparation.ChangesBuilder;
-import org.ml_methods_group.core.preparation.DiffIndexer;
-import org.ml_methods_group.core.preparation.LabelsIndexer;
+import org.ml_methods_group.core.preparation.*;
 import org.ml_methods_group.core.vectorization.*;
 import org.ml_methods_group.core.vectorization.VectorTemplate.Postprocessor;
 
@@ -23,7 +20,8 @@ import static org.ml_methods_group.core.vectorization.BasicEncodingStrategy.Chan
 
 public class Utils {
     public static void loadDatabase(InputStream inputStream, SolutionDatabase database,
-                                    int problem, Index<LabelWrapper> index) throws IOException {
+                                    Map<String, LabelType> dictionary,
+                                    int problem, Index<LabelWrapper, Integer> index) throws IOException {
         database.clear();
         database.create();
         final CSVParser parser = new CSVParser(inputStream);
@@ -54,11 +52,11 @@ public class Utils {
                     builder.findChanges(before, after)));
         }
         final LabelsIndexer labelsIndexer = new LabelsIndexer(database);
-        labelsIndexer.indexLabels(x -> true, index);
+        labelsIndexer.indexLabels(x -> true, dictionary, index);
     }
 
     public static VectorTemplate generateTemplate(SolutionDatabase database,
-                                                                Index<ChangeCodeWrapper> index,
+                                                                Index<ChangeCodeWrapper, Integer> index,
                                                                 List<EncodingStrategy> strategies,
                                                                 Postprocessor postprocessor,
                                                                 int lowerBound, int upperBound) {

@@ -1,6 +1,7 @@
 package org.ml_methods_group.database;
 
 import org.ml_methods_group.core.Index;
+import org.ml_methods_group.core.preparation.LabelType;
 import org.ml_methods_group.core.vectorization.LabelWrapper;
 import org.ml_methods_group.database.primitives.Database;
 import org.ml_methods_group.database.primitives.Table;
@@ -9,7 +10,7 @@ import org.ml_methods_group.database.primitives.Tables;
 import java.util.HashMap;
 import java.util.Map;
 
-public class LabelIndex implements Index<LabelWrapper> {
+public class LabelIndex implements Index<LabelWrapper, Integer> {
 
     private final Table index;
 
@@ -23,8 +24,8 @@ public class LabelIndex implements Index<LabelWrapper> {
     }
 
     @Override
-    public void insert(LabelWrapper value, int count) {
-        index.insert(new Object[]{value.getLabel(),value.getId(), count});
+    public void insert(LabelWrapper value, Integer count) {
+        index.insert(new Object[]{value.getLabel(), value.getType(), value.getId(), count});
     }
 
     @Override
@@ -33,6 +34,7 @@ public class LabelIndex implements Index<LabelWrapper> {
         for (Table.ResultWrapper wrapper : index) {
             final LabelWrapper value = new LabelWrapper(
                     wrapper.getStringValue("label"),
+                    wrapper.getEnumValue("type", LabelType.class),
                     wrapper.getIntValue("id")
             );
             result.put(value, wrapper.getIntValue("count"));

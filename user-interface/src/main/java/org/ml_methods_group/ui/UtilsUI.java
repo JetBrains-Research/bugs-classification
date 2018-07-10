@@ -2,18 +2,26 @@ package org.ml_methods_group.ui;
 
 import difflib.Delta;
 import difflib.DiffUtils;
+import org.ml_methods_group.core.Index;
 import org.ml_methods_group.core.SolutionDatabase;
+import org.ml_methods_group.core.SolutionDiff;
 import org.ml_methods_group.core.selection.RepresenterSelector;
+import org.ml_methods_group.core.testing.ExternalTester;
+import org.ml_methods_group.core.testing.ExternalTester.PairGuess;
+import org.ml_methods_group.core.testing.Pair;
 import org.ml_methods_group.core.vectorization.Wrapper;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 
 public class UtilsUI {
     public static List<String> lines(String text) {
-        return Arrays.asList(text.split("\\R"));
+        return Arrays.stream(text.split("\\R"))
+                .map(String::trim)
+                .collect(Collectors.toList());
     }
 
     public static String diff(String before, String after) {
@@ -52,5 +60,20 @@ public class UtilsUI {
             marks.add(mark);
         }
         return marks;
+    }
+
+    public static void markPairs(List<Pair<SolutionDiff>> cases, ConsoleIO console,
+                                 Index<Pair<Integer>, PairGuess> index) {
+        console.write("Start marking pairs");
+        for (Pair<SolutionDiff> pair : cases) {
+            console.write("--------------------Start-marking-new-pair---------------");
+            console.write("First diff");
+            console.write(pair.first);
+            console.write("Second diff");
+            console.write(pair.second);
+            console.write("Your mark:");
+            final PairGuess mark = PairGuess.valueOf(console.expect("+", "=", "-"));
+            index.insert(new Pair<>(pair.first.getSessionId(), pair.second.getSessionId()), mark);
+        }
     }
 }

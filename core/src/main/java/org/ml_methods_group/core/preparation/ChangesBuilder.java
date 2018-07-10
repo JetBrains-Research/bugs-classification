@@ -102,7 +102,7 @@ public class ChangesBuilder {
             return NodeType.NONE;
         }
         if (steps == 0) {
-            return NodeType.valueOf(node.getType());
+            return node.getType() < 0 ? NodeType.NONE : NodeType.valueOf(node.getType());
         }
         return getNodeType(node.getParent(), steps - 1);
     }

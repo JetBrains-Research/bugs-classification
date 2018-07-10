@@ -3,7 +3,11 @@ package org.ml_methods_group.core;
 import org.ml_methods_group.core.basic.BasicSolution;
 import org.ml_methods_group.core.basic.BasicSolutionDiff;
 import org.ml_methods_group.core.changes.AtomicChange;
+import org.ml_methods_group.core.changes.ChangeType;
 import org.ml_methods_group.core.preparation.*;
+import org.ml_methods_group.core.testing.ExternalTester;
+import org.ml_methods_group.core.testing.ExternalTester.PairGuess;
+import org.ml_methods_group.core.testing.Pair;
 import org.ml_methods_group.core.vectorization.*;
 import org.ml_methods_group.core.vectorization.VectorTemplate.Postprocessor;
 
@@ -107,7 +111,16 @@ public class Utils {
                         Collections.singletonList(UPDATE)),
                 new BasicEncodingStrategy(dictionary, 11,
                         Arrays.asList(CHANGE_TYPE, NODE_TYPE, LABEL_TYPE, OLD_LABEL_TYPE),
-                        Collections.singletonList(UPDATE))
+                        Collections.singletonList(UPDATE)),
+                new BasicEncodingStrategy(dictionary, 12,
+                        Arrays.asList(CHANGE_TYPE, NODE_TYPE),
+                        Arrays.asList(ChangeType.values())),
+                new BasicEncodingStrategy(dictionary, 13,
+                        Arrays.asList(CHANGE_TYPE, NODE_TYPE, PARENT_TYPE),
+                        Arrays.asList(ChangeType.values())),
+                new BasicEncodingStrategy(dictionary, 14,
+                        Arrays.asList(CHANGE_TYPE, LABEL_TYPE),
+                        Arrays.asList(ChangeType.values()))
         );
     }
 

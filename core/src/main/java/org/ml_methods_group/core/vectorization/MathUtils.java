@@ -3,7 +3,7 @@ package org.ml_methods_group.core.vectorization;
 import java.util.Arrays;
 import java.util.List;
 
-public class Utils {
+public class MathUtils {
     public static void standardize(List<double[]> vectors) {
         if (vectors.isEmpty()) {
             return;
@@ -20,6 +20,9 @@ public class Utils {
         for (int i = 0; i < n; i++) {
             final double average = sum[i] / vectors.size();
             final double variation = Math.sqrt(sumSquared[i] - average * average);
+            if (variation == 0) {
+                continue;
+            }
             for (double[] vector : vectors) {
                 vector[i] = (vector[i] - average) / variation;
             }

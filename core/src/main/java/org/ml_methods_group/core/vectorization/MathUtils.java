@@ -20,6 +20,9 @@ public class MathUtils {
         for (int i = 0; i < n; i++) {
             final double average = sum[i] / vectors.size();
             final double variation = Math.sqrt(sumSquared[i] - average * average);
+            if (variation == 0) {
+                continue;
+            }
             for (double[] vector : vectors) {
                 vector[i] = (vector[i] - average) / variation;
             }

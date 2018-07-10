@@ -48,4 +48,9 @@ public final class Tables {
     public static final TableHeader STANDARD_LABEL_HEADER = new TableHeader("std_label_index",
             new Column("label", Type.TEXT, true),
             new Column("type", Type.TEXT));
+
+    public static final TableHeader TEST_PAIRS_HEADER = new TableHeader("test_pair_index",
+            new Column("first", Type.INTEGER),
+            new Column("second", Type.INTEGER),
+            new Column("guess", Type.TEXT));
 }

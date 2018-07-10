@@ -73,7 +73,7 @@ public class VectorTemplate implements Serializable {
         STANDARD {
             @Override
             public void process(List<?> features, double[] vector) {
-                final double norma = Utils.norm(vector);
+                final double norma = MathUtils.norm(vector);
                 for (int i = 0; i < vector.length; i++) {
                     vector[i] /= norma;
                 }

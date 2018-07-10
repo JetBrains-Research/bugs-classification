@@ -3,7 +3,7 @@ package org.ml_methods_group.core.vectorization;
 import java.util.Arrays;
 import java.util.List;
 
-public class Utils {
+public class MathUtils {
     public static void standardize(List<double[]> vectors) {
         if (vectors.isEmpty()) {
             return;

@@ -12,14 +12,14 @@ public class Wrapper implements Serializable {
     }
 
     public double squaredEuclideanDistance(Wrapper other) {
-        return Utils.squaredEuclideanDistance(vector, other.vector);
+        return MathUtils.squaredEuclideanDistance(vector, other.vector);
     }
 
     public double euclideanDistance(Wrapper other) {
-        return Utils.euclideanDistance(vector, other.vector);
+        return MathUtils.euclideanDistance(vector, other.vector);
     }
 
     public double manhattanDistance(Wrapper other) {
-        return Utils.manhattanDistance(vector, other.vector);
+        return MathUtils.manhattanDistance(vector, other.vector);
     }
 }

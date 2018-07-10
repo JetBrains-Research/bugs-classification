@@ -4,6 +4,9 @@ import org.ml_methods_group.core.basic.BasicSolution;
 import org.ml_methods_group.core.basic.BasicSolutionDiff;
 import org.ml_methods_group.core.changes.AtomicChange;
 import org.ml_methods_group.core.preparation.*;
+import org.ml_methods_group.core.testing.ExternalTester;
+import org.ml_methods_group.core.testing.ExternalTester.PairGuess;
+import org.ml_methods_group.core.testing.Pair;
 import org.ml_methods_group.core.vectorization.*;
 import org.ml_methods_group.core.vectorization.VectorTemplate.Postprocessor;
 

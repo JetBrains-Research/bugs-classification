@@ -1,8 +1,12 @@
 package org.ml_methods_group.database;
 
+import org.ml_methods_group.core.database.Condition;
+
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.sql.*;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Optional;
@@ -49,14 +53,19 @@ class Table {
                 switch (column.getType()) {
                     case ENUM:
                         statement.setString(pointer++, data.get(i).toString());
+                        break;
                     case STRING:
                         statement.setString(pointer++, data.get(i).toString());
+                        break;
                     case INTEGER:
                         statement.setInt(pointer++, (Integer) data.get(i));
+                        break;
                     case LONG:
                         statement.setLong(pointer++, (Long) data.get(i));
+                        break;
                     case DOUBLE:
                         statement.setDouble(pointer++, (Double) data.get(i));
+                        break;
                     case BYTE_ARRAY:
                         statement.setBytes(pointer++, data.get(i).toString().getBytes(StandardCharsets.UTF_16));
                 }
@@ -67,11 +76,11 @@ class Table {
         }
     }
 
-    Iterator<ResultWrapper> select(List<SQLCondition> conditions) {
-        final String condition = conditions.stream()
-                .map(SQLCondition::toSQL)
+    Iterator<ResultWrapper> select(Condition... conditions) {
+        final String condition = Arrays.stream(conditions)
+                .map(Object::toString)
                 .collect(Collectors.joining(" AND ", " ", " "));
-        final String request = selectTemplate + (conditions.isEmpty() ? "" : "WHERE" + condition) + ";";
+        final String request = selectTemplate + (conditions.length == 0 ? "" : " WHERE" + condition) + ";";
         try {
             final PreparedStatement query = connection.prepareStatement(request);
             final ResultSet resultSet = query.executeQuery();
@@ -118,9 +127,9 @@ class Table {
         }
     }
 
-    Optional<ResultWrapper> find(List<SQLCondition> conditions) {
+    Optional<ResultWrapper> find(List<Condition> conditions) {
         final String condition = conditions.stream()
-                .map(SQLCondition::toSQL)
+                .map(Object::toString)
                 .collect(Collectors.joining(" AND ", " ", " "));
         final String request = selectTemplate + (conditions.isEmpty() ? "" : "WHERE" + condition) + ";";
         try (PreparedStatement query = connection.prepareStatement(request);
@@ -175,10 +184,6 @@ class Table {
     class ResultWrapper {
         private final Object[] results;
 
-        private ResultWrapper(Object[] results) {
-            this.results = results;
-        }
-
         private ResultWrapper(ResultSet resultSet) throws SQLException, UnsupportedEncodingException {
             results = new Object[columns.size()];
             for (int i = 0; i < columns.size(); i++) {
@@ -200,12 +205,13 @@ class Table {
             }
         }
 
-        <T extends Enum<T>> T getEnumValue(Column column, Class<T> enumType) {
+        <T> T getEnumValue(Column column, Class<T> enumType) {
             final int index = columnIndex(column);
             switch (columns.get(index).getType()) {
+                case ENUM:
                 case STRING:
                     final String value = (String) results[index];
-                    return value.equals("null") ? null : Enum.valueOf(enumType, (String) results[index]);
+                    return value.equals("null") ? null : parseEnum(value, enumType);
                 default:
                     throw new RuntimeException("String type expected");
             }
@@ -245,22 +251,30 @@ class Table {
 
         Object getValue(Column column, Class<?> template) {
             if (template.equals(Double.class) || template.equals(double.class)) {
-                return template.cast(getDoubleValue(column));
+                return getDoubleValue(column);
             } else if (template.equals(Integer.class) || template.equals(int.class)) {
-                return template.cast(getIntValue(column));
+                return getIntValue(column);
             } else if (template.equals(Long.class) || template.equals(long.class)) {
-                return template.cast(getLongValue(column));
+                return getLongValue(column);
             } else if (template.equals(String.class)) {
-                return template.cast(getStringValue(column));
-            } else if (template.isAssignableFrom(Enum.class)) {
-                return template.cast(getEnumValue(column, castToEnumClass(template)));
+                return getStringValue(column);
+            } else if (Enum.class.isAssignableFrom(template)) {
+                return getEnumValue(column, template);
             }
             throw new DatabaseException("Unsupported data type requested: " + template.getCanonicalName());
         }
     }
 
-    private static <T extends Enum<T>> Class<T> castToEnumClass(Class<?> template) {
-        //noinspection unchecked
-        return (Class<T>) template;
+    private static <T> T parseEnum(String token, Class<T> template) {
+        if (!Enum.class.isAssignableFrom(template)) {
+            throw new IllegalArgumentException();
+        }
+        try {
+            final Method method = template.getMethod("valueOf", String.class);
+            //noinspection unchecked
+            return (T) method.invoke(null, token);
+        } catch (Exception e) {
+            throw new DatabaseException(e);
+        }
     }
 }

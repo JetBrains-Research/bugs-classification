@@ -21,7 +21,7 @@ public class Database implements AutoCloseable {
         }
     }
 
-    public Table getTable(String name, List<Column> columns) {
+    Table getTable(String name, List<Column> columns) {
         return new Table(connection, name, columns);
     }
 

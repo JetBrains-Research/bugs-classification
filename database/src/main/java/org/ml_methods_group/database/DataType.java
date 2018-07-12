@@ -27,7 +27,7 @@ enum DataType {
                 }
             }
         }
-        if (template.isAssignableFrom(Enum.class)) {
+        if (Enum.class.isAssignableFrom(template)) {
             return ENUM;
         }
         return null;

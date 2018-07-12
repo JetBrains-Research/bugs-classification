@@ -1,8 +1,9 @@
 package org.ml_methods_group.database;
 
+import org.ml_methods_group.core.database.Condition;
 import org.ml_methods_group.core.database.ConditionSupplier;
 
-public class SQLConditionSupplier implements ConditionSupplier<SQLCondition> {
+public class SQLConditionSupplier implements ConditionSupplier {
 
     private static final SQLConditionSupplier INSTANCE = new SQLConditionSupplier();
 
@@ -33,7 +34,20 @@ public class SQLConditionSupplier implements ConditionSupplier<SQLCondition> {
         return new SQLCondition(column + " = '" + value + "'");
     }
 
-    public static SQLConditionSupplier instance() {
+    static SQLConditionSupplier instance() {
         return INSTANCE;
+    }
+
+    private class SQLCondition implements Condition {
+        private final String condition;
+
+        SQLCondition(String condition) {
+            this.condition = condition;
+        }
+
+        @Override
+        public String toString() {
+            return condition;
+        }
     }
 }

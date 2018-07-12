@@ -1,5 +1,6 @@
 package org.ml_methods_group.database;
 
+import org.ml_methods_group.core.database.Condition;
 import org.ml_methods_group.core.database.ConditionSupplier;
 import org.ml_methods_group.core.database.Proxy;
 import org.ml_methods_group.core.database.Repository;
@@ -9,17 +10,16 @@ import java.lang.reflect.Field;
 import java.util.*;
 import java.util.stream.Collectors;
 
-public class SQLRepository<T> implements Repository<T, SQLCondition> {
+public class SQLRepository<T> implements Repository<T> {
     private final Class<T> template;
     private final List<Column> columns;
     private final Map<Column, Field> fields;
     private final Table table;
 
-    SQLRepository(String name, Class<T> template, Database database) {
+    public SQLRepository(String name, Class<T> template, Database database) {
         this.template = template;
         this.columns = new ArrayList<>();
         this.fields = new HashMap<>();
-        this.table = database.getTable(name, columns);
 
         final List<Field> dataFields = Arrays.stream(template.getDeclaredFields())
                 .filter(field -> field.getAnnotation(DataField.class) != null)
@@ -32,7 +32,8 @@ public class SQLRepository<T> implements Repository<T, SQLCondition> {
             fields.put(column, field);
         }
         columns.add(Column.ID);
-
+        System.out.println(columns);
+        this.table = database.getTable(name, columns);
         table.create();
     }
 
@@ -51,7 +52,7 @@ public class SQLRepository<T> implements Repository<T, SQLCondition> {
     }
 
     @Override
-    public Iterator<T> get(List<SQLCondition> conditions) {
+    public Iterator<T> get(Condition... conditions) {
         final Iterator<Table.ResultWrapper> iterator = table.select(conditions);
         return new Iterator<T>() {
             @Override
@@ -67,7 +68,7 @@ public class SQLRepository<T> implements Repository<T, SQLCondition> {
     }
 
     @Override
-    public Iterator<Proxy<T>> getProxy(List<SQLCondition> conditions) {
+    public Iterator<Proxy<T>> getProxy(Condition... conditions) {
         final Iterator<Table.ResultWrapper> iterator = table.select(conditions);
         return new Iterator<Proxy<T>>() {
             @Override
@@ -88,13 +89,13 @@ public class SQLRepository<T> implements Repository<T, SQLCondition> {
     }
 
     @Override
-    public ConditionSupplier<SQLCondition> conditionSupplier() {
+    public ConditionSupplier conditionSupplier() {
         return SQLConditionSupplier.instance();
     }
 
     @Override
     public Iterator<T> iterator() {
-        return get(Collections.emptyList());
+        return get();
     }
 
     private T parse(Table.ResultWrapper wrapper) {
@@ -119,6 +120,7 @@ public class SQLRepository<T> implements Repository<T, SQLCondition> {
 
     private static Column generateColumn(Field field) {
         final DataType dataType = getDataTypeFor(field.getType());
+        System.out.println(dataType);
         final String columnName = getColumnNameFor(field);
         return new Column(columnName, dataType);
     }

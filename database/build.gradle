@@ -13,7 +13,5 @@ dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
     // https://mvnrepository.com/artifact/org.postgresql/postgresql
     compile group: 'org.postgresql', name: 'postgresql', version: '42.2.0'
-    // https://mvnrepository.com/artifact/com.github.gumtreediff/gen.jdt
-    compile group: 'com.github.gumtreediff', name: 'gen.jdt', version: '2.0.0'
     compile project(':core')
 }

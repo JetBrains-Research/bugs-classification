@@ -16,4 +16,18 @@ public class Wrapper<F> {
     public int getSessionId() {
         return sessionId;
     }
+
+    public static <T> DistanceFunction<Wrapper<T>> wrap(DistanceFunction<T> metric) {
+        return new DistanceFunction<Wrapper<T>>() {
+            @Override
+            public double distance(Wrapper<T> first, Wrapper<T> second) {
+                return metric.distance(first.getFeatures(), second.getFeatures());
+            }
+
+            @Override
+            public double distance(Wrapper<T> first, Wrapper<T> second, double upperBound) {
+                return metric.distance(first.getFeatures(), second.getFeatures(), upperBound);
+            }
+        };
+    }
 }

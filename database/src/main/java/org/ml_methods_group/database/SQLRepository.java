@@ -4,6 +4,7 @@ import org.ml_methods_group.core.database.Condition;
 import org.ml_methods_group.core.database.ConditionSupplier;
 import org.ml_methods_group.core.database.Proxy;
 import org.ml_methods_group.core.database.Repository;
+import org.ml_methods_group.core.database.annotations.DataClass;
 import org.ml_methods_group.core.database.annotations.DataField;
 
 import java.lang.reflect.Field;
@@ -32,9 +33,12 @@ public class SQLRepository<T> implements Repository<T> {
             fields.put(column, field);
         }
         columns.add(Column.ID);
-        System.out.println(columns);
         this.table = database.getTable(name, columns);
         table.create();
+    }
+
+    public SQLRepository(Class<T> template, Database database) {
+        this(template.getAnnotation(DataClass.class).defaultStorageName(), template, database);
     }
 
     @Override

@@ -1,4 +1,4 @@
-package org.ml_methods_group;
+package org.ml_methods_group.core.basic;
 
 import com.github.gumtreediff.tree.ITree;
 import org.ml_methods_group.core.DistanceFunction;

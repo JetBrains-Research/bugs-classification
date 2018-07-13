@@ -5,9 +5,9 @@ import com.github.gumtreediff.actions.model.Insert;
 import com.github.gumtreediff.actions.model.Move;
 import com.github.gumtreediff.actions.model.Update;
 
-public interface ChangeFilter {
-    boolean accept(Update update);
-    boolean accept(Insert insert);
-    boolean accept(Move move);
-    boolean accept(Delete delete);
+public interface LabelNormalizer {
+    String normalize(String label, Insert insert);
+    String normalize(String label, Move move);
+    String normalize(String label, Update update);
+    String normalize(String label, Delete delete);
 }

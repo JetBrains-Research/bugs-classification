@@ -1,9 +1,10 @@
 package org.ml_methods_group.core.testing;
 
-import org.ml_methods_group.core.vectorization.Wrapper;
+
+import org.ml_methods_group.core.Wrapper;
 
 import java.util.List;
 
-public interface Tester {
-    double test(List<List<Wrapper>> clusters);
+public interface Tester<F> {
+    double test(List<List<Wrapper<F>>> clusters);
 }

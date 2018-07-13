@@ -1,8 +1,8 @@
 package org.ml_methods_group.core.testing;
 
+import org.ml_methods_group.core.Wrapper;
 import org.ml_methods_group.core.database.Repository;
 import org.ml_methods_group.core.entities.TestPair;
-import org.ml_methods_group.core.vectorization.Wrapper;
 
 import java.util.HashMap;
 import java.util.List;
@@ -10,7 +10,7 @@ import java.util.List;
 import static org.ml_methods_group.core.entities.PairGuess.NEUTRAL;
 import static org.ml_methods_group.core.entities.PairGuess.SIMILAR;
 
-public class ExternalTester implements Tester {
+public class ExternalTester<T> implements Tester<T> {
     private final Repository<TestPair> tests;
 
     public ExternalTester(Repository<TestPair> tests) {
@@ -18,12 +18,12 @@ public class ExternalTester implements Tester {
     }
 
     @Override
-    public double test(List<List<Wrapper>> clusters) {
+    public double test(List<List<Wrapper<T>>> clusters) {
         final HashMap<Integer, Integer> sessionToCluster = new HashMap<>();
         for (int i = 0; i < clusters.size(); i++) {
             final int clusterIndex = i;
             clusters.get(i).stream()
-                    .map(wrapper -> wrapper.sessionId)
+                    .map(Wrapper::getSessionId)
                     .forEach(id -> sessionToCluster.put(id, clusterIndex));
         }
         int errors = 0;

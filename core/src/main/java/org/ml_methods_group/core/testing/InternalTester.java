@@ -1,20 +1,20 @@
 package org.ml_methods_group.core.testing;
 
 import org.ml_methods_group.core.DistanceFunction;
-import org.ml_methods_group.core.vectorization.Wrapper;
+import org.ml_methods_group.core.Wrapper;
 
 import java.util.List;
 import java.util.stream.IntStream;
 
-public class InternalTester implements Tester {
-    private final DistanceFunction<Wrapper> metric;
+public class InternalTester implements Tester<double[]> {
+    private final DistanceFunction<Wrapper<double[]>> metric;
 
-    public InternalTester(DistanceFunction<Wrapper> metric) {
+    public InternalTester(DistanceFunction<Wrapper<double[]>> metric) {
         this.metric = metric;
     }
 
     @Override
-    public double test(List<List<Wrapper>> clusters) {
+    public double test(List<List<Wrapper<double[]>>> clusters) {
         return IntStream.range(0, clusters.size())
                 .boxed()
                 .flatMap(i -> clusters.get(i).stream()
@@ -24,7 +24,7 @@ public class InternalTester implements Tester {
                 .orElse(0);
     }
 
-    private double silhouette(Wrapper wrapper, List<Wrapper> wrappers) {
+    private double silhouette(Wrapper wrapper, List<Wrapper<double[]>> wrappers) {
         return wrappers.stream()
                 .filter(other -> wrapper != other)
                 .mapToDouble(other -> metric.distance(wrapper, other))
@@ -32,7 +32,7 @@ public class InternalTester implements Tester {
                 .orElse(2);
     }
 
-    private double silhouette(Wrapper wrapper, int clusterIndex, List<List<Wrapper>> clusters) {
+    private double silhouette(Wrapper wrapper, int clusterIndex, List<List<Wrapper<double[]>>> clusters) {
         final double a = silhouette(wrapper, clusters.get(clusterIndex));
         final double b = IntStream.range(0, clusters.size())
                 .filter(i -> i != clusterIndex)

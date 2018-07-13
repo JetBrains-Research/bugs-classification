@@ -13,9 +13,10 @@ import org.ml_methods_group.core.entities.NodeType;
 import org.ml_methods_group.core.entities.Solution;
 
 import java.io.IOException;
-import java.lang.ref.SoftReference;
-import java.lang.ref.WeakReference;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import static org.ml_methods_group.core.changes.ChangeFilter.Resolution.ACCEPT_WITHOUT_LABEL;
@@ -25,7 +26,6 @@ public class SimpleChangeGenerator implements ChangeGenerator {
     private final Matchers matchers;
     private final TreeGenerator generator;
     private final ChangeFilter filter;
-    private final Map<Integer, SoftReference<ITree>> cache = new HashMap<>();
 
     public SimpleChangeGenerator(ChangeFilter filter) {
         this.filter = filter;
@@ -35,35 +35,40 @@ public class SimpleChangeGenerator implements ChangeGenerator {
 
     @Override
     public List<CodeChange> getChanges(Solution before, Solution after) {
+        final ITree treeBefore = getTree(before);
+        final ITree treeAfter = getTree(after);
+        final Matcher matcher = matchers.getMatcher(treeBefore, treeAfter);
+        matcher.match();
+        final ActionGenerator actions = new ActionGenerator(treeBefore, treeAfter, matcher.getMappings());
+        if (treeBefore == null || treeAfter == null) {
+            System.out.println("OOps");
+        }
         try {
-            final ITree treeBefore = getTree(before);
-            final ITree treeAfter = getTree(after);
-            final Matcher matcher = matchers.getMatcher(treeBefore, treeAfter);
-            matcher.match();
-            final ActionGenerator actions = new ActionGenerator(treeBefore, treeAfter, matcher.getMappings());
             return actions.generate().stream()
                     .map(action -> fromAction(action, before.getSolutionId(), after.getSolutionId()))
                     .filter(Objects::nonNull)
                     .collect(Collectors.toList());
         } catch (Exception e) {
-            throw new RuntimeException(e);
+            System.out.println(before.getCode());
+            System.out.println(after.getCode());
+            System.exit(2);
+            return null;
         }
     }
 
-    private ITree getTree(Solution solution) throws IOException {
-        final SoftReference<ITree> tree = cache.get(solution.getSolutionId());
-        if (tree != null && tree.get() != null) {
-            return tree.get();
+    @Override
+    public ITree getTree(Solution solution) {
+        try {
+            final String code;
+            if (!solution.getCode().contains("class ")) {
+                code = "public class MY_MAGIC_CLASS_NAME {\n" + solution.getCode() + "\n}";
+            } else {
+                code = solution.getCode();
+            }
+            return generator.generateFromString(code).getRoot();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
-        final String code;
-        if (!solution.getCode().contains("class ")) {
-            code = "public class MY_MAGIC_CLASS_NAME {\n" + solution.getCode() + "\n}";
-        } else {
-            code = solution.getCode();
-        }
-        final ITree root = generator.generateFromString(code).getRoot();
-        cache.put(solution.getSolutionId(), new SoftReference<>(root));
-        return root;
     }
 
     private static String normalize(String label) {

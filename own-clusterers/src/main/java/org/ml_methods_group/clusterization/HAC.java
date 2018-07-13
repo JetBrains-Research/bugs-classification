@@ -38,8 +38,8 @@ public class HAC<T> implements AutoCloseable, Clusterer<T> {
         final List<Community> communitiesAsList = new ArrayList<>(communities);
         Collections.shuffle(communitiesAsList);
         final List<Triple> toInsert = runParallel(communitiesAsList, ArrayList::new,
-                        (Community x, List<Triple> y) -> findTriples(distanceLimit, x, y),
-                        HAC::combineLists);
+                (Community x, List<Triple> y) -> findTriples(distanceLimit, x, y),
+                HAC::combineLists);
         toInsert.forEach(this::insertTriple);
     }
 
@@ -49,7 +49,7 @@ public class HAC<T> implements AutoCloseable, Clusterer<T> {
             if (another == community) {
                 break;
             }
-            final double distance = distanceFunction.distance(representative, another.entities.get(0));
+            final double distance = distanceFunction.distance(representative, another.entities.get(0), distanceLimit);
             if (distance < distanceLimit) {
                 accumulator.add(new Triple(distance, community, another));
             }
@@ -91,7 +91,6 @@ public class HAC<T> implements AutoCloseable, Clusterer<T> {
             final Triple fromFirst = triples.get(fromFirstID);
             final Triple fromSecond = triples.get(fromSecondID);
             final double newDistance = Math.max(getDistance(fromFirst), getDistance(fromSecond));
-//            final double newDistance = Math.min(getDistance(fromFirst), getDistance(fromSecond));
             invalidateTriple(fromFirst);
             invalidateTriple(fromSecond);
             insertTripleIfNecessary(newDistance, newCommunity, community);
@@ -219,7 +218,7 @@ public class HAC<T> implements AutoCloseable, Clusterer<T> {
     }
 
     private <A, V> A runParallel(List<V> values, Supplier<A> accumulatorFactory,
-                                       BiFunction<V, A, A> processor, BinaryOperator<A> combiner) {
+                                 BiFunction<V, A, A> processor, BinaryOperator<A> combiner) {
         final List<Callable<A>> tasks = splitValues(values).stream()
                 .sequential()
                 .map(list -> new Task<>(list, accumulatorFactory, processor))
@@ -252,6 +251,7 @@ public class HAC<T> implements AutoCloseable, Clusterer<T> {
                 return future.get();
             } catch (InterruptedException ignored) {
             } catch (ExecutionException e) {
+                e.printStackTrace();
                 throw new RuntimeException(e); // todo
             }
         }

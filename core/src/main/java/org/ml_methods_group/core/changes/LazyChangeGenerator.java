@@ -1,5 +1,6 @@
 package org.ml_methods_group.core.changes;
 
+import com.github.gumtreediff.tree.ITree;
 import org.ml_methods_group.core.database.ConditionSupplier;
 import org.ml_methods_group.core.database.Repository;
 import org.ml_methods_group.core.entities.CodeChange;
@@ -12,11 +13,11 @@ public class LazyChangeGenerator implements ChangeGenerator {
 
     private final Repository<CodeChange> repository;
     private final ConditionSupplier conditions;
-    private final ChangeGenerator builder;
+    private final ChangeGenerator generator;
 
-    public LazyChangeGenerator(Repository<CodeChange> repository, ChangeGenerator builder) {
+    public LazyChangeGenerator(Repository<CodeChange> repository, ChangeGenerator generator) {
         this.repository = repository;
-        this.builder = builder;
+        this.generator = generator;
         this.conditions = repository.conditionSupplier();
     }
 
@@ -26,9 +27,14 @@ public class LazyChangeGenerator implements ChangeGenerator {
         if (!cache.isEmpty()) {
             return cache;
         }
-        final List<CodeChange> result = builder.getChanges(origin, target);
+        final List<CodeChange> result = generator.getChanges(origin, target);
         result.forEach(repository::insert);
         return result;
+    }
+
+    @Override
+    public ITree getTree(Solution solution) {
+        return generator.getTree(solution);
     }
 
     private List<CodeChange> tryLoad(int origin, int target) {

@@ -2,12 +2,12 @@ package org.ml_methods_group.clusterization;
 
 import org.ml_methods_group.core.Clusterer;
 import org.ml_methods_group.core.DistanceFunction;
+import org.ml_methods_group.core.parallel.ParallelContext;
+import org.ml_methods_group.core.parallel.ParallelUtils;
 
 import java.util.*;
-import java.util.concurrent.*;
-import java.util.function.BiFunction;
-import java.util.function.BinaryOperator;
-import java.util.function.Supplier;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 public class HAC<T> implements AutoCloseable, Clusterer<T> {
@@ -37,10 +37,12 @@ public class HAC<T> implements AutoCloseable, Clusterer<T> {
                 .forEach(communities::add);
         final List<Community> communitiesAsList = new ArrayList<>(communities);
         Collections.shuffle(communitiesAsList);
-        final List<Triple> toInsert = runParallel(communitiesAsList, ArrayList::new,
+        try (ParallelContext context = new ParallelContext()) {
+            final List<Triple> toInsert = context.runParallel(communitiesAsList, ArrayList::new,
                 (Community x, List<Triple> y) -> findTriples(distanceLimit, x, y),
-                HAC::combineLists);
-        toInsert.forEach(this::insertTriple);
+                ParallelUtils::combineLists);
+            toInsert.forEach(this::insertTriple);
+        }
     }
 
     private List<Triple> findTriples(double distanceLimit, Community community, List<Triple> accumulator) {
@@ -67,7 +69,6 @@ public class HAC<T> implements AutoCloseable, Clusterer<T> {
             final Community second = minTriple.second;
             mergeCommunities(first, second);
         }
-        clearPool();
         return communities.stream().map(c -> c.entities).collect(Collectors.toList());
     }
 
@@ -211,77 +212,5 @@ public class HAC<T> implements AutoCloseable, Clusterer<T> {
         triple.first = first;
         triple.second = second;
         return triple;
-    }
-
-    private void clearPool() {
-        triplesPoll.clear();
-    }
-
-    private <A, V> A runParallel(List<V> values, Supplier<A> accumulatorFactory,
-                                 BiFunction<V, A, A> processor, BinaryOperator<A> combiner) {
-        final List<Callable<A>> tasks = splitValues(values).stream()
-                .sequential()
-                .map(list -> new Task<>(list, accumulatorFactory, processor))
-                .collect(Collectors.toList());
-        final List<Future<A>> results = new ArrayList<>();
-        for (Callable<A> task : tasks) {
-            results.add(executor.submit(task));
-        }
-        return results.stream()
-                .sequential()
-                .map(this::getResult)
-                .reduce(combiner)
-                .orElseGet(accumulatorFactory);
-    }
-
-    private <V> List<List<V>> splitValues(List<V> values) {
-        final List<List<V>> lists = new ArrayList<>();
-        final int valuesCount = values.size();
-        final int blocksCount = Math.min(4, values.size());
-        final int blockSize = (valuesCount - 1) / blocksCount + 1; // round up
-        for (int blockStart = 0; blockStart < valuesCount; blockStart += blockSize) {
-            lists.add(values.subList(blockStart, Math.min(blockStart + blockSize, valuesCount)));
-        }
-        return lists;
-    }
-
-    private <V> V getResult(Future<V> future) {
-        while (true) {
-            try {
-                return future.get();
-            } catch (InterruptedException ignored) {
-            } catch (ExecutionException e) {
-                e.printStackTrace();
-                throw new RuntimeException(e); // todo
-            }
-        }
-    }
-
-    private static <V> List<V> combineLists(List<V> first, List<V> second) {
-        if (first.size() < second.size()) {
-            return combineLists(second, first);
-        }
-        first.addAll(second);
-        return first;
-    }
-
-    private class Task<A, V> implements Callable<A> {
-        private final List<V> values;
-        private final Supplier<A> accumulatorFactory;
-        private final BiFunction<V, A, A> processor;
-
-        private Task(List<V> values, Supplier<A> accumulatorFactory, BiFunction<V, A, A> processor) {
-            this.values = values;
-            this.accumulatorFactory = accumulatorFactory;
-            this.processor = processor;
-        }
-
-        public A call() {
-            A accumulator = accumulatorFactory.get();
-            for (V value : values) {
-                accumulator = processor.apply(value, accumulator);
-            }
-            return accumulator;
-        }
     }
 }

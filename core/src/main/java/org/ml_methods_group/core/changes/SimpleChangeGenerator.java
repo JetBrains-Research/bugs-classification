@@ -13,6 +13,7 @@ import org.ml_methods_group.core.entities.NodeType;
 import org.ml_methods_group.core.entities.Solution;
 
 import java.io.IOException;
+import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -24,7 +25,7 @@ public class SimpleChangeGenerator implements ChangeGenerator {
     private final Matchers matchers;
     private final TreeGenerator generator;
     private final ChangeFilter filter;
-    private final Map<Integer, WeakReference<ITree>> cache = new HashMap<>();
+    private final Map<Integer, SoftReference<ITree>> cache = new HashMap<>();
 
     public SimpleChangeGenerator(ChangeFilter filter) {
         this.filter = filter;
@@ -50,7 +51,7 @@ public class SimpleChangeGenerator implements ChangeGenerator {
     }
 
     private ITree getTree(Solution solution) throws IOException {
-        final WeakReference<ITree> tree = cache.get(solution.getSolutionId());
+        final SoftReference<ITree> tree = cache.get(solution.getSolutionId());
         if (tree != null && tree.get() != null) {
             return tree.get();
         }
@@ -61,7 +62,7 @@ public class SimpleChangeGenerator implements ChangeGenerator {
             code = solution.getCode();
         }
         final ITree root = generator.generateFromString(code).getRoot();
-        cache.put(solution.getSolutionId(), new WeakReference<ITree>(root));
+        cache.put(solution.getSolutionId(), new SoftReference<>(root));
         return root;
     }
 

@@ -64,9 +64,11 @@ public class NearestCorrectStrategy implements AnalysisStrategy<Solution, double
             return extractor;
         }
         clear();
-        final List<Solution> centers = clusterer.buildClusters(correctSolutions).stream()
-                .map(selector::getCenter)
-                .collect(Collectors.toList());
+        final List<Solution> centers =
+//                clusterer.buildClusters(correctSolutions).stream()
+//                .map(selector::getCenter)
+//                .collect(Collectors.toList());
+                correctSolutions;
         System.out.println("Centers: " + centers.size());
         incorrectSolutions.forEach(solution -> index(solution, centers));
         final List<Long> codes = codeCounters.entrySet().stream()
@@ -76,12 +78,12 @@ public class NearestCorrectStrategy implements AnalysisStrategy<Solution, double
 //        System.out.println("Codes: " + codes.size());
         final VectorTemplate template = new VectorTemplate(codes, postprocessor, strategies);
         return new NearestCorrectFeaturesExtractor(template, centers, metric, generator);
-//        return new NearestCorrectFeaturesExtractor(null, centers, generator);
     }
 
     private void index(Solution solution, List<Solution> centers) {
         final Solution target = findNearest(solution, centers, metric);
         final List<CodeChange> changes = generator.getChanges(solution, target);
+        System.out.println("Changes: " + changes.size() + " " + (solution.getSessionId() == target.getSessionId()));
         for (EncodingStrategy strategy : strategies) {
             for (CodeChange change : changes) {
                 final long code = strategy.encode(change);

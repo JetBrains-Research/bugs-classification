@@ -1,7 +1,7 @@
 package org.ml_methods_group.core.preparation;
 
 import au.com.bytecode.opencsv.CSVReader;
-import org.ml_methods_group.core.Solution.Verdict;
+import org.ml_methods_group.core.entities.Solution.Verdict;
 
 import java.io.*;
 import java.util.NoSuchElementException;
@@ -96,8 +96,6 @@ public class CSVParser {
 
         static Column byName(String name) {
             for (Column column : values()) {
-//                System.out.println(name.length() + " " + column.name.length());
-//                System.out.println(column.name + " " + name + " " + name.equals(column.name));
                 if (name.matches(column.name)) {
                     return column;
                 }

@@ -1,6 +1,6 @@
 package org.ml_methods_group.core.vectorization;
 
-import org.ml_methods_group.core.changes.AtomicChange;
+import org.ml_methods_group.core.entities.CodeChange;
 
 import java.io.Serializable;
 import java.util.Arrays;
@@ -25,11 +25,11 @@ public class VectorTemplate implements Serializable {
         acceptable.forEach(code -> codeToIndex.putIfAbsent(code, codeToIndex.size()));
     }
 
-    public double[] process(List<AtomicChange> features) {
+    public double[] process(List<CodeChange> features) {
         final double[] result = new double[codeToIndex.size()];
         final HashMap<Long, Integer> buffer = new HashMap<>();
         for (EncodingStrategy strategy : strategies) {
-            for (AtomicChange feature : features) {
+            for (CodeChange feature : features) {
                 final long code = strategy.encode(feature);
                 if (code != 0) {
                     buffer.compute(code, (key, old) -> (old == null ? 0 : old) + 1);

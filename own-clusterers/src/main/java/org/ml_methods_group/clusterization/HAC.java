@@ -116,7 +116,7 @@ public class HAC<T> implements AutoCloseable, Clusterer<T> {
     }
 
     private void insertTripleIfNecessary(double distance, Community first, Community second) {
-        if (distance > 1.0) {
+        if (distance > distanceLimit) {
             return;
         }
         final Triple triple = createTriple(distance, first, second);

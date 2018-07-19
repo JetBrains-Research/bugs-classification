@@ -18,6 +18,10 @@ public class Solution {
     @DataField
     private final Verdict verdict;
 
+    public Solution() {
+        this(null, 0, 0, 0, null);
+    }
+
     public Solution(String code, int problemId, int sessionId, int solutionId, Verdict verdict) {
         this.code = code;
         this.problemId = problemId;

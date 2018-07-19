@@ -37,6 +37,11 @@ public class LazyChangeGenerator implements ChangeGenerator {
         return generator.getTree(solution);
     }
 
+    @Override
+    public ChangeFilter getFilter() {
+        return generator.getFilter();
+    }
+
     private List<CodeChange> tryLoad(int origin, int target) {
         final List<CodeChange> result = new ArrayList<>();
         repository.get(conditions.is("originSolutionId", origin),

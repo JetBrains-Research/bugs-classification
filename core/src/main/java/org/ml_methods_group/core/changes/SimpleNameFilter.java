@@ -4,27 +4,34 @@ import com.github.gumtreediff.actions.model.Delete;
 import com.github.gumtreediff.actions.model.Insert;
 import com.github.gumtreediff.actions.model.Move;
 import com.github.gumtreediff.actions.model.Update;
+import com.github.gumtreediff.tree.ITree;
 
-import static org.ml_methods_group.core.entities.NodeType.SIMPLE_NAME;
+import static org.ml_methods_group.core.entities.NodeType.*;
 
 public class SimpleNameFilter implements ChangeFilter {
     @Override
     public boolean accept(Update update) {
-        return update.getNode().getType() != SIMPLE_NAME.ordinal() || Utils.isMethodName(update.getNode());
+        return !isComment(update.getNode()) &&
+                (update.getNode().getType() != SIMPLE_NAME.ordinal() || Utils.isMethodName(update.getNode()));
     }
 
     @Override
     public boolean accept(Insert insert) {
-        return true;
+        return !isComment(insert.getNode());
     }
 
     @Override
     public boolean accept(Move move) {
-        return true;
+        return !isComment(move.getNode());
     }
 
     @Override
     public boolean accept(Delete delete) {
-        return true;
+        return !isComment(delete.getNode());
+    }
+
+    private static boolean isComment(ITree node) {
+        final int type = node.getType();
+        return type == JAVADOC.ordinal() || type == LINE_COMMENT.ordinal() || type == BLOCK_COMMENT.ordinal();
     }
 }

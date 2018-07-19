@@ -46,6 +46,7 @@ public class SimpleChangeGenerator implements ChangeGenerator {
     public ITree getTree(Solution solution) {
         try {
             final String code;
+            //todo
             if (!solution.getCode().contains("class ")) {
                 code = "public class MY_MAGIC_CLASS_NAME {\n" + solution.getCode() + "\n}";
             } else {
@@ -55,6 +56,11 @@ public class SimpleChangeGenerator implements ChangeGenerator {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public ChangeFilter getFilter() {
+        return filter;
     }
 
     private CodeChange fromAction(Action action, int originalId, int targetId) {

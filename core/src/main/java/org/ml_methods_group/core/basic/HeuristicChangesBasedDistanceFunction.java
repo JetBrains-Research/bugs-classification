@@ -10,6 +10,8 @@ import java.lang.ref.SoftReference;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static org.ml_methods_group.core.entities.NodeType.*;
+
 public class HeuristicChangesBasedDistanceFunction implements DistanceFunction<Solution> {
     private final Map<Integer, SoftReference<int[]>> counters = new ConcurrentHashMap<>();
     private final ChangeGenerator generator;
@@ -35,7 +37,11 @@ public class HeuristicChangesBasedDistanceFunction implements DistanceFunction<S
         }
         final int[] result = new int[NodeType.values().length];
         final ITree tree = generator.getTree(solution);
-        tree.getTrees().forEach(node -> result[node.getType()]++);
+        tree.getTrees()
+                .stream()
+                .map(ITree::getType)
+                .filter(type -> type != JAVADOC.ordinal() && type != BLOCK_COMMENT.ordinal() && type != LINE_COMMENT.ordinal())
+                .forEach(type -> result[type]++);
         counters.put(solution.getSolutionId(), new SoftReference<int[]>(result));
         return result;
     }

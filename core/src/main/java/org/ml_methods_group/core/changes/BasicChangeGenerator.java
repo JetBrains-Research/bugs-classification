@@ -12,19 +12,25 @@ import org.ml_methods_group.core.entities.NodeType;
 import org.ml_methods_group.core.entities.Solution;
 
 import java.io.IOException;
+import java.lang.ref.SoftReference;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-public class SimpleChangeGenerator implements ChangeGenerator {
+public class BasicChangeGenerator implements ChangeGenerator {
     private final Matchers matchers;
     private final TreeGenerator generator;
+    private final Map<Solution, SoftReference<ITree>> cache = new HashMap<>();
     private final ChangeFilter filter;
     private final LabelNormalizer normalizer;
+    private final CodePreprocessor preprocessor;
 
-    public SimpleChangeGenerator(ChangeFilter filter, LabelNormalizer normalizer) {
+    public BasicChangeGenerator(ChangeFilter filter, LabelNormalizer normalizer, CodePreprocessor preprocessor) {
         this.filter = filter;
         this.normalizer = normalizer;
+        this.preprocessor = preprocessor;
         matchers = Matchers.getInstance();
         generator = new JdtTreeGenerator();
     }
@@ -44,15 +50,16 @@ public class SimpleChangeGenerator implements ChangeGenerator {
 
     @Override
     public ITree getTree(Solution solution) {
+        final SoftReference<ITree> reference = cache.get(solution);
+        final ITree cached = reference == null ? null : reference.get();
+        if (cached != null) {
+            return cached.deepCopy();
+        }
         try {
-            final String code;
-            //todo
-            if (!solution.getCode().contains("class ")) {
-                code = "public class MY_MAGIC_CLASS_NAME {\n" + solution.getCode() + "\n}";
-            } else {
-                code = solution.getCode();
-            }
-            return generator.generateFromString(code).getRoot();
+            final String code = preprocessor.process(solution.getCode());
+            final ITree tree = generator.generateFromString(code).getRoot();
+            cache.put(solution, new SoftReference<>(tree));
+            return tree.deepCopy();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

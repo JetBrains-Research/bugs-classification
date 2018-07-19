@@ -8,7 +8,7 @@ import com.github.gumtreediff.tree.ITree;
 
 import static org.ml_methods_group.core.entities.NodeType.*;
 
-public class SimpleNameFilter implements ChangeFilter {
+public class BasicChangeFilter implements ChangeFilter {
     @Override
     public boolean accept(Update update) {
         return !isComment(update.getNode()) &&

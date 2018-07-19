@@ -7,7 +7,7 @@ import com.github.gumtreediff.actions.model.Update;
 import com.github.gumtreediff.tree.ITree;
 import org.ml_methods_group.core.entities.NodeType;
 
-public class SimpleLabelNormalizer implements LabelNormalizer {
+public class BasicLabelNormalizer implements LabelNormalizer {
     @Override
     public String normalize(String label, Insert insert) {
         return normalize(label, insert.getNode());

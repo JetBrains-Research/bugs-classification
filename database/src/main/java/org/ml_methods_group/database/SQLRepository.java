@@ -124,7 +124,6 @@ public class SQLRepository<T> implements Repository<T> {
 
     private static Column generateColumn(Field field) {
         final DataType dataType = getDataTypeFor(field.getType());
-        System.out.println(dataType);
         final String columnName = getColumnNameFor(field);
         return new Column(columnName, dataType);
     }

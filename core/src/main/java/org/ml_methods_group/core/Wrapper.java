@@ -30,4 +30,9 @@ public class Wrapper<F> {
             }
         };
     }
+
+    @Override
+    public String toString() {
+        return "Wrapper{session=" + sessionId + "}";
+    }
 }

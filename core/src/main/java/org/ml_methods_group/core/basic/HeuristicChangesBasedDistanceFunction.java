@@ -14,6 +14,7 @@ import static org.ml_methods_group.core.entities.NodeType.*;
 
 public class HeuristicChangesBasedDistanceFunction implements DistanceFunction<Solution> {
     private final Map<Integer, SoftReference<int[]>> counters = new ConcurrentHashMap<>();
+//    private final Map<Integer, int[]> counters = new ConcurrentHashMap<>();
     private final ChangeGenerator generator;
 
     public HeuristicChangesBasedDistanceFunction(ChangeGenerator generator) {
@@ -32,8 +33,10 @@ public class HeuristicChangesBasedDistanceFunction implements DistanceFunction<S
 
     private int[] getCounters(Solution solution) {
         final SoftReference<int[]> reference = counters.get(solution.getSolutionId());
-        if (reference != null && reference.get() != null) {
-            return reference.get();
+        final int[] cached = reference == null ? null : reference.get();
+//        final int[] cached = counters.get(solution.getSolutionId());
+        if (cached != null) {
+            return cached;
         }
         final int[] result = new int[NodeType.values().length];
         final ITree tree = generator.getTree(solution);
@@ -42,7 +45,7 @@ public class HeuristicChangesBasedDistanceFunction implements DistanceFunction<S
                 .map(ITree::getType)
                 .filter(type -> type != JAVADOC.ordinal() && type != BLOCK_COMMENT.ordinal() && type != LINE_COMMENT.ordinal())
                 .forEach(type -> result[type]++);
-        counters.put(solution.getSolutionId(), new SoftReference<int[]>(result));
+        counters.put(solution.getSolutionId(), new SoftReference<>(result));
         return result;
     }
 

@@ -21,7 +21,7 @@ public class ParallelContext implements AutoCloseable {
     }
 
     public <V, A> A runParallel(List<V> values,
-                                Supplier<A> accumulatorFactory,
+                                Supplier<? extends A> accumulatorFactory,
                                 BiFunction<V, A, A> processor,
                                 BinaryOperator<A> combiner) {
         return this.<V, Void, A>runParallel(values,
@@ -32,7 +32,7 @@ public class ParallelContext implements AutoCloseable {
     }
 
     public <V, C, A> A runParallel(List<V> values,
-                                   Supplier<A> accumulatorFactory,
+                                   Supplier<? extends A> accumulatorFactory,
                                    C context,
                                    ParallelProcessor<V, C, A> processor,
                                    BinaryOperator<A> combiner) {
@@ -44,8 +44,8 @@ public class ParallelContext implements AutoCloseable {
     }
 
     public <V, C, A> A runParallel(List<V> values,
-                                   Supplier<A> accumulatorFactory,
-                                   Supplier<C> contextFactory,
+                                   Supplier<? extends A> accumulatorFactory,
+                                   Supplier<? extends C> contextFactory,
                                    ParallelProcessor<V, C, A> processor,
                                    BinaryOperator<A> combiner) {
         final List<Callable<A>> tasks = splitValues(values).stream()
@@ -87,11 +87,11 @@ public class ParallelContext implements AutoCloseable {
 
     private class Task<V, C, A> implements Callable<A> {
         private final List<V> values;
-        private final Supplier<A> accumulatorFactory;
-        private final Supplier<C> contextFactory;
+        private final Supplier<? extends A> accumulatorFactory;
+        private final Supplier<? extends C> contextFactory;
         private final ParallelProcessor<V, C, A> processor;
 
-        private Task(List<V> values, Supplier<A> accumulatorFactory, Supplier<C> contextFactory,
+        private Task(List<V> values, Supplier<? extends A> accumulatorFactory, Supplier<? extends C> contextFactory,
                      ParallelProcessor<V, C, A> processor) {
             this.values = values;
             this.accumulatorFactory = accumulatorFactory;

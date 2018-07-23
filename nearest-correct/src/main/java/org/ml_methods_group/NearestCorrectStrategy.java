@@ -103,7 +103,8 @@ public class NearestCorrectStrategy implements AnalysisStrategy<Solution, double
         final Solution target = findNearest(solution, centers, metric);
         cache.put(solution.getSolutionId(), target);
         final List<CodeChange> changes = generator.getChanges(solution, target);
-        System.out.println("Changes: " + changes.size() + " " + (solution.getSessionId() == target.getSessionId()));
+        System.out.print("Changes: " + changes.size() + " " + (solution.getSessionId() == target.getSessionId()) + " ");
+        System.out.println(solution.getSessionId() + " " + target.getSessionId());
         for (EncodingStrategy strategy : strategies) {
             for (CodeChange change : changes) {
                 final long code = strategy.encode(change);

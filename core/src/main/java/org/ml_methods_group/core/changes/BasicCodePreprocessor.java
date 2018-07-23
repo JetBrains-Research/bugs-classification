@@ -7,7 +7,7 @@ public class BasicCodePreprocessor implements CodePreprocessor {
         if (code.contains("import") || code.contains("package")) {
             return code;
         } else {
-            return "class MyMagicClass {\n" + code + "\n}";
+            return "class MyMagicClassWrapper {\n" + code + "\n}";
         }
     }
 }

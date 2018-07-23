@@ -65,8 +65,11 @@ public class VectorTemplate implements Serializable {
         RELATIVE {
             @Override
             public void process(List<?> features, double[] vector) {
-                for (int i = 0; i < vector.length; i++) {
-                    vector[i] /= features.size();
+                final double count = features.size();
+                if (count != 0) {
+                    for (int i = 0; i < vector.length; i++) {
+                        vector[i] /= count;
+                    }
                 }
             }
         },
@@ -74,8 +77,10 @@ public class VectorTemplate implements Serializable {
             @Override
             public void process(List<?> features, double[] vector) {
                 final double norma = MathUtils.norm(vector);
-                for (int i = 0; i < vector.length; i++) {
-                    vector[i] /= norma;
+                if (norma != 0) {
+                    for (int i = 0; i < vector.length; i++) {
+                        vector[i] /= norma;
+                    }
                 }
             }
         };

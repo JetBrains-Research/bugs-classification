@@ -6,25 +6,22 @@ import org.ml_methods_group.core.parallel.ParallelContext;
 import org.ml_methods_group.core.parallel.ParallelUtils;
 
 import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
-public class HAC<T> implements AutoCloseable, Clusterer<T> {
+public class HAC<T> implements Clusterer<T> {
 
     private final SortedSet<Triple> heap = new TreeSet<>();
     private final Map<Long, Triple> triples = new HashMap<>();
     private final Set<Community> communities = new HashSet<>();
-    private final ExecutorService executor = Executors.newCachedThreadPool();
     private final double distanceLimit;
     private final int minClustersCount;
-    private final DistanceFunction<T> distanceFunction;
+    private final DistanceFunction<T> metric;
     private int idGenerator = 0;
 
-    public HAC(double distanceLimit, int minClustersCount, DistanceFunction<T> distanceFunction) {
+    public HAC(double distanceLimit, int minClustersCount, DistanceFunction<T> metric) {
         this.distanceLimit = distanceLimit;
         this.minClustersCount = minClustersCount;
-        this.distanceFunction = distanceFunction;
+        this.metric = metric;
     }
 
     private void init(List<T> values) {
@@ -38,20 +35,21 @@ public class HAC<T> implements AutoCloseable, Clusterer<T> {
         final List<Community> communitiesAsList = new ArrayList<>(communities);
         Collections.shuffle(communitiesAsList);
         try (ParallelContext context = new ParallelContext()) {
-            final List<Triple> toInsert = context.runParallel(communitiesAsList, ArrayList::new,
-                (Community x, List<Triple> y) -> findTriples(distanceLimit, x, y),
-                ParallelUtils::combineLists);
+            final List<Triple> toInsert = context.runParallel(communitiesAsList,
+                    ArrayList::new,
+                    this::findTriples,
+                    ParallelUtils::combineLists);
             toInsert.forEach(this::insertTriple);
         }
     }
 
-    private List<Triple> findTriples(double distanceLimit, Community community, List<Triple> accumulator) {
+    private List<Triple> findTriples(Community community, List<Triple> accumulator) {
         final T representative = community.entities.get(0);
         for (Community another : communities) {
             if (another == community) {
                 break;
             }
-            final double distance = distanceFunction.distance(representative, another.entities.get(0), distanceLimit);
+            final double distance = metric.distance(representative, another.entities.get(0), distanceLimit);
             if (distance < distanceLimit) {
                 accumulator.add(new Triple(distance, community, another));
             }
@@ -116,7 +114,7 @@ public class HAC<T> implements AutoCloseable, Clusterer<T> {
     }
 
     private void insertTripleIfNecessary(double distance, Community first, Community second) {
-        if (distance > distanceLimit) {
+        if (distance >= distanceLimit) {
             return;
         }
         final Triple triple = createTriple(distance, first, second);
@@ -137,11 +135,6 @@ public class HAC<T> implements AutoCloseable, Clusterer<T> {
         final List<T> singletonList = new ArrayList<>(1);
         singletonList.add(entity);
         return new Community(singletonList);
-    }
-
-    @Override
-    public void close() {
-        executor.shutdown();
     }
 
     private class Community implements Comparable<Community> {

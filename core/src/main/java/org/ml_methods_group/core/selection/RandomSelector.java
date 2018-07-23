@@ -1,17 +1,23 @@
 package org.ml_methods_group.core.selection;
 
+import org.ml_methods_group.core.Selector;
+
 import java.util.*;
 
-public class RandomSelector<T> implements RepresenterSelector<T> {
+public class RandomSelector<T> implements Selector<T> {
 
-    final Random random = new Random(239566);
+    final Random random;
+
+    public RandomSelector(long seed) {
+        this.random = new Random(seed);
+    }
+
+    public RandomSelector() {
+        this.random = new Random();
+    }
 
     @Override
-    public List<T> findRepresenter(int n, List<T> samples) {
-        final Set<T> result = new HashSet<>();
-        while (result.size() < n) {
-            result.add(samples.get(random.nextInt(samples.size())));
-        }
-        return new ArrayList<>(result);
+    public T getCenter(List<T> samples) {
+        return samples.get(random.nextInt(samples.size()));
     }
 }

@@ -1,13 +1,14 @@
 package org.ml_methods_group.core.selection;
 
 import org.ml_methods_group.core.DistanceFunction;
+import org.ml_methods_group.core.Selector;
 
 import java.util.Comparator;
 import java.util.DoubleSummaryStatistics;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public class CenterSelector<T> implements RepresenterSelector<T> {
+public class CenterSelector<T> implements Selector<T> {
 
     public enum Mode {
         MAX {
@@ -22,6 +23,7 @@ public class CenterSelector<T> implements RepresenterSelector<T> {
                 return statistics.getAverage();
             }
         };
+
         abstract double getValue(DoubleSummaryStatistics statistics);
     }
 
@@ -36,11 +38,10 @@ public class CenterSelector<T> implements RepresenterSelector<T> {
     }
 
     @Override
-    public List<T> findRepresenter(int n, List<T> samples) {
+    public T getCenter(List<T> samples) {
         return samples.stream()
-                .sorted(Comparator.comparingDouble(x -> mode.getValue(calculate(x, samples))))
-                .limit(n)
-                .collect(Collectors.toList());
+                .min(Comparator.comparingDouble(x -> mode.getValue(calculate(x, samples))))
+                .orElse(null);
     }
 
     private DoubleSummaryStatistics calculate(T object, List<T> samples) {

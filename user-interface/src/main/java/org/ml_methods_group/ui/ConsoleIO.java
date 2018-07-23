@@ -1,7 +1,6 @@
 package org.ml_methods_group.ui;
 
-import org.ml_methods_group.core.Solution;
-import org.ml_methods_group.core.SolutionDiff;
+import org.ml_methods_group.core.entities.Solution;
 
 import java.io.InputStream;
 import java.io.PrintStream;
@@ -34,14 +33,16 @@ public class ConsoleIO {
         output.flush();
     }
 
-    public void write(SolutionDiff diff) {
-        output.println("-------------------------------Session #" + diff.getSessionId());
-        output.println("------------------------before----------------------------");
-        output.println(diff.getCodeBefore());
-        output.println("------------------------after-----------------------------");
-        output.println(diff.getCodeAfter());
+    public void writeDiff(Solution first, Solution second) {
+        output.println("-------------------------------Show-diff-------------------");
+        output.println("-----before--(session=" + first.getSessionId() + "--solution=" + first.getSolutionId()
+                + "--------------------------");
+        output.println(first.getCode());
+        output.println("-----after--(session=" + second.getSessionId() + "--solution=" + second.getSolutionId()
+                + "--------------------------");
+        output.println(second.getCode());
         output.println("-------------------------diff-----------------------------");
-        output.println(UtilsUI.diff(diff.getCodeBefore(), diff.getCodeAfter()));
+        output.println(UtilsUI.diff(first.getCode(), second.getCode()));
         output.println("----------------------------------------------------------");
         output.println();
     }

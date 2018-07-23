@@ -2,29 +2,26 @@ package org.ml_methods_group.clusterization;
 
 import org.ml_methods_group.core.Clusterer;
 import org.ml_methods_group.core.DistanceFunction;
+import org.ml_methods_group.core.parallel.ParallelContext;
+import org.ml_methods_group.core.parallel.ParallelUtils;
 
 import java.util.*;
-import java.util.concurrent.*;
-import java.util.function.BiFunction;
-import java.util.function.BinaryOperator;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-public class HAC<T> implements AutoCloseable, Clusterer<T> {
+public class HAC<T> implements Clusterer<T> {
 
     private final SortedSet<Triple> heap = new TreeSet<>();
     private final Map<Long, Triple> triples = new HashMap<>();
     private final Set<Community> communities = new HashSet<>();
-    private final ExecutorService executor = Executors.newCachedThreadPool();
     private final double distanceLimit;
     private final int minClustersCount;
-    private final DistanceFunction<T> distanceFunction;
+    private final DistanceFunction<T> metric;
     private int idGenerator = 0;
 
-    public HAC(double distanceLimit, int minClustersCount, DistanceFunction<T> distanceFunction) {
+    public HAC(double distanceLimit, int minClustersCount, DistanceFunction<T> metric) {
         this.distanceLimit = distanceLimit;
         this.minClustersCount = minClustersCount;
-        this.distanceFunction = distanceFunction;
+        this.metric = metric;
     }
 
     private void init(List<T> values) {
@@ -37,19 +34,22 @@ public class HAC<T> implements AutoCloseable, Clusterer<T> {
                 .forEach(communities::add);
         final List<Community> communitiesAsList = new ArrayList<>(communities);
         Collections.shuffle(communitiesAsList);
-        final List<Triple> toInsert = runParallel(communitiesAsList, ArrayList::new,
-                        (Community x, List<Triple> y) -> findTriples(distanceLimit, x, y),
-                        HAC::combineLists);
-        toInsert.forEach(this::insertTriple);
+        try (ParallelContext context = new ParallelContext()) {
+            final List<Triple> toInsert = context.runParallel(communitiesAsList,
+                    ArrayList::new,
+                    this::findTriples,
+                    ParallelUtils::combineLists);
+            toInsert.forEach(this::insertTriple);
+        }
     }
 
-    private List<Triple> findTriples(double distanceLimit, Community community, List<Triple> accumulator) {
+    private List<Triple> findTriples(Community community, List<Triple> accumulator) {
         final T representative = community.entities.get(0);
         for (Community another : communities) {
             if (another == community) {
                 break;
             }
-            final double distance = distanceFunction.distance(representative, another.entities.get(0));
+            final double distance = metric.distance(representative, another.entities.get(0), distanceLimit);
             if (distance < distanceLimit) {
                 accumulator.add(new Triple(distance, community, another));
             }
@@ -67,7 +67,6 @@ public class HAC<T> implements AutoCloseable, Clusterer<T> {
             final Community second = minTriple.second;
             mergeCommunities(first, second);
         }
-        clearPool();
         return communities.stream().map(c -> c.entities).collect(Collectors.toList());
     }
 
@@ -91,7 +90,6 @@ public class HAC<T> implements AutoCloseable, Clusterer<T> {
             final Triple fromFirst = triples.get(fromFirstID);
             final Triple fromSecond = triples.get(fromSecondID);
             final double newDistance = Math.max(getDistance(fromFirst), getDistance(fromSecond));
-//            final double newDistance = Math.min(getDistance(fromFirst), getDistance(fromSecond));
             invalidateTriple(fromFirst);
             invalidateTriple(fromSecond);
             insertTripleIfNecessary(newDistance, newCommunity, community);
@@ -116,7 +114,7 @@ public class HAC<T> implements AutoCloseable, Clusterer<T> {
     }
 
     private void insertTripleIfNecessary(double distance, Community first, Community second) {
-        if (distance > 1.0) {
+        if (distance >= distanceLimit) {
             return;
         }
         final Triple triple = createTriple(distance, first, second);
@@ -137,11 +135,6 @@ public class HAC<T> implements AutoCloseable, Clusterer<T> {
         final List<T> singletonList = new ArrayList<>(1);
         singletonList.add(entity);
         return new Community(singletonList);
-    }
-
-    @Override
-    public void close() {
-        executor.shutdown();
     }
 
     private class Community implements Comparable<Community> {
@@ -212,76 +205,5 @@ public class HAC<T> implements AutoCloseable, Clusterer<T> {
         triple.first = first;
         triple.second = second;
         return triple;
-    }
-
-    private void clearPool() {
-        triplesPoll.clear();
-    }
-
-    private <A, V> A runParallel(List<V> values, Supplier<A> accumulatorFactory,
-                                       BiFunction<V, A, A> processor, BinaryOperator<A> combiner) {
-        final List<Callable<A>> tasks = splitValues(values).stream()
-                .sequential()
-                .map(list -> new Task<>(list, accumulatorFactory, processor))
-                .collect(Collectors.toList());
-        final List<Future<A>> results = new ArrayList<>();
-        for (Callable<A> task : tasks) {
-            results.add(executor.submit(task));
-        }
-        return results.stream()
-                .sequential()
-                .map(this::getResult)
-                .reduce(combiner)
-                .orElseGet(accumulatorFactory);
-    }
-
-    private <V> List<List<V>> splitValues(List<V> values) {
-        final List<List<V>> lists = new ArrayList<>();
-        final int valuesCount = values.size();
-        final int blocksCount = Math.min(4, values.size());
-        final int blockSize = (valuesCount - 1) / blocksCount + 1; // round up
-        for (int blockStart = 0; blockStart < valuesCount; blockStart += blockSize) {
-            lists.add(values.subList(blockStart, Math.min(blockStart + blockSize, valuesCount)));
-        }
-        return lists;
-    }
-
-    private <V> V getResult(Future<V> future) {
-        while (true) {
-            try {
-                return future.get();
-            } catch (InterruptedException ignored) {
-            } catch (ExecutionException e) {
-                throw new RuntimeException(e); // todo
-            }
-        }
-    }
-
-    private static <V> List<V> combineLists(List<V> first, List<V> second) {
-        if (first.size() < second.size()) {
-            return combineLists(second, first);
-        }
-        first.addAll(second);
-        return first;
-    }
-
-    private class Task<A, V> implements Callable<A> {
-        private final List<V> values;
-        private final Supplier<A> accumulatorFactory;
-        private final BiFunction<V, A, A> processor;
-
-        private Task(List<V> values, Supplier<A> accumulatorFactory, BiFunction<V, A, A> processor) {
-            this.values = values;
-            this.accumulatorFactory = accumulatorFactory;
-            this.processor = processor;
-        }
-
-        public A call() {
-            A accumulator = accumulatorFactory.get();
-            for (V value : values) {
-                accumulator = processor.apply(value, accumulator);
-            }
-            return accumulator;
-        }
     }
 }

@@ -1,4 +1,4 @@
-package org.ml_methods_group.core.changes;
+package org.ml_methods_group.core.entities;
 
 
 public enum NodeType {

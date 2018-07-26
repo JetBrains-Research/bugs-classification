@@ -35,7 +35,7 @@ public class BasicLabelNormalizer implements LabelNormalizer {
         }
         if (node.getType() == NodeType.QUALIFIED_NAME.ordinal()) {
             return node.getParent().getType() == NodeType.SIMPLE_TYPE.ordinal() ? label : lastName(label);
-        } else if (node.getType() == NodeType.SIMPLE_TYPE.ordinal()) {
+        } else if (node.getType() == NodeType.SIMPLE_NAME.ordinal()) {
             return Utils.isMethodName(node) ? label : "";
         }
         return label;

@@ -7,6 +7,7 @@ import com.github.gumtreediff.gen.jdt.JdtTreeGenerator;
 import com.github.gumtreediff.matchers.Matcher;
 import com.github.gumtreediff.matchers.Matchers;
 import com.github.gumtreediff.tree.ITree;
+import com.github.gumtreediff.tree.TreeContext;
 import org.ml_methods_group.core.entities.CodeChange;
 import org.ml_methods_group.core.entities.NodeType;
 import org.ml_methods_group.core.entities.Solution;
@@ -24,13 +25,16 @@ public class BasicChangeGenerator implements ChangeGenerator {
     private final TreeGenerator generator;
     private final Map<Solution, SoftReference<ITree>> cache = new ConcurrentHashMap<>();
     private final ChangeFilter filter;
-    private final LabelNormalizer normalizer;
+    private final LabelNormalizer labelNormalizer;
     private final CodePreprocessor preprocessor;
+    private final ASTNormalizer astNormalizer;
 
-    public BasicChangeGenerator(ChangeFilter filter, LabelNormalizer normalizer, CodePreprocessor preprocessor) {
+    public BasicChangeGenerator(ChangeFilter filter, LabelNormalizer labelNormalizer,
+                                CodePreprocessor preprocessor, ASTNormalizer astNormalizer) {
         this.filter = filter;
-        this.normalizer = normalizer;
+        this.labelNormalizer = labelNormalizer;
         this.preprocessor = preprocessor;
+        this.astNormalizer = astNormalizer;
         matchers = Matchers.getInstance();
         generator = new JdtTreeGenerator();
     }
@@ -57,7 +61,9 @@ public class BasicChangeGenerator implements ChangeGenerator {
         }
         try {
             final String code = preprocessor.process(solution.getCode());
-            final ITree tree = generator.generateFromString(code).getRoot();
+            final TreeContext context = generator.generateFromString(code);
+            astNormalizer.normalize(context);
+            final ITree tree = context.getRoot();
             cache.put(solution, new SoftReference<>(tree));
             return tree.deepCopy();
         } catch (IOException e) {
@@ -91,7 +97,7 @@ public class BasicChangeGenerator implements ChangeGenerator {
                         getNodeType(node, 0),
                         getNodeType(node, 1),
                         getNodeType(node, 2),
-                        normalizer.normalize(node.getLabel(), insert)
+                        labelNormalizer.normalize(node.getLabel(), insert)
                 );
     }
 
@@ -103,7 +109,7 @@ public class BasicChangeGenerator implements ChangeGenerator {
                 getNodeType(node, 0),
                 getNodeType(node, 1),
                 getNodeType(node, 2),
-                normalizer.normalize(node.getLabel(), delete)
+                labelNormalizer.normalize(node.getLabel(), delete)
         );
     }
 
@@ -119,7 +125,7 @@ public class BasicChangeGenerator implements ChangeGenerator {
                 getNodeType(parent, 1),
                 getNodeType(node, 1),
                 getNodeType(node, 2),
-                normalizer.normalize(node.getLabel(), move)
+                labelNormalizer.normalize(node.getLabel(), move)
         );
     }
 
@@ -131,8 +137,8 @@ public class BasicChangeGenerator implements ChangeGenerator {
                 getNodeType(node, 0),
                 getNodeType(node, 1),
                 getNodeType(node, 2),
-                normalizer.normalize(update.getValue(), update),
-                normalizer.normalize(node.getLabel(), update)
+                labelNormalizer.normalize(update.getValue(), update),
+                labelNormalizer.normalize(node.getLabel(), update)
         );
     }
 

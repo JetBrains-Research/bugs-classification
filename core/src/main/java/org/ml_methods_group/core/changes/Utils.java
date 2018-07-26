@@ -21,6 +21,8 @@ public class Utils {
         } else if (parentType == METHOD_INVOCATION) {
             if (parent.getChildren().size() == 1) {
                 return true;
+            } else if (position == 0) {
+                return false;
             }
             for (int i = 1; i < position; i++) {
                 if (parent.getChild(i).getType() == SIMPLE_NAME.ordinal()) {

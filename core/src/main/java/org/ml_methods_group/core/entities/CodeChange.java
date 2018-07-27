@@ -9,10 +9,6 @@ import static org.ml_methods_group.core.entities.NodeType.NONE;
 @DataClass(defaultStorageName = "changes")
 public class CodeChange {
     @DataField
-    private final int originSolutionId;
-    @DataField
-    private final int targetSolutionId;
-    @DataField
     private final ChangeType changeType;
     @DataField
     private final NodeType nodeType;
@@ -39,8 +35,6 @@ public class CodeChange {
                       ChangeType changeType, NodeType nodeType, NodeType parentType, NodeType parentOfParentType,
                       NodeType oldParentType, NodeType oldParentOfParentType,
                       String label, String oldLabel) {
-        this.originSolutionId = originSolutionId;
-        this.targetSolutionId = targetSolutionId;
         this.changeType = changeType;
         this.nodeType = nodeType;
         this.parentType = parentType;
@@ -49,14 +43,6 @@ public class CodeChange {
         this.oldParentOfParentType = oldParentOfParentType;
         this.label = label;
         this.oldLabel = oldLabel;
-    }
-
-    public int getOriginSolutionId() {
-        return originSolutionId;
-    }
-
-    public int getTargetSolutionId() {
-        return targetSolutionId;
     }
 
     public ChangeType getChangeType() {
@@ -122,5 +108,35 @@ public class CodeChange {
         return new CodeChange(originSolutionId, targetSolutionId,
                 UPDATE, nodeType, parentType, parentOfParentType, NONE, NONE,
                 label, oldLabel);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        CodeChange change = (CodeChange) o;
+
+        if (changeType != change.changeType) return false;
+        if (nodeType != change.nodeType) return false;
+        if (parentType != change.parentType) return false;
+        if (parentOfParentType != change.parentOfParentType) return false;
+        if (oldParentType != change.oldParentType) return false;
+        if (oldParentOfParentType != change.oldParentOfParentType) return false;
+        if (label != null ? !label.equals(change.label) : change.label != null) return false;
+        return oldLabel != null ? oldLabel.equals(change.oldLabel) : change.oldLabel == null;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = changeType != null ? changeType.hashCode() : 0;
+        result = 31 * result + (nodeType != null ? nodeType.hashCode() : 0);
+        result = 31 * result + (parentType != null ? parentType.hashCode() : 0);
+        result = 31 * result + (parentOfParentType != null ? parentOfParentType.hashCode() : 0);
+        result = 31 * result + (oldParentType != null ? oldParentType.hashCode() : 0);
+        result = 31 * result + (oldParentOfParentType != null ? oldParentOfParentType.hashCode() : 0);
+        result = 31 * result + (label != null ? label.hashCode() : 0);
+        result = 31 * result + (oldLabel != null ? oldLabel.hashCode() : 0);
+        return result;
     }
 }

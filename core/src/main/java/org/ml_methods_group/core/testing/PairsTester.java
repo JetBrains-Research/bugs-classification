@@ -2,6 +2,7 @@ package org.ml_methods_group.core.testing;
 
 import org.ml_methods_group.core.Wrapper;
 import org.ml_methods_group.core.database.Repository;
+import org.ml_methods_group.core.entities.Solution;
 import org.ml_methods_group.core.entities.TestPair;
 
 import java.util.HashMap;
@@ -10,7 +11,7 @@ import java.util.List;
 import static org.ml_methods_group.core.entities.PairGuess.DIFFERENT;
 import static org.ml_methods_group.core.entities.PairGuess.SIMILAR;
 
-public class PairsTester<T> implements Tester<T> {
+public class PairsTester<T> implements Tester<T, Solution> {
     private final Repository<TestPair> tests;
 
     public PairsTester(Repository<TestPair> tests) {
@@ -18,12 +19,13 @@ public class PairsTester<T> implements Tester<T> {
     }
 
     @Override
-    public PairsTestingResult test(List<List<Wrapper<T>>> clusters) {
+    public PairsTestingResult test(List<List<Wrapper<T, Solution>>> clusters) {
         final HashMap<Integer, Integer> sessionToCluster = new HashMap<>();
         for (int i = 0; i < clusters.size(); i++) {
             final int clusterIndex = i;
             clusters.get(i).stream()
-                    .map(Wrapper::getSessionId)
+                    .map(Wrapper::getMeta)
+                    .mapToInt(Solution::getSessionId)
                     .forEach(id -> sessionToCluster.put(id, clusterIndex));
         }
         int similarPairsCount = 0;

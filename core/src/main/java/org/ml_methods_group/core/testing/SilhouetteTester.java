@@ -7,15 +7,15 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.IntStream;
 
-public class SilhouetteTester<T> implements Tester<T> {
-    private final DistanceFunction<Wrapper<T>> metric;
+public class SilhouetteTester<T, M> implements Tester<T, M> {
+    private final DistanceFunction<Wrapper<T, M>> metric;
 
-    public SilhouetteTester(DistanceFunction<Wrapper<T>> metric) {
+    public SilhouetteTester(DistanceFunction<Wrapper<T, M>> metric) {
         this.metric = metric;
     }
 
     @Override
-    public SilhouetteResults test(List<List<Wrapper<T>>> clusters) {
+    public SilhouetteResults test(List<List<Wrapper<T, M>>> clusters) {
         final double[] silhouettes = IntStream.range(0, clusters.size())
                 .boxed()
                 .flatMap(i -> clusters.get(i).stream()
@@ -38,7 +38,7 @@ public class SilhouetteTester<T> implements Tester<T> {
                 negativeSilhouettesCount, zeroSilhouettesCount);
     }
 
-    private double silhouette(Wrapper<T> wrapper, List<Wrapper<T>> wrappers) {
+    private double silhouette(Wrapper<T, M> wrapper, List<Wrapper<T, M>> wrappers) {
         return wrappers.stream()
                 .filter(other -> wrapper != other)
                 .mapToDouble(other -> metric.distance(wrapper, other))
@@ -46,7 +46,7 @@ public class SilhouetteTester<T> implements Tester<T> {
                 .orElse(0);
     }
 
-    private double silhouette(Wrapper<T> wrapper, int clusterIndex, List<List<Wrapper<T>>> clusters) {
+    private double silhouette(Wrapper<T, M> wrapper, int clusterIndex, List<List<Wrapper<T, M>>> clusters) {
         if (clusters.get(clusterIndex).size() == 1) {
             return 0;
         }

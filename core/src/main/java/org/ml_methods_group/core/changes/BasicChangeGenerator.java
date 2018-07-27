@@ -4,6 +4,8 @@ import com.github.gumtreediff.actions.ActionGenerator;
 import com.github.gumtreediff.actions.model.*;
 import com.github.gumtreediff.gen.TreeGenerator;
 import com.github.gumtreediff.gen.jdt.JdtTreeGenerator;
+import com.github.gumtreediff.matchers.CompositeMatchers;
+import com.github.gumtreediff.matchers.MappingStore;
 import com.github.gumtreediff.matchers.Matcher;
 import com.github.gumtreediff.matchers.Matchers;
 import com.github.gumtreediff.tree.ITree;
@@ -43,9 +45,18 @@ public class BasicChangeGenerator implements ChangeGenerator {
     public List<CodeChange> getChanges(Solution before, Solution after) {
         final ITree treeBefore = getTree(before);
         final ITree treeAfter = getTree(after);
-        final Matcher matcher = matchers.getMatcher(treeBefore, treeAfter);
-        matcher.match();
-        final ActionGenerator actions = new ActionGenerator(treeBefore, treeAfter, matcher.getMappings());
+        MappingStore store;
+        try {
+            final Matcher matcher =
+                    new CompositeMatchers.CompleteGumtreeMatche(treeBefore, treeAfter, new MappingStore());
+            matcher.match();
+            store = matcher.getMappings();
+        } catch (Exception e) {
+            final Matcher matcher = matchers.getMatcher(treeBefore, treeAfter);
+            matcher.match();
+            store = matcher.getMappings();
+        }
+        final ActionGenerator actions = new ActionGenerator(treeBefore, treeAfter, store);
         return actions.generate().stream()
                 .map(action -> fromAction(action, before.getSolutionId(), after.getSolutionId()))
                 .filter(Objects::nonNull)

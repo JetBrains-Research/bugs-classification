@@ -4,6 +4,7 @@ import org.ml_methods_group.core.database.Condition;
 import org.ml_methods_group.core.database.ConditionSupplier;
 import org.ml_methods_group.core.database.Proxy;
 import org.ml_methods_group.core.database.Repository;
+import org.ml_methods_group.core.database.annotations.BinaryFormat;
 import org.ml_methods_group.core.database.annotations.DataClass;
 import org.ml_methods_group.core.database.annotations.DataField;
 
@@ -123,16 +124,16 @@ public class SQLRepository<T> implements Repository<T> {
     }
 
     private static Column generateColumn(Field field) {
-        final DataType dataType = getDataTypeFor(field.getType());
+        final DataType dataType = getDataTypeFor(field);
         final String columnName = getColumnNameFor(field);
         return new Column(columnName, dataType);
     }
 
-    private static DataType getDataTypeFor(Class<?> template) {
-        if (template.getAnnotation(DataField.class) != null) {
+    private static DataType getDataTypeFor(Field field) {
+        if (field.getAnnotation(BinaryFormat.class) != null) {
             return DataType.BYTE_ARRAY;
         }
-        return DataType.getDefaultTypeFor(template);
+        return DataType.getDefaultTypeFor(field.getType());
     }
 
     private static String getColumnNameFor(Field field) {

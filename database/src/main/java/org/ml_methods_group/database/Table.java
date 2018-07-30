@@ -68,6 +68,7 @@ class Table {
                         break;
                     case BYTE_ARRAY:
                         statement.setBytes(pointer++, data.get(i).toString().getBytes(StandardCharsets.UTF_16));
+                        break;
                 }
             }
             statement.execute();
@@ -187,7 +188,11 @@ class Table {
         private ResultWrapper(ResultSet resultSet) throws SQLException, UnsupportedEncodingException {
             results = new Object[columns.size()];
             for (int i = 0; i < columns.size(); i++) {
-                results[i] = resultSet.getObject(i + 1);
+//                if (columns.get(i).getType() != BYTE_ARRAY) {
+                    results[i] = resultSet.getObject(i + 1);
+//                } else {
+//                    results[i] = resultSet.getBytes(i + 1);
+//                }
             }
         }
 
@@ -219,7 +224,12 @@ class Table {
 
         String getStringValue(Column column) {
             final int index = columnIndex(column);
-            return results[index].toString();
+            switch (columns.get(index).getType()) {
+                case BYTE_ARRAY:
+                    return new String((byte[]) results[index], StandardCharsets.UTF_16);
+                default:
+                    return results[index].toString();
+            }
         }
 
         int getIntValue(Column column) {

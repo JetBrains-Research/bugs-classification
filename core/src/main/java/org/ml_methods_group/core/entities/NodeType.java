@@ -94,9 +94,27 @@ public enum NodeType {
     CREATION_REFERENCE,
     EXPRESSION_METHOD_REFERENCE,
     SUPER_METHOD_REFERENCE,
-    TYPE_METHOD_REFERENCE;
+    TYPE_METHOD_REFERENCE,
+    // My own nodes
+    MY_MEMBER_NAME;
+
+    public final String humanReadableName;
 
     private static final NodeType[] buffer = values();
+
+    NodeType() {
+        final StringBuilder builder = new StringBuilder();
+        boolean wordStart = true;
+        for (char c : name().toCharArray()) {
+            if (c == '_') {
+                wordStart = true;
+            } else {
+                builder.append(wordStart ? Character.toUpperCase(c) : Character.toLowerCase(c));
+                wordStart = false;
+            }
+        }
+        humanReadableName = builder.toString();
+    }
 
     public static NodeType valueOf(int value) {
         return value == -1 ? null : buffer[value];

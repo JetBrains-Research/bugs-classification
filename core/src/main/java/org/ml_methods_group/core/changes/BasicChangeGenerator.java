@@ -4,7 +4,7 @@ import com.github.gumtreediff.actions.ActionGenerator;
 import com.github.gumtreediff.actions.model.*;
 import com.github.gumtreediff.gen.TreeGenerator;
 import com.github.gumtreediff.gen.jdt.JdtTreeGenerator;
-import com.github.gumtreediff.matchers.CompositeMatchers;
+import com.github.gumtreediff.matchers.CompositeMatchers.CompleteGumtreeMatcher;
 import com.github.gumtreediff.matchers.MappingStore;
 import com.github.gumtreediff.matchers.Matcher;
 import com.github.gumtreediff.matchers.Matchers;
@@ -26,15 +26,10 @@ public class BasicChangeGenerator implements ChangeGenerator {
     private final Matchers matchers;
     private final TreeGenerator generator;
     private final Map<Solution, SoftReference<ITree>> cache = new ConcurrentHashMap<>();
-    private final ChangeFilter filter;
-    private final LabelNormalizer labelNormalizer;
     private final CodePreprocessor preprocessor;
     private final ASTNormalizer astNormalizer;
 
-    public BasicChangeGenerator(ChangeFilter filter, LabelNormalizer labelNormalizer,
-                                CodePreprocessor preprocessor, ASTNormalizer astNormalizer) {
-        this.filter = filter;
-        this.labelNormalizer = labelNormalizer;
+    public BasicChangeGenerator(CodePreprocessor preprocessor, ASTNormalizer astNormalizer) {
         this.preprocessor = preprocessor;
         this.astNormalizer = astNormalizer;
         matchers = Matchers.getInstance();
@@ -47,8 +42,7 @@ public class BasicChangeGenerator implements ChangeGenerator {
         final ITree treeAfter = getTree(after);
         MappingStore store;
         try {
-            final Matcher matcher =
-                    new CompositeMatchers.CompleteGumtreeMatche(treeBefore, treeAfter, new MappingStore());
+            final Matcher matcher = new CompleteGumtreeMatcher(treeBefore, treeAfter, new MappingStore());
             matcher.match();
             store = matcher.getMappings();
         } catch (Exception e) {
@@ -73,18 +67,13 @@ public class BasicChangeGenerator implements ChangeGenerator {
         try {
             final String code = preprocessor.process(solution.getCode());
             final TreeContext context = generator.generateFromString(code);
-            astNormalizer.normalize(context);
+            astNormalizer.normalize(context, code);
             final ITree tree = context.getRoot();
             cache.put(solution, new SoftReference<>(tree));
             return tree.deepCopy();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    @Override
-    public ChangeFilter getFilter() {
-        return filter;
     }
 
     private CodeChange fromAction(Action action, int originalId, int targetId) {
@@ -101,26 +90,25 @@ public class BasicChangeGenerator implements ChangeGenerator {
 
     private CodeChange fromAction(Insert insert, int originalId, int targetId) {
         final ITree node = insert.getNode();
-        return !filter.accept(insert) ? null :
-                CodeChange.createInsertChange(
-                        originalId,
-                        targetId,
-                        getNodeType(node, 0),
-                        getNodeType(node, 1),
-                        getNodeType(node, 2),
-                        labelNormalizer.normalize(node.getLabel(), insert)
-                );
-    }
-
-    private CodeChange fromAction(Delete delete, int originalId, int targetId) {
-        final ITree node = delete.getNode();
-        return !filter.accept(delete) ? null : CodeChange.createDeleteChange(
+        return CodeChange.createInsertChange(
                 originalId,
                 targetId,
                 getNodeType(node, 0),
                 getNodeType(node, 1),
                 getNodeType(node, 2),
-                labelNormalizer.normalize(node.getLabel(), delete)
+                node.getLabel()
+        );
+    }
+
+    private CodeChange fromAction(Delete delete, int originalId, int targetId) {
+        final ITree node = delete.getNode();
+        return CodeChange.createDeleteChange(
+                originalId,
+                targetId,
+                getNodeType(node, 0),
+                getNodeType(node, 1),
+                getNodeType(node, 2),
+                node.getLabel()
         );
     }
 
@@ -128,7 +116,7 @@ public class BasicChangeGenerator implements ChangeGenerator {
     private CodeChange fromAction(Move move, int originalId, int targetId) {
         final ITree node = move.getNode();
         final ITree parent = move.getParent();
-        return !filter.accept(move) ? null : CodeChange.createMoveChange(
+        return CodeChange.createMoveChange(
                 originalId,
                 targetId,
                 getNodeType(node, 0),
@@ -136,20 +124,20 @@ public class BasicChangeGenerator implements ChangeGenerator {
                 getNodeType(parent, 1),
                 getNodeType(node, 1),
                 getNodeType(node, 2),
-                labelNormalizer.normalize(node.getLabel(), move)
+                node.getLabel()
         );
     }
 
     private CodeChange fromAction(Update update, int originalId, int targetId) {
         final ITree node = update.getNode();
-        return !filter.accept(update) ? null : CodeChange.createUpdateChange(
+        return CodeChange.createUpdateChange(
                 originalId,
                 targetId,
                 getNodeType(node, 0),
                 getNodeType(node, 1),
                 getNodeType(node, 2),
-                labelNormalizer.normalize(update.getValue(), update),
-                labelNormalizer.normalize(node.getLabel(), update)
+                update.getValue(),
+                node.getLabel()
         );
     }
 

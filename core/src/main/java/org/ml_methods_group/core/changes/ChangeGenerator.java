@@ -9,5 +9,4 @@ import java.util.List;
 public interface ChangeGenerator {
     List<CodeChange> getChanges(Solution origin, Solution target);
     ITree getTree(Solution solution);
-    ChangeFilter getFilter();
 }

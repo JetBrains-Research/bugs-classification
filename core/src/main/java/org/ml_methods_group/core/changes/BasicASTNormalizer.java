@@ -5,6 +5,7 @@ import com.github.gumtreediff.tree.TreeContext;
 import org.ml_methods_group.core.entities.NodeType;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.ml_methods_group.core.changes.ASTUtils.getFirstChild;
 import static org.ml_methods_group.core.entities.NodeType.*;
@@ -29,10 +30,6 @@ public class BasicASTNormalizer implements ASTNormalizer {
         }
 
         private void register(String name) {
-            if (typeDeclarations.isEmpty()) {
-                System.err.println(name);
-                System.err.println(code);
-            }
             assert !typeDeclarations.isEmpty();
             layers.peekLast().put(name, typeDeclarations.peekLast());
         }
@@ -91,8 +88,19 @@ public class BasicASTNormalizer implements ASTNormalizer {
 
         @Override
         protected ITree visitQualifiedName(ITree node) {
-            return createNode(NodeType.MY_MEMBER_NAME,
-                    node.getLabel().substring(node.getLabel().lastIndexOf('.') + 1));
+            assert node.getChildren().isEmpty();
+            final String label = node.getLabel();
+            final ITree path = createNode(SIMPLE_NAME, label.substring(0, label.lastIndexOf('.')));
+            final ITree member = createNode(MY_MEMBER_NAME, label.substring(label.lastIndexOf('.') + 1));
+
+            final List<ITree> children = new ArrayList<>(2);
+            children.add(visit(path));
+            children.add(visit(member));
+            children.removeIf(Objects::isNull);
+
+            node.setLabel("");
+            node.setChildren(children);
+            return node;
         }
 
         @Override
@@ -160,21 +168,20 @@ public class BasicASTNormalizer implements ASTNormalizer {
             } else if (text.matches("(?s)(<[^>]+>)?\\s*[а-яА-Яa-zA-Z0-9_]+\\s*\\(.*")) {
                 bound = 0;
             } else {
-                System.err.println(code);
                 throw new RuntimeException("Unexpected situation: " + text);
             }
             final List<ITree> generated = new ArrayList<>(children.size());
             boolean flag = false;
             for (int i = 0; i < children.size(); i++) {
                 final ITree child = children.get(i);
-                if (!flag && i >= bound && child.getType() == NodeType.SIMPLE_NAME.ordinal()) {
+                if (!flag && i >= bound && child.getType() == SIMPLE_NAME.ordinal()) {
                     flag = true;
-                    generated.add(createNode(NodeType.MY_MEMBER_NAME, child.getLabel()));
+                    generated.add(createNode(MY_MEMBER_NAME, child.getLabel()));
                     continue;
                 }
                 final ITree result = visit(child);
                 if (result != null) {
-                    generated.add(child);
+                    generated.add(result);
                 }
             }
             node.setChildren(generated);
@@ -201,10 +208,6 @@ public class BasicASTNormalizer implements ASTNormalizer {
             final ITree name = getFirstChild(node, SIMPLE_NAME);
             final ITree type = getFirstChild(node, SIMPLE_TYPE, PARAMETERIZED_TYPE, PRIMITIVE_TYPE,
                     ARRAY_TYPE, UNION_TYPE);
-            if (type == null) {
-                System.err.println(code);
-                System.err.println(code.substring(node.getPos(), node.getEndPos()));
-            }
             assert name != null;
             assert type != null;
             pushTypeDeclaration(getTypeName(type));

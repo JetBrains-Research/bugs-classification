@@ -5,6 +5,7 @@ import org.ml_methods_group.core.entities.ChangeType;
 import org.ml_methods_group.core.entities.CodeChange;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import static org.ml_methods_group.core.entities.ChangeType.*;
@@ -12,7 +13,7 @@ import static org.ml_methods_group.core.vectorization.BasicEncodingStrategy.Chan
 
 public class BasicEncodingStrategy implements EncodingStrategy {
 
-    private final Map<String, Integer> dictionary = new HashMap<>();
+    private final Map<String, Integer> dictionary = new ConcurrentHashMap<>();
     private final Set<ChangeAttribute> attributes;
     private final Set<ChangeType> types;
     private final int encodingType;
@@ -151,16 +152,16 @@ public class BasicEncodingStrategy implements EncodingStrategy {
                         Collections.singletonList(UPDATE)),
                 new BasicEncodingStrategy(11,
                         Arrays.asList(CHANGE_TYPE, NODE_TYPE, LABEL_TYPE, OLD_LABEL_TYPE),
-                        Collections.singletonList(UPDATE)),
-                new BasicEncodingStrategy(12,
-                        Arrays.asList(CHANGE_TYPE, NODE_TYPE),
-                        Arrays.asList(ChangeType.values())),
-                new BasicEncodingStrategy(13,
-                        Arrays.asList(CHANGE_TYPE, NODE_TYPE, PARENT_TYPE),
-                        Arrays.asList(ChangeType.values())),
-                new BasicEncodingStrategy(14,
-                        Arrays.asList(CHANGE_TYPE, LABEL_TYPE),
-                        Arrays.asList(ChangeType.values()))
+                        Collections.singletonList(UPDATE))//,
+//                new BasicEncodingStrategy(12,
+//                        Arrays.asList(CHANGE_TYPE, NODE_TYPE),
+//                        Arrays.asList(ChangeType.values())),
+//                new BasicEncodingStrategy(13,
+//                        Arrays.asList(CHANGE_TYPE, NODE_TYPE, PARENT_TYPE),
+//                        Arrays.asList(ChangeType.values())),
+//                new BasicEncodingStrategy(14,
+//                        Arrays.asList(CHANGE_TYPE, LABEL_TYPE),
+//                        Arrays.asList(ChangeType.values()))
         );
     }
 }

@@ -89,6 +89,11 @@ public class SQLRepository<T> implements Repository<T> {
     }
 
     @Override
+    public Optional<T> find(Condition... conditions) {
+        return table.find(conditions).map(this::parse);
+    }
+
+    @Override
     public void clear() {
         table.clear();
     }
@@ -154,7 +159,7 @@ public class SQLRepository<T> implements Repository<T> {
 
         @Override
         public T get() {
-            return table.find(Collections.singletonList(SQLConditionSupplier.instance().is("ID", id)))
+            return table.find(SQLConditionSupplier.instance().is("ID", id))
                     .map(SQLRepository.this::parse)
                     .orElseThrow(NoSuchElementException::new);
         }

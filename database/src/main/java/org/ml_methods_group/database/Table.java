@@ -128,11 +128,11 @@ class Table {
         }
     }
 
-    Optional<ResultWrapper> find(List<Condition> conditions) {
-        final String condition = conditions.stream()
+    Optional<ResultWrapper> find(Condition... conditions) {
+        final String condition = Arrays.stream(conditions)
                 .map(Object::toString)
                 .collect(Collectors.joining(" AND ", " ", " "));
-        final String request = selectTemplate + (conditions.isEmpty() ? "" : "WHERE" + condition) + ";";
+        final String request = selectTemplate + (conditions.length == 0 ? "" : " WHERE " + condition) + " LIMIT 1;";
         try (PreparedStatement query = connection.prepareStatement(request);
              ResultSet rs = query.executeQuery()) {
             return rs.next() ? Optional.of(new ResultWrapper(rs)) : Optional.empty();
@@ -188,11 +188,7 @@ class Table {
         private ResultWrapper(ResultSet resultSet) throws SQLException, UnsupportedEncodingException {
             results = new Object[columns.size()];
             for (int i = 0; i < columns.size(); i++) {
-//                if (columns.get(i).getType() != BYTE_ARRAY) {
-                    results[i] = resultSet.getObject(i + 1);
-//                } else {
-//                    results[i] = resultSet.getBytes(i + 1);
-//                }
+                results[i] = resultSet.getObject(i + 1);
             }
         }
 

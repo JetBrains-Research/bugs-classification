@@ -10,8 +10,6 @@ import com.github.gumtreediff.matchers.Matcher;
 import com.github.gumtreediff.matchers.Matchers;
 import com.github.gumtreediff.tree.ITree;
 import com.github.gumtreediff.tree.TreeContext;
-import org.ml_methods_group.core.entities.CodeChange;
-import org.ml_methods_group.core.entities.NodeType;
 import org.ml_methods_group.core.entities.Solution;
 
 import java.io.IOException;
@@ -26,11 +24,9 @@ public class BasicChangeGenerator implements ChangeGenerator {
     private final Matchers matchers;
     private final TreeGenerator generator;
     private final Map<Solution, SoftReference<ITree>> cache = new ConcurrentHashMap<>();
-    private final CodePreprocessor preprocessor;
     private final ASTNormalizer astNormalizer;
 
-    public BasicChangeGenerator(CodePreprocessor preprocessor, ASTNormalizer astNormalizer) {
-        this.preprocessor = preprocessor;
+    public BasicChangeGenerator(ASTNormalizer astNormalizer) {
         this.astNormalizer = astNormalizer;
         matchers = Matchers.getInstance();
         generator = new JdtTreeGenerator();
@@ -65,7 +61,7 @@ public class BasicChangeGenerator implements ChangeGenerator {
             return cached.deepCopy();
         }
         try {
-            final String code = preprocessor.process(solution.getCode());
+            final String code = solution.getCode();
             final TreeContext context = generator.generateFromString(code);
             astNormalizer.normalize(context, code);
             final ITree tree = context.getRoot();

@@ -1,4 +1,4 @@
-package org.ml_methods_group.core.entities;
+package org.ml_methods_group.core.changes;
 
 public enum ChangeType {
     DELETE, INSERT, MOVE, UPDATE;

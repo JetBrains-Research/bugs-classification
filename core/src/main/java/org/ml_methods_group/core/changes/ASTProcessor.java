@@ -2,7 +2,6 @@ package org.ml_methods_group.core.changes;
 
 import com.github.gumtreediff.tree.ITree;
 import com.github.gumtreediff.tree.TreeContext;
-import org.ml_methods_group.core.entities.NodeType;
 
 import java.util.List;
 import java.util.Objects;

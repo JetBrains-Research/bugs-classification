@@ -2,12 +2,11 @@ package org.ml_methods_group.core.changes;
 
 import com.github.gumtreediff.tree.ITree;
 import com.github.gumtreediff.tree.TreeContext;
-import org.ml_methods_group.core.entities.NodeType;
 
 import java.util.*;
 
 import static org.ml_methods_group.core.changes.ASTUtils.getFirstChild;
-import static org.ml_methods_group.core.entities.NodeType.*;
+import static org.ml_methods_group.core.changes.NodeType.*;
 
 
 public class BasicASTNormalizer implements ASTNormalizer {

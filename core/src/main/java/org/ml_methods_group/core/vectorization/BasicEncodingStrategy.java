@@ -1,14 +1,13 @@
 package org.ml_methods_group.core.vectorization;
 
 
-import org.ml_methods_group.core.entities.ChangeType;
-import org.ml_methods_group.core.entities.CodeChange;
+import org.ml_methods_group.core.changes.ChangeType;
+import org.ml_methods_group.core.changes.CodeChange;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
-import static org.ml_methods_group.core.entities.ChangeType.*;
+import static org.ml_methods_group.core.changes.ChangeType.*;
 import static org.ml_methods_group.core.vectorization.BasicEncodingStrategy.ChangeAttribute.*;
 
 public class BasicEncodingStrategy implements EncodingStrategy {

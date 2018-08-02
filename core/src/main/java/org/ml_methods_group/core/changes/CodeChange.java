@@ -1,10 +1,10 @@
-package org.ml_methods_group.core.entities;
+package org.ml_methods_group.core.changes;
 
 import org.ml_methods_group.core.database.annotations.DataClass;
 import org.ml_methods_group.core.database.annotations.DataField;
 
-import static org.ml_methods_group.core.entities.ChangeType.*;
-import static org.ml_methods_group.core.entities.NodeType.NONE;
+import static org.ml_methods_group.core.changes.ChangeType.*;
+import static org.ml_methods_group.core.changes.NodeType.NONE;
 
 @DataClass(defaultStorageName = "changes")
 public class CodeChange {

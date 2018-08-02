@@ -2,7 +2,7 @@ package org.ml_methods_group.core.basic.extractors;
 
 import org.ml_methods_group.core.FeaturesExtractor;
 import org.ml_methods_group.core.changes.ChangeGenerator;
-import org.ml_methods_group.core.entities.CodeChange;
+import org.ml_methods_group.core.changes.CodeChange;
 import org.ml_methods_group.core.entities.Solution;
 
 import java.util.List;

@@ -1,16 +1,14 @@
-package org.ml_methods_group.core.basic;
+package org.ml_methods_group.core.basic.metrics;
 
 import com.github.gumtreediff.tree.ITree;
 import org.ml_methods_group.core.DistanceFunction;
 import org.ml_methods_group.core.changes.ChangeGenerator;
-import org.ml_methods_group.core.entities.NodeType;
+import org.ml_methods_group.core.changes.NodeType;
 import org.ml_methods_group.core.entities.Solution;
 
 import java.lang.ref.SoftReference;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
-import static org.ml_methods_group.core.entities.NodeType.*;
 
 public class HeuristicChangesBasedDistanceFunction implements DistanceFunction<Solution> {
     private final Map<Integer, SoftReference<int[]>> counters = new ConcurrentHashMap<>();

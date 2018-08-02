@@ -1,4 +1,4 @@
-package org.ml_methods_group.core.basic;
+package org.ml_methods_group.core.basic.metrics;
 
 import org.ml_methods_group.core.DistanceFunction;
 import org.ml_methods_group.core.database.ConditionSupplier;

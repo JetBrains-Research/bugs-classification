@@ -14,7 +14,7 @@ public class SQLConditionSupplier implements ConditionSupplier {
         return new SQLCondition(column + " < " + value);
     }
 
-    public SQLCondition less(String column, String value) {
+    public SQLCondition less(String column, Object value) {
         return new SQLCondition(column + " < '" + value + "'");
     }
 
@@ -22,7 +22,7 @@ public class SQLConditionSupplier implements ConditionSupplier {
         return new SQLCondition(column + " > " + value);
     }
 
-    public SQLCondition greater(String column, String value) {
+    public SQLCondition greater(String column, Object value) {
         return new SQLCondition(column + " > '" + value + "'");
     }
 
@@ -30,7 +30,7 @@ public class SQLConditionSupplier implements ConditionSupplier {
         return new SQLCondition(column + " = " + value);
     }
 
-    public SQLCondition is(String column, String value) {
+    public SQLCondition is(String column, Object value) {
         return new SQLCondition(column + " = '" + value + "'");
     }
 

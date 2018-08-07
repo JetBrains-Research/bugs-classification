@@ -101,6 +101,9 @@ public class BasicASTNormalizer implements ASTNormalizer {
         @Override
         protected ITree visitQualifiedName(ITree node) {
             assert node.getChildren().isEmpty();
+            if (node.getParent().getType() == PACKAGE_DECLARATION.ordinal()) {
+                return createNode(SIMPLE_NAME, node.getLabel());
+            }
             final String label = node.getLabel();
             final ITree path = createNode(SIMPLE_NAME, label.substring(0, label.lastIndexOf('.')));
             final ITree member = createNode(MY_MEMBER_NAME, label.substring(label.lastIndexOf('.') + 1));
@@ -154,6 +157,8 @@ public class BasicASTNormalizer implements ASTNormalizer {
 
         @Override
         protected ITree visitSimpleType(ITree node) {
+            final String label = node.getLabel();
+            node.setLabel(label.substring(label.lastIndexOf('.') + 1));
             node.setChildren(Collections.emptyList());
             return node;
         }
@@ -197,6 +202,25 @@ public class BasicASTNormalizer implements ASTNormalizer {
             }
             node.setChildren(generated);
             return node;
+        }
+
+        @Override
+        protected ITree visitImportDeclaration(ITree node) {
+            final List<ITree> children = node.getChildren();
+            assert children.size() == 1;
+            final String name = children.get(0).getLabel();
+            final String path = name.substring(0, name.lastIndexOf('.'));
+            final String type = name.substring(name.lastIndexOf('.') + 1);
+            final List<ITree> generated = new ArrayList<>(2);
+            generated.add(visit(createNode(MY_PATH_NAME, path)));
+            if (type.equals("*")) {
+                generated.add(visit(createNode(MY_ALL_CLASSES, "")));
+            } else {
+                generated.add(visit(createNode(SIMPLE_TYPE, type)));
+            }
+            generated.removeIf(Objects::isNull);
+            node.setChildren(generated);
+            return super.visitImportDeclaration(node);
         }
 
         @Override

@@ -96,7 +96,9 @@ public enum NodeType {
     SUPER_METHOD_REFERENCE,
     TYPE_METHOD_REFERENCE,
     // My own nodes
-    MY_MEMBER_NAME;
+    MY_MEMBER_NAME,
+    MY_PATH_NAME,
+    MY_ALL_CLASSES;
 
     public final String humanReadableName;
 

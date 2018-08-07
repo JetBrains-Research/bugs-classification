@@ -214,6 +214,10 @@ public abstract class ASTProcessor {
 
             case MY_MEMBER_NAME:
                 return visitMyMemberName(node);
+            case MY_ALL_CLASSES:
+                return visitMyAllClasses(node);
+            case MY_PATH_NAME:
+                return visitMyPathName(node);
             default:
                 throw new RuntimeException("Unexpected node type");
         }
@@ -592,6 +596,14 @@ public abstract class ASTProcessor {
     }
 
     protected ITree visitMyMemberName(ITree node) {
+        return defaultVisit(node);
+    }
+
+    protected ITree visitMyPathName(ITree node) {
+        return defaultVisit(node);
+    }
+
+    protected ITree visitMyAllClasses(ITree node) {
         return defaultVisit(node);
     }
 

@@ -3,13 +3,12 @@ package org.ml_methods_group.core.basic.metrics;
 import org.ml_methods_group.core.DistanceFunction;
 import org.ml_methods_group.core.changes.CodeChange;
 
-import java.util.function.BiFunction;
 import java.util.function.Function;
 
 public class ChangeDistanceFunction implements DistanceFunction<CodeChange> {
 
     private double matchInsertChanges(CodeChange first, CodeChange second) {
-        if (first.getLabel().equals("") && second.getLabel().equals("")) {
+        if (first.getLabel().isEmpty() && second.getLabel().isEmpty()) {
             return check(first, second, CodeChange::getParentType, 0.6)
                     + check(first, second, CodeChange::getParentOfParentType, 0.4);
         }
@@ -19,7 +18,7 @@ public class ChangeDistanceFunction implements DistanceFunction<CodeChange> {
     }
 
     private double matchDeleteChanges(CodeChange first, CodeChange second) {
-        if (first.getLabel().equals("") && second.getLabel().equals("")) {
+        if (first.getLabel().isEmpty() && second.getLabel().isEmpty()) {
             return check(first, second, CodeChange::getParentType, 0.6)
                     + check(first, second, CodeChange::getParentOfParentType, 0.4);
         }

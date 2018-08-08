@@ -4,6 +4,7 @@ import com.github.gumtreediff.tree.ITree;
 import com.github.gumtreediff.tree.TreeContext;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.ml_methods_group.core.changes.ASTUtils.getFirstChild;
 import static org.ml_methods_group.core.changes.NodeType.*;
@@ -290,6 +291,21 @@ public class BasicASTNormalizer implements ASTNormalizer {
             final ITree result = checkBlocks(node, 2);
             popLayer();
             return result;
+        }
+
+        @Override
+        protected ITree visitUnionType(ITree node) {
+            final List<ITree> children = node.getChildren()
+                    .stream()
+                    .map(this::visit)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toList());
+            node.setChildren(children);
+            final String label = Arrays.stream(node.getLabel().split("\\|"))
+                    .sorted()
+                    .collect(Collectors.joining("|"));
+            node.setLabel(label);
+            return node;
         }
 
         private static String getTypeName(ITree node) {

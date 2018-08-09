@@ -18,7 +18,7 @@ public class ParallelContext implements AutoCloseable {
 
     @Override
     public void close() {
-        service.shutdown();
+        service.shutdownNow();
     }
 
     public <V, A> A runParallel(List<V> values,

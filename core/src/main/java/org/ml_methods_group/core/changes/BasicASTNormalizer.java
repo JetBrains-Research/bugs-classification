@@ -188,19 +188,28 @@ public class BasicASTNormalizer implements ASTNormalizer {
                 throw new RuntimeException("Unexpected situation: " + text);
             }
             final List<ITree> generated = new ArrayList<>(children.size());
+            final List<ITree> arguments = new ArrayList<>(children.size());
             boolean flag = false;
             for (int i = 0; i < children.size(); i++) {
                 final ITree child = children.get(i);
                 if (!flag && i >= bound && child.getType() == SIMPLE_NAME.ordinal()) {
                     flag = true;
-                    generated.add(createNode(MY_MEMBER_NAME, child.getLabel()));
+                    node.setLabel(child.getLabel());
                     continue;
                 }
                 final ITree result = visit(child);
-                if (result != null) {
+                if (result == null) {
+                    continue;
+                }
+                if (flag) {
+                    arguments.add(result);
+                } else {
                     generated.add(result);
                 }
             }
+            final ITree argumentsNode = createNode(MY_METHOD_INVOCATION_ARGUMENTS, "");
+            argumentsNode.setChildren(arguments);
+            generated.add(argumentsNode);
             node.setChildren(generated);
             return node;
         }

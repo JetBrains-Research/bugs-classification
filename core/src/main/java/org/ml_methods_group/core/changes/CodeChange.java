@@ -3,11 +3,13 @@ package org.ml_methods_group.core.changes;
 import org.ml_methods_group.core.database.annotations.DataClass;
 import org.ml_methods_group.core.database.annotations.DataField;
 
+import java.io.Serializable;
+
 import static org.ml_methods_group.core.changes.ChangeType.*;
 import static org.ml_methods_group.core.changes.NodeType.NONE;
 
 @DataClass(defaultStorageName = "changes")
-public class CodeChange {
+public class CodeChange implements Serializable{
     @DataField
     private final ChangeType changeType;
     @DataField

@@ -218,6 +218,8 @@ public abstract class ASTProcessor {
                 return visitMyAllClasses(node);
             case MY_PATH_NAME:
                 return visitMyPathName(node);
+            case MY_METHOD_INVOCATION_ARGUMENTS:
+                return visitMyMethodInvocationArguments(node);
             default:
                 throw new RuntimeException("Unexpected node type");
         }
@@ -604,6 +606,10 @@ public abstract class ASTProcessor {
     }
 
     protected ITree visitMyAllClasses(ITree node) {
+        return defaultVisit(node);
+    }
+
+    protected ITree visitMyMethodInvocationArguments(ITree node) {
         return defaultVisit(node);
     }
 

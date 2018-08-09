@@ -98,7 +98,8 @@ public enum NodeType {
     // My own nodes
     MY_MEMBER_NAME,
     MY_PATH_NAME,
-    MY_ALL_CLASSES;
+    MY_ALL_CLASSES,
+    MY_METHOD_INVOCATION_ARGUMENTS;
 
     public final String humanReadableName;
 

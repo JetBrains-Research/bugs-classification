@@ -48,7 +48,7 @@ public class CacheDistanceFunction<T> implements DistanceFunction<T> {
     }
 
     @DataClass(defaultStorageName = "distance_cache")
-    private static class CachedDistance {
+    public static class CachedDistance {
         @DataField
         private final int firstId;
         @DataField

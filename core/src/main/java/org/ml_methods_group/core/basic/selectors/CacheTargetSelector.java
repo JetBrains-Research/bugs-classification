@@ -57,7 +57,7 @@ public class CacheTargetSelector<T> implements TargetSelector<T> {
     }
 
     @DataClass(defaultStorageName = "decisions_cache")
-    private static class CachedDecision {
+    public static class CachedDecision {
         @DataField
         private final int valueId;
         @DataField

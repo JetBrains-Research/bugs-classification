@@ -1,7 +1,7 @@
 package org.ml_methods_group.core.entities;
 
 public enum PairGuess {
-    VERY_SIMILAR, SIMILAR, NEUTRAL, DIFFERENT, VERY_DIFFERENT;
+    SIMILAR, NEUTRAL, DIFFERENT;
 
     private static final PairGuess[] buffer = values();
 

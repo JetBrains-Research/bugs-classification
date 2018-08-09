@@ -68,6 +68,7 @@ class Table {
                         break;
                     case BYTE_ARRAY:
                         statement.setBytes(pointer++, data.get(i).toString().getBytes(StandardCharsets.UTF_16));
+                        break;
                 }
             }
             statement.execute();
@@ -127,11 +128,11 @@ class Table {
         }
     }
 
-    Optional<ResultWrapper> find(List<Condition> conditions) {
-        final String condition = conditions.stream()
+    Optional<ResultWrapper> find(Condition... conditions) {
+        final String condition = Arrays.stream(conditions)
                 .map(Object::toString)
                 .collect(Collectors.joining(" AND ", " ", " "));
-        final String request = selectTemplate + (conditions.isEmpty() ? "" : "WHERE" + condition) + ";";
+        final String request = selectTemplate + (conditions.length == 0 ? "" : " WHERE " + condition) + " LIMIT 1;";
         try (PreparedStatement query = connection.prepareStatement(request);
              ResultSet rs = query.executeQuery()) {
             return rs.next() ? Optional.of(new ResultWrapper(rs)) : Optional.empty();
@@ -219,7 +220,12 @@ class Table {
 
         String getStringValue(Column column) {
             final int index = columnIndex(column);
-            return results[index].toString();
+            switch (columns.get(index).getType()) {
+                case BYTE_ARRAY:
+                    return new String((byte[]) results[index], StandardCharsets.UTF_16);
+                default:
+                    return results[index].toString();
+            }
         }
 
         int getIntValue(Column column) {

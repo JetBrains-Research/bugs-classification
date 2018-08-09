@@ -1,31 +1,31 @@
 package org.ml_methods_group.core;
 
-public class Wrapper<F> {
+public class Wrapper<F, M> {
     private final F features;
-    private final int sessionId;
+    private final M meta;
 
-    public Wrapper(F features, int sessionId) {
+    public Wrapper(F features, M meta) {
         this.features = features;
-        this.sessionId = sessionId;
+        this.meta = meta;
     }
 
     public F getFeatures() {
         return features;
     }
 
-    public int getSessionId() {
-        return sessionId;
+    public M getMeta() {
+        return meta;
     }
 
-    public static <T> DistanceFunction<Wrapper<T>> wrap(DistanceFunction<T> metric) {
-        return new DistanceFunction<Wrapper<T>>() {
+    public static <T, M> DistanceFunction<Wrapper<T, M>> wrap(DistanceFunction<T> metric) {
+        return new DistanceFunction<Wrapper<T, M>>() {
             @Override
-            public double distance(Wrapper<T> first, Wrapper<T> second) {
+            public double distance(Wrapper<T, M> first, Wrapper<T, M> second) {
                 return metric.distance(first.getFeatures(), second.getFeatures());
             }
 
             @Override
-            public double distance(Wrapper<T> first, Wrapper<T> second, double upperBound) {
+            public double distance(Wrapper<T, M> first, Wrapper<T, M> second, double upperBound) {
                 return metric.distance(first.getFeatures(), second.getFeatures(), upperBound);
             }
         };
@@ -33,6 +33,6 @@ public class Wrapper<F> {
 
     @Override
     public String toString() {
-        return "Wrapper{session=" + sessionId + "}";
+        return "Wrapper{meta=" + meta + "}";
     }
 }

@@ -3,6 +3,7 @@ package org.ml_methods_group.core.parallel;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.BinaryOperator;
 import java.util.function.Supplier;
@@ -17,7 +18,21 @@ public class ParallelContext implements AutoCloseable {
 
     @Override
     public void close() {
-        service.shutdown();
+        service.shutdownNow();
+    }
+
+    public <V, A> A runParallel(List<V> values,
+                                Supplier<? extends A> accumulatorFactory,
+                                BiConsumer<V, A> processor,
+                                BinaryOperator<A> combiner) {
+        return this.<V, Void, A>runParallel(values,
+                accumulatorFactory,
+                () -> null,
+                (value, context, accumulator) -> {
+                    processor.accept(value, accumulator);
+                    return accumulator;
+                },
+                combiner);
     }
 
     public <V, A> A runParallel(List<V> values,

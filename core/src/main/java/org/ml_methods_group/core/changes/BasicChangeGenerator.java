@@ -4,11 +4,12 @@ import com.github.gumtreediff.actions.ActionGenerator;
 import com.github.gumtreediff.actions.model.*;
 import com.github.gumtreediff.gen.TreeGenerator;
 import com.github.gumtreediff.gen.jdt.JdtTreeGenerator;
+import com.github.gumtreediff.matchers.CompositeMatchers.CompleteGumtreeMatcher;
+import com.github.gumtreediff.matchers.MappingStore;
 import com.github.gumtreediff.matchers.Matcher;
 import com.github.gumtreediff.matchers.Matchers;
 import com.github.gumtreediff.tree.ITree;
-import org.ml_methods_group.core.entities.CodeChange;
-import org.ml_methods_group.core.entities.NodeType;
+import com.github.gumtreediff.tree.TreeContext;
 import org.ml_methods_group.core.entities.Solution;
 
 import java.io.IOException;
@@ -23,14 +24,10 @@ public class BasicChangeGenerator implements ChangeGenerator {
     private final Matchers matchers;
     private final TreeGenerator generator;
     private final Map<Solution, SoftReference<ITree>> cache = new ConcurrentHashMap<>();
-    private final ChangeFilter filter;
-    private final LabelNormalizer normalizer;
-    private final CodePreprocessor preprocessor;
+    private final ASTNormalizer astNormalizer;
 
-    public BasicChangeGenerator(ChangeFilter filter, LabelNormalizer normalizer, CodePreprocessor preprocessor) {
-        this.filter = filter;
-        this.normalizer = normalizer;
-        this.preprocessor = preprocessor;
+    public BasicChangeGenerator(ASTNormalizer astNormalizer) {
+        this.astNormalizer = astNormalizer;
         matchers = Matchers.getInstance();
         generator = new JdtTreeGenerator();
     }
@@ -39,9 +36,17 @@ public class BasicChangeGenerator implements ChangeGenerator {
     public List<CodeChange> getChanges(Solution before, Solution after) {
         final ITree treeBefore = getTree(before);
         final ITree treeAfter = getTree(after);
-        final Matcher matcher = matchers.getMatcher(treeBefore, treeAfter);
-        matcher.match();
-        final ActionGenerator actions = new ActionGenerator(treeBefore, treeAfter, matcher.getMappings());
+        MappingStore store;
+        try {
+            final Matcher matcher = new CompleteGumtreeMatcher(treeBefore, treeAfter, new MappingStore());
+            matcher.match();
+            store = matcher.getMappings();
+        } catch (Exception e) {
+            final Matcher matcher = matchers.getMatcher(treeBefore, treeAfter);
+            matcher.match();
+            store = matcher.getMappings();
+        }
+        final ActionGenerator actions = new ActionGenerator(treeBefore, treeAfter, store);
         return actions.generate().stream()
                 .map(action -> fromAction(action, before.getSolutionId(), after.getSolutionId()))
                 .filter(Objects::nonNull)
@@ -56,18 +61,15 @@ public class BasicChangeGenerator implements ChangeGenerator {
             return cached.deepCopy();
         }
         try {
-            final String code = preprocessor.process(solution.getCode());
-            final ITree tree = generator.generateFromString(code).getRoot();
+            final String code = solution.getCode();
+            final TreeContext context = generator.generateFromString(code);
+            astNormalizer.normalize(context, code);
+            final ITree tree = context.getRoot();
             cache.put(solution, new SoftReference<>(tree));
             return tree.deepCopy();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    @Override
-    public ChangeFilter getFilter() {
-        return filter;
     }
 
     private CodeChange fromAction(Action action, int originalId, int targetId) {
@@ -84,26 +86,25 @@ public class BasicChangeGenerator implements ChangeGenerator {
 
     private CodeChange fromAction(Insert insert, int originalId, int targetId) {
         final ITree node = insert.getNode();
-        return !filter.accept(insert) ? null :
-                CodeChange.createInsertChange(
-                        originalId,
-                        targetId,
-                        getNodeType(node, 0),
-                        getNodeType(node, 1),
-                        getNodeType(node, 2),
-                        normalizer.normalize(node.getLabel(), insert)
-                );
-    }
-
-    private CodeChange fromAction(Delete delete, int originalId, int targetId) {
-        final ITree node = delete.getNode();
-        return !filter.accept(delete) ? null : CodeChange.createDeleteChange(
+        return CodeChange.createInsertChange(
                 originalId,
                 targetId,
                 getNodeType(node, 0),
                 getNodeType(node, 1),
                 getNodeType(node, 2),
-                normalizer.normalize(node.getLabel(), delete)
+                node.getLabel()
+        );
+    }
+
+    private CodeChange fromAction(Delete delete, int originalId, int targetId) {
+        final ITree node = delete.getNode();
+        return CodeChange.createDeleteChange(
+                originalId,
+                targetId,
+                getNodeType(node, 0),
+                getNodeType(node, 1),
+                getNodeType(node, 2),
+                node.getLabel()
         );
     }
 
@@ -111,7 +112,7 @@ public class BasicChangeGenerator implements ChangeGenerator {
     private CodeChange fromAction(Move move, int originalId, int targetId) {
         final ITree node = move.getNode();
         final ITree parent = move.getParent();
-        return !filter.accept(move) ? null : CodeChange.createMoveChange(
+        return CodeChange.createMoveChange(
                 originalId,
                 targetId,
                 getNodeType(node, 0),
@@ -119,20 +120,20 @@ public class BasicChangeGenerator implements ChangeGenerator {
                 getNodeType(parent, 1),
                 getNodeType(node, 1),
                 getNodeType(node, 2),
-                normalizer.normalize(node.getLabel(), move)
+                node.getLabel()
         );
     }
 
     private CodeChange fromAction(Update update, int originalId, int targetId) {
         final ITree node = update.getNode();
-        return !filter.accept(update) ? null : CodeChange.createUpdateChange(
+        return CodeChange.createUpdateChange(
                 originalId,
                 targetId,
                 getNodeType(node, 0),
                 getNodeType(node, 1),
                 getNodeType(node, 2),
-                normalizer.normalize(update.getValue(), update),
-                normalizer.normalize(node.getLabel(), update)
+                update.getValue(),
+                node.getLabel()
         );
     }
 

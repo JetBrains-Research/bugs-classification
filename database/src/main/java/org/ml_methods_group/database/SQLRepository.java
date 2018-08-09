@@ -4,6 +4,7 @@ import org.ml_methods_group.core.database.Condition;
 import org.ml_methods_group.core.database.ConditionSupplier;
 import org.ml_methods_group.core.database.Proxy;
 import org.ml_methods_group.core.database.Repository;
+import org.ml_methods_group.core.database.annotations.BinaryFormat;
 import org.ml_methods_group.core.database.annotations.DataClass;
 import org.ml_methods_group.core.database.annotations.DataField;
 
@@ -17,7 +18,7 @@ public class SQLRepository<T> implements Repository<T> {
     private final Map<Column, Field> fields;
     private final Table table;
 
-    public SQLRepository(String name, Class<T> template, Database database) {
+    SQLRepository(String name, Class<T> template, SQLDatabase database) {
         this.template = template;
         this.columns = new ArrayList<>();
         this.fields = new HashMap<>();
@@ -37,7 +38,7 @@ public class SQLRepository<T> implements Repository<T> {
         table.create();
     }
 
-    public SQLRepository(Class<T> template, Database database) {
+    SQLRepository(Class<T> template, SQLDatabase database) {
         this(template.getAnnotation(DataClass.class).defaultStorageName(), template, database);
     }
 
@@ -88,6 +89,11 @@ public class SQLRepository<T> implements Repository<T> {
     }
 
     @Override
+    public Optional<T> find(Condition... conditions) {
+        return table.find(conditions).map(this::parse);
+    }
+
+    @Override
     public void clear() {
         table.clear();
     }
@@ -123,16 +129,16 @@ public class SQLRepository<T> implements Repository<T> {
     }
 
     private static Column generateColumn(Field field) {
-        final DataType dataType = getDataTypeFor(field.getType());
+        final DataType dataType = getDataTypeFor(field);
         final String columnName = getColumnNameFor(field);
         return new Column(columnName, dataType);
     }
 
-    private static DataType getDataTypeFor(Class<?> template) {
-        if (template.getAnnotation(DataField.class) != null) {
+    private static DataType getDataTypeFor(Field field) {
+        if (field.getAnnotation(BinaryFormat.class) != null) {
             return DataType.BYTE_ARRAY;
         }
-        return DataType.getDefaultTypeFor(template);
+        return DataType.getDefaultTypeFor(field.getType());
     }
 
     private static String getColumnNameFor(Field field) {
@@ -153,7 +159,7 @@ public class SQLRepository<T> implements Repository<T> {
 
         @Override
         public T get() {
-            return table.find(Collections.singletonList(SQLConditionSupplier.instance().is("ID", id)))
+            return table.find(SQLConditionSupplier.instance().is("ID", id))
                     .map(SQLRepository.this::parse)
                     .orElseThrow(NoSuchElementException::new);
         }

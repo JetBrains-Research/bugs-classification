@@ -18,7 +18,7 @@ public class SQLRepository<T> implements Repository<T> {
     private final Map<Column, Field> fields;
     private final Table table;
 
-    public SQLRepository(String name, Class<T> template, Database database) {
+    SQLRepository(String name, Class<T> template, SQLDatabase database) {
         this.template = template;
         this.columns = new ArrayList<>();
         this.fields = new HashMap<>();
@@ -38,7 +38,7 @@ public class SQLRepository<T> implements Repository<T> {
         table.create();
     }
 
-    public SQLRepository(Class<T> template, Database database) {
+    SQLRepository(Class<T> template, SQLDatabase database) {
         this(template.getAnnotation(DataClass.class).defaultStorageName(), template, database);
     }
 

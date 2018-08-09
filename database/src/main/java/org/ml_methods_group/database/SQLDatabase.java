@@ -1,5 +1,7 @@
 package org.ml_methods_group.database;
 
+import org.ml_methods_group.core.database.Database;
+import org.ml_methods_group.core.database.Repository;
 import org.postgresql.Driver;
 
 import java.sql.Connection;
@@ -7,11 +9,11 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.List;
 
-public class Database implements AutoCloseable {
+public class SQLDatabase implements Database {
 
     private final Connection connection;
 
-    public Database() {
+    public SQLDatabase() {
         try {
             DriverManager.registerDriver(new Driver());
             connection = DriverManager
@@ -26,7 +28,21 @@ public class Database implements AutoCloseable {
     }
 
     @Override
-    public void close() throws Exception {
-        connection.close();
+    public void close() {
+        try {
+            connection.close();
+        } catch (SQLException e) {
+            throw new DatabaseException(e);
+        }
+    }
+
+    @Override
+    public <T> Repository<T> getRepository(String name, Class<T> template) {
+        return new SQLRepository<>(name, template, this);
+    }
+
+    @Override
+    public <T> Repository<T> getRepository(Class<T> template) {
+        return new SQLRepository<>(template, this);
     }
 }

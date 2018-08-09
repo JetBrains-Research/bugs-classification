@@ -2,8 +2,10 @@ package org.ml_methods_group.core.basic.selectors;
 
 import org.ml_methods_group.core.TargetSelector;
 import org.ml_methods_group.core.database.ConditionSupplier;
+import org.ml_methods_group.core.database.Database;
 import org.ml_methods_group.core.database.Repository;
-import org.ml_methods_group.core.entities.CachedDecision;
+import org.ml_methods_group.core.database.annotations.DataClass;
+import org.ml_methods_group.core.database.annotations.DataField;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -19,9 +21,10 @@ public class CacheTargetSelector<T> implements TargetSelector<T> {
     private final TargetSelector<T> oracle;
     private final ToIntFunction<T> idExtractor;
 
-    public CacheTargetSelector(Repository<CachedDecision> repository, TargetSelector<T> oracle,
+    public CacheTargetSelector(Database database, String identifier,
+                               TargetSelector<T> oracle,
                                ToIntFunction<T> idExtractor) {
-        this.repository = repository;
+        this.repository = database.getRepository(identifier, CachedDecision.class);
         this.oracle = oracle;
         this.idExtractor = idExtractor;
         this.supplier = repository.conditionSupplier();
@@ -51,5 +54,30 @@ public class CacheTargetSelector<T> implements TargetSelector<T> {
 
     private void storeCached(int id, int targetId) {
         repository.insert(new CachedDecision(id, targetId));
+    }
+
+    @DataClass(defaultStorageName = "decisions_cache")
+    private static class CachedDecision {
+        @DataField
+        private final int valueId;
+        @DataField
+        private final int targetId;
+
+        public CachedDecision() {
+            this(0, 0);
+        }
+
+        public CachedDecision(int valueId, int targetId) {
+            this.valueId = valueId;
+            this.targetId = targetId;
+        }
+
+        public int getValueId() {
+            return valueId;
+        }
+
+        public int getTargetId() {
+            return targetId;
+        }
     }
 }

@@ -1,11 +1,11 @@
 package org.ml_methods_group.core;
 
-import org.ml_methods_group.core.entities.Solution;
+import java.io.Serializable;
 
-import java.io.*;
-import java.util.Map;
+public interface FeaturesExtractor<V, F> extends Serializable {
+    F process(V value);
 
-public interface FeaturesExtractor<F> extends Serializable {
-    F process(Solution value, Solution target);
-    void train(Map<Solution, Solution> dataset);
+    default <R> FeaturesExtractor<V, R> compose(FeaturesExtractor<? super F, R> other) {
+        return x -> other.process(process(x));
+    }
 }

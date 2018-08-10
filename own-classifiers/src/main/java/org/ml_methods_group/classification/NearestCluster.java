@@ -9,17 +9,17 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
-public class NearestCluster<T> implements Classifier<T> {
-    private final Map<Integer, List<T>> clusters = new ConcurrentHashMap<>();
-    private final DistanceFunction<T> metric;
+public class NearestCluster<V, M> implements Classifier<V, M> {
+    private final Map<M, List<V>> clusters = new ConcurrentHashMap<>();
+    private final DistanceFunction<V> metric;
 
-    public NearestCluster(DistanceFunction<T> metric) {
+    public NearestCluster(DistanceFunction<V> metric) {
         this.metric = metric;
     }
 
     @Override
-    public void train(Map<T, Integer> samples) {
-        final Map<Integer, List<T>> buffer = samples.keySet()
+    public void train(Map<V, M> samples) {
+        final Map<M, List<V>> buffer = samples.keySet()
                 .stream()
                 .collect(Collectors.groupingBy(samples::get));
         clusters.clear();
@@ -28,13 +28,27 @@ public class NearestCluster<T> implements Classifier<T> {
     }
 
     @Override
-    public int classify(T value) {
+    public M classify(V value) {
         return clusters.keySet()
                 .stream()
                 .min(Comparator.comparingDouble(i -> clusters.get(i).stream()
                         .mapToDouble(e -> metric.distance(value, e))
                         .average()
                         .orElse(0)))
-                .orElse(-1);
+                .orElse(null);
+    }
+
+    @Override
+    public Map<M, Double> reliability(V value) {
+        return clusters.entrySet()
+                .stream()
+                .collect(Collectors.toMap(Map.Entry::getKey, e -> estimateReliability(value, e.getValue())));
+    }
+
+    private double estimateReliability(V value, List<V> cluster) {
+        return metric.upperBound() - cluster.stream()
+                .mapToDouble(element -> metric.distance(value, element))
+                .average()
+                .orElseGet(metric::upperBound);
     }
 }

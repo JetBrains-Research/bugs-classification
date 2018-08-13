@@ -18,6 +18,10 @@ public class CommonUtils {
         return (Serializable & Predicate<F>) x -> predicate.test(function.apply(x));
     }
 
+    public static <F, S> Predicate<F> checkNot(Function<F, S> function, Predicate<S> predicate) {
+        return (Serializable & Predicate<F>) x -> !predicate.test(function.apply(x));
+    }
+
     public static <V, F> Predicate<V> checkEquals(Function<V, F> first, Function<V, F> second) {
         return (Serializable & Predicate<V>) x -> Objects.equals(first.apply(x), second.apply(x));
     }

@@ -14,11 +14,11 @@ public class Utils {
         for (int i = 0; i < targets.size(); i++) {
             final double distance = metric.distance(value, targets.get(i), bound);
             if (heap.size() < k || distance < bound) {
-                bound = distance;
                 heap.add(new Wrapper<>(distance, i));
                 if (heap.size() > k) {
-                    heap.pollFirst();
+                    heap.pollLast();
                 }
+                bound = heap.last().getFeatures();
             }
         }
         return heap.stream()

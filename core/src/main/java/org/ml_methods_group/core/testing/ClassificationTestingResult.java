@@ -1,54 +1,35 @@
 package org.ml_methods_group.core.testing;
 
-import java.util.Map;
-
-import static org.ml_methods_group.core.CommonUtils.check;
-import static org.ml_methods_group.core.CommonUtils.checkEquals;
-import static org.ml_methods_group.core.CommonUtils.compose;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.BiPredicate;
+import java.util.stream.IntStream;
 
 public class ClassificationTestingResult<V, M> implements TestingResults {
-    private final Map<V, M> tests;
-    private final Map<V, M> predictions;
+    private final List<Double> confidence = new ArrayList<>();
+    private final List<Boolean> isAcceptable = new ArrayList<>();
 
-    ClassificationTestingResult(Map<V, M> tests, Map<V, M> predictions) {
-        this.tests = tests;
-        this.predictions = predictions;
+    void addTestResult(double confidence, boolean isAcceptable) {
+        this.confidence.add(confidence);
+        this.isAcceptable.add(isAcceptable);
     }
 
-    public double getRecall(M mark) {
-        final long total = tests.entrySet()
-                .stream()
-                .map(Map.Entry::getValue)
-                .filter(mark::equals)
+    private long count(BiPredicate<Double, Boolean> predicate) {
+        return IntStream.range(0, confidence.size())
+                .filter(i -> predicate.test(confidence.get(i), isAcceptable.get(i)))
                 .count();
-        final long truePositive = tests.entrySet()
-                .stream()
-                .filter(check(Map.Entry::getValue, mark::equals))
-                .filter(check(compose(Map.Entry::getKey, predictions::get), mark::equals))
-                .count();
-        return (double) truePositive / total;
     }
 
+    public double getCoverage(double threshold) {
+        return (double) count((x, a) -> x >= threshold) / confidence.size();
+    }
 
-    public double getPrecision(M mark) {
-        final long predicted = predictions.entrySet()
-                .stream()
-                .map(Map.Entry::getValue)
-                .filter(mark::equals)
-                .count();
-        final long truePositive = tests.entrySet()
-                .stream()
-                .filter(check(Map.Entry::getValue, mark::equals))
-                .filter(check(compose(Map.Entry::getKey, predictions::get), mark::equals))
-                .count();
-        return (double) truePositive / predicted;
+    public double getPrecision(double threshold) {
+        return (double) count((x, a) -> x >= threshold && a) / count((x, a) -> x >= threshold);
     }
 
     public double getAccuracy() {
-        return (double) tests.entrySet()
-                .stream()
-                .filter(checkEquals(Map.Entry::getValue, compose(Map.Entry::getKey, predictions::get)))
-                .count() / tests.size();
+        return (double) count((x, a) -> a) / confidence.size();
     }
 
     @Override

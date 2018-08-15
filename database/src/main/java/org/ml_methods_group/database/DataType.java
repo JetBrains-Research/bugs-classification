@@ -4,6 +4,7 @@ enum DataType {
     INTEGER("INTEGER", false, int.class, Integer.class),
     DOUBLE("FLOAT", false, double.class, Double.class),
     LONG("BIGINT", false, long.class, Long.class),
+    BOOLEAN("BOOL", false, boolean.class, Boolean.class),
     STRING("TEXT", false, String.class),
     ENUM("TEXT", false),
     SERIAL("SERIAL", true),

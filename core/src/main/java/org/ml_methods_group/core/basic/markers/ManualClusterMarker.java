@@ -17,6 +17,11 @@ public class ManualClusterMarker extends AbstractManualMarker<List<Solution>, St
         this.elementsBound = elementsBound;
     }
 
+    public ManualClusterMarker(int elementsBound) {
+        super(System.in, System.out);
+        this.elementsBound = elementsBound;
+    }
+
     @Override
     protected String valueToString(List<Solution> value) {
         final List<Solution> buffer = new ArrayList<>(value);

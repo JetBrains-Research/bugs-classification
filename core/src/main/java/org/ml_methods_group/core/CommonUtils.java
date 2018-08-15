@@ -46,4 +46,23 @@ public class CommonUtils {
         }
         return result;
     }
+
+    public static <V, F> DistanceFunction<V> metricFor(DistanceFunction<F> metric, Function<V, F> extractor) {
+        return new DistanceFunction<V>() {
+            @Override
+            public double distance(V first, V second) {
+                return metric.distance(extractor.apply(first), extractor.apply(second));
+            }
+
+            @Override
+            public double distance(V first, V second, double upperBound) {
+                return metric.distance(extractor.apply(first), extractor.apply(second), upperBound);
+            }
+
+            @Override
+            public double upperBound() {
+                return metric.upperBound();
+            }
+        };
+    }
 }

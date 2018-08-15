@@ -6,7 +6,6 @@ import org.ml_methods_group.core.FeaturesExtractor;
 import org.ml_methods_group.core.Wrapper;
 
 import java.util.Map;
-import java.util.stream.Collectors;
 
 public class CompositeClassifier<T, F, M> implements Classifier<T, M> {
 
@@ -25,6 +24,20 @@ public class CompositeClassifier<T, F, M> implements Classifier<T, M> {
 
     @Override
     public M classify(T value) {
-        return classifier.classify(new Wrapper<>(extractor.process(value), value));
+        return classifier.classify(createWrapper(value));
+    }
+
+    @Override
+    public Map<M, Double> reliability(T value) {
+        return classifier.reliability(createWrapper(value));
+    }
+
+    @Override
+    public Map.Entry<M, Double> mostProbable(T value) {
+        return classifier.mostProbable(createWrapper(value));
+    }
+
+    private Wrapper<F, T> createWrapper(T value) {
+        return new Wrapper<>(extractor.process(value), value);
     }
 }

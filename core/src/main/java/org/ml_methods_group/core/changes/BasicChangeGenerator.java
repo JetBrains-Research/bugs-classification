@@ -33,7 +33,7 @@ public class BasicChangeGenerator implements ChangeGenerator {
     }
 
     @Override
-    public List<CodeChange> getChanges(Solution before, Solution after) {
+    public Changes getChanges(Solution before, Solution after) {
         final ITree treeBefore = getTree(before);
         final ITree treeAfter = getTree(after);
         MappingStore store;
@@ -47,10 +47,11 @@ public class BasicChangeGenerator implements ChangeGenerator {
             store = matcher.getMappings();
         }
         final ActionGenerator actions = new ActionGenerator(treeBefore, treeAfter, store);
-        return actions.generate().stream()
+        final List<CodeChange> changes = actions.generate().stream()
                 .map(action -> fromAction(action, before.getSolutionId(), after.getSolutionId()))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
+        return new Changes(before, after, changes);
     }
 
     @Override

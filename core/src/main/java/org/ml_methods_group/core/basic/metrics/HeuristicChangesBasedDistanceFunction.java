@@ -20,7 +20,7 @@ public class HeuristicChangesBasedDistanceFunction implements DistanceFunction<S
 
     @Override
     public double distance(Solution first, Solution second) {
-        return generator.getChanges(first, second).size();
+        return generator.getChanges(first, second).getChanges().size();
     }
 
     @Override

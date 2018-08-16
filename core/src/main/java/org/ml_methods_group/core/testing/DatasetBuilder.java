@@ -21,7 +21,7 @@ public class DatasetBuilder {
         this.problemId = problemId;
         correct = loadSolutions(repository, problemId, Verdict.OK);
         incorrect = loadSolutions(repository, problemId, Verdict.FAIL);
-        Collections.shuffle(incorrect, new Random(seed));
+        validate(correct, incorrect, seed);
     }
 
     public int size() {
@@ -45,8 +45,16 @@ public class DatasetBuilder {
         final List<Solution> result = new ArrayList<>();
         repository.get(conditions.is("problemid", problemId), conditions.is("verdict", verdict))
                 .forEachRemaining(result::add);
-        result.sort(Comparator.comparingInt(Solution::getSolutionId));
         return result;
+    }
+
+    private static void validate(List<Solution> correct, List<Solution> incorrect, long seed) {
+        final Set<Integer> sessions = correct.stream()
+                .map(Solution::getSessionId)
+                .collect(Collectors.toSet());
+        incorrect.removeIf(x -> !sessions.contains(x.getSessionId()));
+        incorrect.sort(Comparator.comparingInt(Solution::getSolutionId));
+        Collections.shuffle(incorrect, new Random(seed));
     }
 
     public long getSeed() {

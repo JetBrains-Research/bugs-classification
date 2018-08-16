@@ -7,12 +7,17 @@ import org.ml_methods_group.core.changes.NodeType;
 import org.ml_methods_group.core.entities.Solution;
 
 import java.lang.ref.SoftReference;
+import java.util.Arrays;
+import java.util.BitSet;
+import java.util.EnumMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class HeuristicChangesBasedDistanceFunction implements DistanceFunction<Solution> {
     private final Map<Integer, SoftReference<int[]>> counters = new ConcurrentHashMap<>();
+    private final Map<Integer, Integer> indexes = new ConcurrentHashMap<>();
     private final ChangeGenerator generator;
+    private volatile int indexGenerator = 0;
 
     public HeuristicChangesBasedDistanceFunction(ChangeGenerator generator) {
         this.generator = generator;
@@ -28,27 +33,38 @@ public class HeuristicChangesBasedDistanceFunction implements DistanceFunction<S
         return checkHeuristic(first, second, upperBound) ? upperBound : Math.min(upperBound, distance(first, second));
     }
 
-    private int[] getCounters(Solution solution) {
+    private int[] getCountersFromCache(Solution solution) {
         final SoftReference<int[]> reference = counters.get(solution.getSolutionId());
-        final int[] cached = reference == null ? null : reference.get();
+        return reference == null ? null : reference.get();
+    }
+
+    private int[] getCounters(Solution solution) {
+        int[] cached = getCountersFromCache(solution);
         if (cached != null) {
             return cached;
         }
-        final int[] result = new int[NodeType.values().length];
-        final ITree tree = generator.getTree(solution);
-        tree.getTrees()
-                .stream()
-                .map(ITree::getType)
-                .forEach(type -> result[type]++);
-        counters.put(solution.getSolutionId(), new SoftReference<>(result));
-        return result;
+        synchronized (indexes) {
+            cached = getCountersFromCache(solution);
+            if (cached != null) {
+                return cached;
+            }
+            final int[] result = new int[NodeType.values().length];
+            final ITree tree = generator.getTree(solution);
+            tree.getTrees()
+                    .stream()
+                    .mapToInt(ITree::getType)
+                    .map(type -> indexes.computeIfAbsent(type, x -> indexGenerator++))
+                    .forEach(index -> result[index]++);
+            counters.put(solution.getSolutionId(), new SoftReference<>(result));
+            return result;
+        }
     }
 
     private boolean checkHeuristic(Solution first, Solution second, double limit) {
         final int[] firstCounters = getCounters(first);
         final int[] secondCounters = getCounters(second);
         int total = 0;
-        for (int i = 0; i < firstCounters.length && total < limit; i++) {
+        for (int i = 0; i < indexGenerator && total < limit; i++) {
             total += Math.abs(firstCounters[i] - secondCounters[i]);
         }
         return total >= limit;

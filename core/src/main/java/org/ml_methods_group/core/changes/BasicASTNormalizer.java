@@ -179,13 +179,11 @@ public class BasicASTNormalizer implements ASTNormalizer {
             final String text = code.substring(node.getPos(), node.getEndPos());
             final int bound;
             if (children.get(0).getType() != SIMPLE_NAME.ordinal()) {
-                bound = 1;
-            } else if (text.matches("(?s)[а-яА-Яa-zA-Z0-9_]+\\s*\\.\\s*(<[^>]+>)?\\s*[а-яА-Яa-zA-Z0-9_]+\\s*\\(.*")) {
-                bound = 1;
-            } else if (text.matches("(?s)(<[^>]+>)?\\s*[а-яА-Яa-zA-Z0-9_]+\\s*\\(.*")) {
+                bound = 0;
+            } else if (text.matches("(?s)\\s*[а-яА-Яa-zA-Z0-9_]+\\s*\\(.*")) {
                 bound = 0;
             } else {
-                throw new RuntimeException("Unexpected situation: " + text);
+                bound = 1;
             }
             final List<ITree> generated = new ArrayList<>(children.size());
             final List<ITree> arguments = new ArrayList<>(children.size());
@@ -218,15 +216,20 @@ public class BasicASTNormalizer implements ASTNormalizer {
         protected ITree visitImportDeclaration(ITree node) {
             final List<ITree> children = node.getChildren();
             assert children.size() == 1;
-            final String name = children.get(0).getLabel();
-            final String path = name.substring(0, name.lastIndexOf('.'));
-            final String type = name.substring(name.lastIndexOf('.') + 1);
             final List<ITree> generated = new ArrayList<>(2);
-            generated.add(visit(createNode(MY_PATH_NAME, path)));
-            if (type.equals("*")) {
-                generated.add(visit(createNode(MY_ALL_CLASSES, "")));
+            final String name = children.get(0).getLabel();
+            final int separatorIndex = name.lastIndexOf('.');
+            if (separatorIndex == -1) {
+                generated.add(visit(createNode(SIMPLE_TYPE, name)));
             } else {
-                generated.add(visit(createNode(SIMPLE_TYPE, type)));
+                final String path = name.substring(0, separatorIndex);
+                final String type = name.substring(separatorIndex + 1);
+                generated.add(visit(createNode(MY_PATH_NAME, path)));
+                if (type.equals("*")) {
+                    generated.add(visit(createNode(MY_ALL_CLASSES, "")));
+                } else {
+                    generated.add(visit(createNode(SIMPLE_TYPE, type)));
+                }
             }
             generated.removeIf(Objects::isNull);
             node.setChildren(generated);

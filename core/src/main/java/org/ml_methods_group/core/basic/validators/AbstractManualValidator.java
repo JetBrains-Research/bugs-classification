@@ -24,6 +24,7 @@ public abstract class AbstractManualValidator<V, M> implements Validator<V, M> {
         output.println("Suggested mark:" + markToString(mark));
         while (true) {
             output.println("Is mark acceptable? (+/-)");
+            output.flush();
             switch (input.next()) {
                 case "+":
                     return true;
@@ -31,6 +32,7 @@ public abstract class AbstractManualValidator<V, M> implements Validator<V, M> {
                     return false;
                 default:
                     output.println("Unexpected input!");
+                    output.flush();
             }
         }
     }

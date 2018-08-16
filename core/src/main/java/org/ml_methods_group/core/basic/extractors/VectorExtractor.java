@@ -32,12 +32,10 @@ public class VectorExtractor implements FeaturesExtractor<List<CodeChange>, doub
                                         int lowerBound, Postprocessor postprocessor) {
         try (ParallelContext context = new ParallelContext()) {
             final Map<Long, Integer> buffer =
-                    context.runParallel(
+                    context.runParallelWithConsumer(
                             dataset,
-                            HashMap::new,
-                            (List<CodeChange> changes, Map<Long, Integer> accumulator) -> {
-                                index(changes, strategies, accumulator);
-                            },
+                            ParallelUtils::defaultMapImplementation,
+                            (changes, accumulator) -> index(changes, strategies, accumulator),
                             ParallelUtils::combineCounters);
             final List<Long> acceptable = buffer.entrySet()
                     .stream()

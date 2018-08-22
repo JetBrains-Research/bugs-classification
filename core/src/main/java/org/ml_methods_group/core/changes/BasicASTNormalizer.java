@@ -121,7 +121,7 @@ public class BasicASTNormalizer implements ASTNormalizer {
 
         @Override
         protected ITree visitVariableDeclarationFragment(ITree node) {
-            final List<ITree> children = node.getChildren();
+            final List<ITree> children = node.getChildren();q
             assert 1 <= children.size() && children.size() <= 3;
             assert children.get(0).getType() == SIMPLE_NAME.ordinal();
             if (children.size() > 1 && children.get(1).getType() == DIMENSION.ordinal()) {
@@ -140,8 +140,10 @@ public class BasicASTNormalizer implements ASTNormalizer {
         protected ITree visitVariableDeclarationStatement(ITree node) {
             final ITree type = getFirstChild(node, SIMPLE_TYPE, PARAMETERIZED_TYPE, PRIMITIVE_TYPE, ARRAY_TYPE);
             assert type != null;
-            pushTypeDeclaration(getTypeName(type));
+            final String typeName = getTypeName(type);
+            pushTypeDeclaration(typeName);
             final ITree result = defaultVisit(node);
+            result.setLabel(typeName);
             popTypeDeclaration();
             return result;
         }
@@ -150,8 +152,10 @@ public class BasicASTNormalizer implements ASTNormalizer {
         protected ITree visitVariableDeclarationExpression(ITree node) {
             final ITree type = getFirstChild(node, SIMPLE_TYPE, PARAMETERIZED_TYPE, PRIMITIVE_TYPE, ARRAY_TYPE);
             assert type != null;
-            pushTypeDeclaration(getTypeName(type));
+            final String typeName = getTypeName(type);
+            pushTypeDeclaration(typeName);
             final ITree result = defaultVisit(node);
+            result.setLabel(typeName);
             popTypeDeclaration();
             return result;
         }

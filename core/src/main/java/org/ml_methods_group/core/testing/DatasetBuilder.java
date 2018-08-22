@@ -28,6 +28,14 @@ public class DatasetBuilder {
         return Math.min(correct.size(), incorrect.size());
     }
 
+    public List<Solution> getAllCorrect() {
+        return Collections.unmodifiableList(correct);
+    }
+
+    public List<Solution> getAllIncorrect() {
+        return Collections.unmodifiableList(incorrect);
+    }
+
     public Dataset createDataset(int trainSize, int testSize) {
         final List<Solution> trainIncorrect = incorrect.subList(0, trainSize);
         final List<Solution> testIncorrect = incorrect.subList(trainSize, trainSize + testSize);

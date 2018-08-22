@@ -5,6 +5,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.BiFunction;
+import java.util.function.BiPredicate;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -24,6 +25,11 @@ public class CommonUtils {
 
     public static <V, F> Predicate<V> checkEquals(Function<V, F> first, Function<V, F> second) {
         return (Serializable & Predicate<V>) x -> Objects.equals(first.apply(x), second.apply(x));
+    }
+
+    public static <V, F> BiPredicate<V, V> checkEquals(Function<V, F> mapper, BiPredicate<F, F> checker) {
+        return (Serializable & BiPredicate<V, V>) (x, y) ->
+                x == y || x != null && y != null && checker.test(mapper.apply(x), mapper.apply(y));
     }
 
     public static <K, N, V> Map<N, V> mapKey(Map<K, V> map, Function<K, N> remapping) {

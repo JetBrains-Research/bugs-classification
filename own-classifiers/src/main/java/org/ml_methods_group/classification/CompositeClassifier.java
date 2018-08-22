@@ -1,9 +1,6 @@
 package org.ml_methods_group.classification;
 
-import org.ml_methods_group.core.Classifier;
-import org.ml_methods_group.core.CommonUtils;
-import org.ml_methods_group.core.FeaturesExtractor;
-import org.ml_methods_group.core.Wrapper;
+import org.ml_methods_group.core.*;
 
 import java.util.Map;
 
@@ -18,8 +15,8 @@ public class CompositeClassifier<T, F, M> implements Classifier<T, M> {
     }
 
     @Override
-    public void train(Map<T, M> samples) {
-        classifier.train(CommonUtils.mapKey(samples, Wrapper.wrap(extractor::process)));
+    public void train(Map<Cluster<T>, M> samples) {
+        classifier.train(CommonUtils.mapKey(samples, Cluster.mapper(Wrapper.wrap(extractor::process))));
     }
 
     @Override

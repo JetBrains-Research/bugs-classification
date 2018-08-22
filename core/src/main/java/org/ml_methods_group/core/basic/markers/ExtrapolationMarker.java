@@ -1,5 +1,6 @@
 package org.ml_methods_group.core.basic.markers;
 
+import org.ml_methods_group.core.Cluster;
 import org.ml_methods_group.core.Marker;
 
 import java.util.List;
@@ -8,7 +9,7 @@ import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public class ExtrapolationMarker<V, M> implements Marker<List<V>, M> {
+public class ExtrapolationMarker<V, M> implements Marker<Cluster<V>, M> {
 
     private final Marker<V, M> marker;
     private final int bound;
@@ -19,7 +20,7 @@ public class ExtrapolationMarker<V, M> implements Marker<List<V>, M> {
     }
 
     @Override
-    public M mark(List<V> cluster) {
+    public M mark(Cluster<V> cluster) {
         final List<M> tips = cluster.stream()
                 .map(marker::mark)
                 .filter(Objects::nonNull)

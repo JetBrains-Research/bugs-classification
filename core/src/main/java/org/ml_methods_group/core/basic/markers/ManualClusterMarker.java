@@ -1,5 +1,6 @@
 package org.ml_methods_group.core.basic.markers;
 
+import org.ml_methods_group.core.Cluster;
 import org.ml_methods_group.core.entities.Solution;
 
 import java.io.InputStream;
@@ -8,7 +9,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class ManualClusterMarker extends AbstractManualMarker<List<Solution>, String> {
+public class ManualClusterMarker extends AbstractManualMarker<Cluster<Solution>, String> {
 
     private final int elementsBound;
 
@@ -23,8 +24,8 @@ public class ManualClusterMarker extends AbstractManualMarker<List<Solution>, St
     }
 
     @Override
-    protected String valueToString(List<Solution> value) {
-        final List<Solution> buffer = new ArrayList<>(value);
+    protected String valueToString(Cluster<Solution> value) {
+        final List<Solution> buffer = value.elementsCopy();
         Collections.shuffle(buffer);
         final StringBuilder builder = new StringBuilder();
         builder.append("Cluster: (Size: ").append(buffer.size()).append(")").append(System.lineSeparator());
@@ -39,6 +40,7 @@ public class ManualClusterMarker extends AbstractManualMarker<List<Solution>, St
 
     @Override
     protected String stringToMark(String token) {
-        return token.toLowerCase();
+        token = token.toLowerCase().trim();
+        return "trash".equals(token) ? null : token;
     }
 }

@@ -4,54 +4,67 @@ import com.github.gumtreediff.actions.ActionGenerator;
 import com.github.gumtreediff.actions.model.*;
 import com.github.gumtreediff.gen.TreeGenerator;
 import com.github.gumtreediff.gen.jdt.JdtTreeGenerator;
+import com.github.gumtreediff.matchers.CompositeMatchers.ClassicGumtree;
 import com.github.gumtreediff.matchers.CompositeMatchers.CompleteGumtreeMatcher;
 import com.github.gumtreediff.matchers.MappingStore;
 import com.github.gumtreediff.matchers.Matcher;
-import com.github.gumtreediff.matchers.Matchers;
 import com.github.gumtreediff.tree.ITree;
 import com.github.gumtreediff.tree.TreeContext;
 import org.ml_methods_group.core.entities.Solution;
 
 import java.io.IOException;
 import java.lang.ref.SoftReference;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 public class BasicChangeGenerator implements ChangeGenerator {
-    private final Matchers matchers;
     private final TreeGenerator generator;
     private final Map<Solution, SoftReference<ITree>> cache = new ConcurrentHashMap<>();
+    private final List<BiFunction<ITree, ITree, Matcher>> factories;
     private final ASTNormalizer astNormalizer;
 
-    public BasicChangeGenerator(ASTNormalizer astNormalizer) {
+    public BasicChangeGenerator(ASTNormalizer astNormalizer, List<BiFunction<ITree, ITree, Matcher>> factories) {
         this.astNormalizer = astNormalizer;
-        matchers = Matchers.getInstance();
-        generator = new JdtTreeGenerator();
+        this.factories = factories;
+        this.generator = new JdtTreeGenerator();
+    }
+
+    public BasicChangeGenerator(ASTNormalizer astNormalizer) {
+        this(astNormalizer, Arrays.asList(
+                (x, y) -> new CompleteGumtreeMatcher(x, y, new MappingStore()),
+                (x, y) -> new ClassicGumtree(x, y, new MappingStore())
+        ));
     }
 
     @Override
     public Changes getChanges(Solution before, Solution after) {
-        final ITree treeBefore = getTree(before);
-        final ITree treeAfter = getTree(after);
-        MappingStore store;
-        try {
-            final Matcher matcher = new CompleteGumtreeMatcher(treeBefore, treeAfter, new MappingStore());
-            matcher.match();
-            store = matcher.getMappings();
-        } catch (Exception e) {
-            final Matcher matcher = matchers.getMatcher(treeBefore, treeAfter);
-            matcher.match();
-            store = matcher.getMappings();
-        }
-        final ActionGenerator actions = new ActionGenerator(treeBefore, treeAfter, store);
-        final List<CodeChange> changes = actions.generate().stream()
+        final List<Action> actions = factories.stream()
+                .map(factory -> generate(before, after, factory))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .min(Comparator.comparingInt(List::size))
+                .orElseGet(Collections::emptyList);
+        final List<CodeChange> changes = actions.stream()
                 .map(action -> fromAction(action, before.getSolutionId(), after.getSolutionId()))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
         return new Changes(before, after, changes);
+    }
+
+    private Optional<List<Action>> generate(Solution before, Solution after,
+                                            BiFunction<ITree, ITree, Matcher> factory) {
+        try {
+            final ITree beforeTree = getTree(before);
+            final ITree afterTree = getTree(after);
+            final Matcher matcher = factory.apply(beforeTree, afterTree);
+            matcher.match();
+            final ActionGenerator generator = new ActionGenerator(beforeTree, afterTree, matcher.getMappings());
+            return Optional.of(generator.generate());
+        } catch (Exception e) {
+            return Optional.empty();
+        }
     }
 
     @Override

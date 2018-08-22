@@ -2,16 +2,12 @@ package org.ml_methods_group.core.basic.extractors;
 
 import org.ml_methods_group.core.BiFeaturesExtractor;
 import org.ml_methods_group.core.FeaturesExtractor;
-import org.ml_methods_group.core.basic.selectors.OptionSelector;
+import org.ml_methods_group.core.OptionSelector;
 import org.ml_methods_group.core.changes.ChangeGenerator;
 import org.ml_methods_group.core.changes.Changes;
-import org.ml_methods_group.core.changes.CodeChange;
 import org.ml_methods_group.core.entities.Solution;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.Objects;
 
 public class ChangesExtractor implements FeaturesExtractor<Solution, Changes>,
         BiFeaturesExtractor<Solution, Solution, Changes> {

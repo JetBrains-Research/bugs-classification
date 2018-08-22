@@ -1,5 +1,6 @@
 package org.ml_methods_group.core.basic.selectors;
 
+import org.ml_methods_group.core.OptionSelector;
 import org.ml_methods_group.core.database.ConditionSupplier;
 import org.ml_methods_group.core.database.Database;
 import org.ml_methods_group.core.database.Repository;

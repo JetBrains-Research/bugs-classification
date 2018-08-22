@@ -1,5 +1,7 @@
 package org.ml_methods_group.core.basic.selectors;
 
+import org.ml_methods_group.core.OptionSelector;
+
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;

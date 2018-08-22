@@ -16,8 +16,8 @@ public class BasicClassificationTester<V, M> implements ClassificationTester<V, 
     }
 
     @Override
-    public ClassificationTestingResult<V, M> test(Classifier<V, M> classifier) {
-        final ClassificationTestingResult<V, M> results = new ClassificationTestingResult<>();
+    public ClassificationTestingResult test(Classifier<V, M> classifier) {
+        final ClassificationTestingResult results = new ClassificationTestingResult();
         for (V value : tests) {
             final Entry<M, Double> prediction = classifier.mostProbable(value);
             results.addTestResult(prediction.getValue(), validator.isValid(value, prediction.getKey()));

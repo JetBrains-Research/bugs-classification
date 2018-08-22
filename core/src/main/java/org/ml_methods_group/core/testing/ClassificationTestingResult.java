@@ -2,10 +2,11 @@ package org.ml_methods_group.core.testing;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.function.BiPredicate;
 import java.util.stream.IntStream;
 
-public class ClassificationTestingResult<V, M> implements TestingResults {
+public class ClassificationTestingResult implements TestingResults {
     private final List<Double> confidence = new ArrayList<>();
     private final List<Boolean> isAcceptable = new ArrayList<>();
 

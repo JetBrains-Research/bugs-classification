@@ -1,4 +1,4 @@
-package org.ml_methods_group.core.basic.selectors;
+package org.ml_methods_group.core;
 
 import java.util.*;
 

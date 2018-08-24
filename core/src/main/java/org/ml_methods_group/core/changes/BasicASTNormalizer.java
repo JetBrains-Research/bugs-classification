@@ -2,10 +2,13 @@ package org.ml_methods_group.core.changes;
 
 import com.github.gumtreediff.tree.ITree;
 import com.github.gumtreediff.tree.TreeContext;
+import org.ml_methods_group.core.CommonUtils;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
+import static java.util.stream.IntStream.range;
 import static org.ml_methods_group.core.changes.ASTUtils.getFirstChild;
 import static org.ml_methods_group.core.changes.NodeType.*;
 
@@ -36,9 +39,12 @@ public class BasicASTNormalizer implements ASTNormalizer {
             register(name, typeDeclarations.peekLast());
         }
 
-        private void registerAsArray(String name) {
+        private void registerAsArray(String name, int arity) {
             assert !typeDeclarations.isEmpty();
-            register(name, typeDeclarations.peekLast() + "[]");
+            final String type = IntStream.range(0, arity)
+                    .mapToObj(x -> "[]")
+                    .collect(Collectors.joining("", typeDeclarations.peekLast(), ""));
+            register(name, type);
         }
 
         private void register(String name, String type) {
@@ -122,10 +128,12 @@ public class BasicASTNormalizer implements ASTNormalizer {
         @Override
         protected ITree visitVariableDeclarationFragment(ITree node) {
             final List<ITree> children = node.getChildren();
-            assert 1 <= children.size() && children.size() <= 3;
             assert children.get(0).getType() == SIMPLE_NAME.ordinal();
-            if (children.size() > 1 && children.get(1).getType() == DIMENSION.ordinal()) {
-                registerAsArray(children.get(0).getLabel());
+            final int arity = (int) children.stream()
+                    .filter(CommonUtils.check(ITree::getType, type -> type == NodeType.DIMENSION.ordinal()))
+                    .count();
+            if (arity != 0) {
+                registerAsArray(children.get(0).getLabel(), arity);
             } else {
                 register(children.get(0).getLabel());
             }
@@ -140,7 +148,9 @@ public class BasicASTNormalizer implements ASTNormalizer {
         protected ITree visitVariableDeclarationStatement(ITree node) {
             final ITree type = getFirstChild(node, SIMPLE_TYPE, PARAMETERIZED_TYPE, PRIMITIVE_TYPE, ARRAY_TYPE);
             assert type != null;
-            pushTypeDeclaration(getTypeName(type));
+            final String typeName = getTypeName(type);
+            pushTypeDeclaration(typeName);
+            node.setLabel(typeName);
             final ITree result = defaultVisit(node);
             popTypeDeclaration();
             return result;
@@ -150,8 +160,10 @@ public class BasicASTNormalizer implements ASTNormalizer {
         protected ITree visitVariableDeclarationExpression(ITree node) {
             final ITree type = getFirstChild(node, SIMPLE_TYPE, PARAMETERIZED_TYPE, PRIMITIVE_TYPE, ARRAY_TYPE);
             assert type != null;
-            pushTypeDeclaration(getTypeName(type));
+            final String typeName = getTypeName(type);
+            pushTypeDeclaration(typeName);
             final ITree result = defaultVisit(node);
+            result.setLabel(typeName);
             popTypeDeclaration();
             return result;
         }
@@ -179,13 +191,11 @@ public class BasicASTNormalizer implements ASTNormalizer {
             final String text = code.substring(node.getPos(), node.getEndPos());
             final int bound;
             if (children.get(0).getType() != SIMPLE_NAME.ordinal()) {
-                bound = 1;
-            } else if (text.matches("(?s)[а-яА-Яa-zA-Z0-9_]+\\s*\\.\\s*(<[^>]+>)?\\s*[а-яА-Яa-zA-Z0-9_]+\\s*\\(.*")) {
-                bound = 1;
-            } else if (text.matches("(?s)(<[^>]+>)?\\s*[а-яА-Яa-zA-Z0-9_]+\\s*\\(.*")) {
+                bound = 0;
+            } else if (text.matches("(?s)\\s*[а-яА-Яa-zA-Z0-9_]+\\s*\\(.*")) {
                 bound = 0;
             } else {
-                throw new RuntimeException("Unexpected situation: " + text);
+                bound = 1;
             }
             final List<ITree> generated = new ArrayList<>(children.size());
             final List<ITree> arguments = new ArrayList<>(children.size());
@@ -218,15 +228,20 @@ public class BasicASTNormalizer implements ASTNormalizer {
         protected ITree visitImportDeclaration(ITree node) {
             final List<ITree> children = node.getChildren();
             assert children.size() == 1;
-            final String name = children.get(0).getLabel();
-            final String path = name.substring(0, name.lastIndexOf('.'));
-            final String type = name.substring(name.lastIndexOf('.') + 1);
             final List<ITree> generated = new ArrayList<>(2);
-            generated.add(visit(createNode(MY_PATH_NAME, path)));
-            if (type.equals("*")) {
-                generated.add(visit(createNode(MY_ALL_CLASSES, "")));
+            final String name = children.get(0).getLabel();
+            final int separatorIndex = name.lastIndexOf('.');
+            if (separatorIndex == -1) {
+                generated.add(visit(createNode(SIMPLE_TYPE, name)));
             } else {
-                generated.add(visit(createNode(SIMPLE_TYPE, type)));
+                final String path = name.substring(0, separatorIndex);
+                final String type = name.substring(separatorIndex + 1);
+                generated.add(visit(createNode(MY_PATH_NAME, path)));
+                if (type.equals("*")) {
+                    generated.add(visit(createNode(MY_ALL_CLASSES, "")));
+                } else {
+                    generated.add(visit(createNode(SIMPLE_TYPE, type)));
+                }
             }
             generated.removeIf(Objects::isNull);
             node.setChildren(generated);

@@ -1,5 +1,6 @@
 package org.ml_methods_group.database;
 
+import com.sun.org.apache.xpath.internal.operations.Bool;
 import org.ml_methods_group.core.database.Condition;
 
 import java.io.UnsupportedEncodingException;
@@ -65,6 +66,9 @@ class Table {
                         break;
                     case DOUBLE:
                         statement.setDouble(pointer++, (Double) data.get(i));
+                        break;
+                    case BOOLEAN:
+                        statement.setBoolean(pointer++, (Boolean) data.get(i));
                         break;
                     case BYTE_ARRAY:
                         statement.setBytes(pointer++, data.get(i).toString().getBytes(StandardCharsets.UTF_16));
@@ -244,14 +248,31 @@ class Table {
 
         long getLongValue(Column column) {
             final int index = columnIndex(column);
-            if (columns.get(index).getType() == DOUBLE) {
-                throw new RuntimeException("Cant cast float to int");
-            } else if (columns.get(index).getType() == INTEGER) {
-                return (Integer) results[index];
-            } else if (columns.get(index).getType() == LONG) {
-                return (Long) results[index];
-            } else {
-                return Long.valueOf((String) results[index]);
+            switch (columns.get(index).getType()) {
+                case DOUBLE:
+                    throw new RuntimeException("Cant cast float to int");
+                case INTEGER:
+                    return (Integer) results[index];
+                case LONG:
+                    return (Long) results[index];
+                default:
+                    return Long.valueOf((String) results[index]);
+            }
+        }
+
+        boolean getBooleanValue(Column column) {
+            final int index = columnIndex(column);
+            switch (columns.get(index).getType()) {
+                case BOOLEAN:
+                    return (Boolean) results[index];
+                case INTEGER:
+                    return (Integer) results[index] != 0;
+                case LONG:
+                    return (Long) results[index] != 0L;
+                case STRING:
+                    return Boolean.parseBoolean((String) results[index]);
+                default:
+                    throw new RuntimeException("Cant cast to boolean");
             }
         }
 
@@ -262,6 +283,8 @@ class Table {
                 return getIntValue(column);
             } else if (template.equals(Long.class) || template.equals(long.class)) {
                 return getLongValue(column);
+            } else if (template.equals(Boolean.class) || template.equals(boolean.class)) {
+                return getBooleanValue(column);
             } else if (template.equals(String.class)) {
                 return getStringValue(column);
             } else if (Enum.class.isAssignableFrom(template)) {
@@ -269,6 +292,7 @@ class Table {
             }
             throw new DatabaseException("Unsupported data type requested: " + template.getCanonicalName());
         }
+
     }
 
     private static <T> T parseEnum(String token, Class<T> template) {

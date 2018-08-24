@@ -51,4 +51,11 @@ public class Solution {
     }
 
     public enum Verdict {OK, FAIL, UNKNOWN}
+
+    @Override
+    public String toString() {
+        return "Solution (session id: " + sessionId +
+                ", solution id: " + solutionId +
+                ", verdict: " + verdict + ")";
+    }
 }

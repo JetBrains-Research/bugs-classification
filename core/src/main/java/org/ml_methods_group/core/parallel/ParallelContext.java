@@ -21,7 +21,7 @@ public class ParallelContext implements AutoCloseable {
         service.shutdownNow();
     }
 
-    public <V, A> A runParallel(List<V> values,
+    public <V, A> A runParallelWithConsumer(List<V> values,
                                 Supplier<? extends A> accumulatorFactory,
                                 BiConsumer<V, A> processor,
                                 BinaryOperator<A> combiner) {

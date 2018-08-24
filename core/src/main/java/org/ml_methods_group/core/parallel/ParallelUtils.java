@@ -1,9 +1,20 @@
 package org.ml_methods_group.core.parallel;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public class ParallelUtils {
+
+    public static <V> List<V> defaultListImplementation() {
+        return new ArrayList<>();
+    }
+
+    public static <K, V> Map<K, V> defaultMapImplementation() {
+        return new HashMap<>();
+    }
+
     public static <V> List<V> combineLists(List<V> first, List<V> second) {
         if (first.size() < second.size()) {
             return combineLists(second, first);

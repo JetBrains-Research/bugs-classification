@@ -28,10 +28,10 @@ public class ChangeDistanceFunction implements DistanceFunction<CodeChange> {
     }
 
     private double matchUpdateChanges(CodeChange first, CodeChange second) {
-        return check(first, second, CodeChange::getLabel, 0.45)
-                + check(first, second, CodeChange::getOldLabel, 0.25)
-                + check(first, second, CodeChange::getParentType, 0.2)
-                + check(first, second, CodeChange::getParentOfParentType, 0.1);
+        return check(first, second, CodeChange::getLabel, 0.4)
+                + check(first, second, CodeChange::getOldLabel, 0.2)
+                + check(first, second, CodeChange::getParentType, 0.25)
+                + check(first, second, CodeChange::getParentOfParentType, 0.15);
     }
 
     private double matchMoveChanges(CodeChange first, CodeChange second) {
@@ -39,7 +39,7 @@ public class ChangeDistanceFunction implements DistanceFunction<CodeChange> {
                 + check(first, second, CodeChange::getParentType, 0.25)
                 + check(first, second, CodeChange::getParentOfParentType, 0.1)
                 + check(first, second, CodeChange::getOldParentType, 0.25)
-                + check(first, second, CodeChange::getParentOfParentType, 0.1);
+                + check(first, second, CodeChange::getOldParentOfParentType, 0.1);
     }
 
     private static <T> double check(T first, T second, Function<T, ?> extractor, double penalty) {

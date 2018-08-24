@@ -4,6 +4,7 @@ import com.github.gumtreediff.tree.ITree;
 
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.List;
 
 public class ASTUtils {
     static ITree getFirstChild(ITree parent, NodeType... types) {
@@ -17,5 +18,24 @@ public class ASTUtils {
             }
         }
         return null;
+    }
+
+    public static boolean deepEquals(ITree first, ITree second) {
+        if (first.getHash() != second.getHash()
+                || first.getType() != second.getType()
+                || !first.getLabel().equals(second.getLabel())) {
+            return false;
+        }
+        final List<ITree> firstChildren = first.getChildren();
+        final List<ITree> secondChildren = second.getChildren();
+        if (firstChildren.size() != secondChildren.size()) {
+            return false;
+        }
+        for (int i = 0; i < firstChildren.size(); i++) {
+            if (!deepEquals(firstChildren.get(i), secondChildren.get(i))) {
+                return false;
+            }
+        }
+        return true;
     }
 }

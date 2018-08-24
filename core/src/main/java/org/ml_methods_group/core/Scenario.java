@@ -1,9 +1,8 @@
 package org.ml_methods_group.core;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 public class Scenario<V, M> {
     private final Clusterer<V> clusterer;
@@ -21,19 +20,13 @@ public class Scenario<V, M> {
 
     public void run() {
         final List<Cluster<V>> clusters = clusterer.buildClusters(samples);
-        //todo
-        System.out.println(clusters.size());
-        System.out.println(samples.size());
-        System.out.println(clusters.stream().filter(l -> l.size() >= 5).count());
-        System.out.println(clusters.stream().filter(l -> l.size() >= 5).mapToInt(Cluster::size).sum());
-        System.out.println(clusters.stream().filter(l -> l.size() >= 10).count());
-        System.out.println(clusters.stream().filter(l -> l.size() >= 10).mapToInt(Cluster::size).sum());
-        System.out.println(clusters.stream().filter(l -> l.size() >= 15).count());
-        System.out.println(clusters.stream().filter(l -> l.size() >= 15).mapToInt(Cluster::size).sum());
-        System.out.println(clusters.stream().filter(l -> l.size() >= 20).count());
-        System.out.println(clusters.stream().filter(l -> l.size() >= 20).mapToInt(Cluster::size).sum());
-        final Map<Cluster<V>, M> marks = clusters.stream()
-                .collect(Collectors.toMap(Function.identity(), marker::mark));
+        final Map<Cluster<V>, M> marks = new HashMap<>();
+        for (Cluster<V> cluster : clusters) {
+            final M mark = marker.mark(cluster);
+            if (mark != null) {
+                marks.put(cluster, null);
+            }
+        }
         classifier.train(marks);
     }
 

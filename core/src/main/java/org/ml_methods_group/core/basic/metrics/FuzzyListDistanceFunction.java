@@ -28,21 +28,37 @@ public class FuzzyListDistanceFunction<T> implements DistanceFunction<List<T>> {
         final double intersection = firstGroups.entrySet().stream()
                 .mapToDouble(entry -> match(entry.getValue(), secondGroups.getOrDefault(entry.getKey(), emptyList())))
                 .sum();
-//        System.out.println(intersection + " " + first.size() + " " + second.size());
         return 1 - intersection / Math.max(first.size(), second.size());
     }
 
     private double match(List<T> first, List<T> second) {
-        if (first.isEmpty() || second.isEmpty()) {
+        if (first.size() > second.size()) {
+            return match(second, first);
+        }
+        if (first.isEmpty()) {
             return 0;
+        }
+        if (first.size() == 1) {
+            return bestMatch(first.get(0), second);
         }
         final int[][] weights = new int[first.size()][second.size()];
         for (int i = 0; i < first.size(); i++) {
             for (int j = 0; j < second.size(); j++) {
-                weights[i][j] = toDiscrete(1 - metric.distance(first.get(i), second.get(j)));
+                weights[i][j] = toDiscrete(metric.upperBound() - metric.distance(first.get(i), second.get(j)));
             }
         }
         return toFloat(new AssignmentProblem(weights).solve());
+    }
+
+    private double bestMatch(T element, List<T> list) {
+        double best = Double.POSITIVE_INFINITY;
+        for (T another : list) {
+            final double current = metric.distance(element, another, best);
+            if (current < best) {
+                best = current;
+            }
+        }
+        return toFloat(toDiscrete(metric.upperBound() - best));
     }
     
     private int toDiscrete(double value) {

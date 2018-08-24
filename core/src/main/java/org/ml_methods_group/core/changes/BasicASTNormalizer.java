@@ -2,10 +2,13 @@ package org.ml_methods_group.core.changes;
 
 import com.github.gumtreediff.tree.ITree;
 import com.github.gumtreediff.tree.TreeContext;
+import org.ml_methods_group.core.CommonUtils;
 
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
+import static java.util.stream.IntStream.range;
 import static org.ml_methods_group.core.changes.ASTUtils.getFirstChild;
 import static org.ml_methods_group.core.changes.NodeType.*;
 
@@ -36,9 +39,12 @@ public class BasicASTNormalizer implements ASTNormalizer {
             register(name, typeDeclarations.peekLast());
         }
 
-        private void registerAsArray(String name) {
+        private void registerAsArray(String name, int arity) {
             assert !typeDeclarations.isEmpty();
-            register(name, typeDeclarations.peekLast() + "[]");
+            final String type = IntStream.range(0, arity)
+                    .mapToObj(x -> "[]")
+                    .collect(Collectors.joining("", typeDeclarations.peekLast(), ""));
+            register(name, type);
         }
 
         private void register(String name, String type) {
@@ -121,11 +127,13 @@ public class BasicASTNormalizer implements ASTNormalizer {
 
         @Override
         protected ITree visitVariableDeclarationFragment(ITree node) {
-            final List<ITree> children = node.getChildren();q
-            assert 1 <= children.size() && children.size() <= 3;
+            final List<ITree> children = node.getChildren();
             assert children.get(0).getType() == SIMPLE_NAME.ordinal();
-            if (children.size() > 1 && children.get(1).getType() == DIMENSION.ordinal()) {
-                registerAsArray(children.get(0).getLabel());
+            final int arity = (int) children.stream()
+                    .filter(CommonUtils.check(ITree::getType, type -> type == NodeType.DIMENSION.ordinal()))
+                    .count();
+            if (arity != 0) {
+                registerAsArray(children.get(0).getLabel(), arity);
             } else {
                 register(children.get(0).getLabel());
             }
@@ -142,8 +150,8 @@ public class BasicASTNormalizer implements ASTNormalizer {
             assert type != null;
             final String typeName = getTypeName(type);
             pushTypeDeclaration(typeName);
+            node.setLabel(typeName);
             final ITree result = defaultVisit(node);
-            result.setLabel(typeName);
             popTypeDeclaration();
             return result;
         }

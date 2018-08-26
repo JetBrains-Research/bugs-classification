@@ -2,6 +2,7 @@ package org.ml_methods_group.core.algorithms;
 
 import java.util.Arrays;
 import java.util.function.BiPredicate;
+import java.util.function.IntPredicate;
 
 public abstract class DamerauLevenshteinDistance {
     private final int n;

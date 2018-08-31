@@ -3,8 +3,8 @@ package org.ml_methods_group.core.basic.extractors;
 import org.ml_methods_group.core.BiFeaturesExtractor;
 import org.ml_methods_group.core.FeaturesExtractor;
 import org.ml_methods_group.core.OptionSelector;
-import org.ml_methods_group.core.changes.ChangeGenerator;
-import org.ml_methods_group.core.changes.Changes;
+import org.ml_methods_group.core.changes.generation.ChangeGenerator;
+import org.ml_methods_group.core.changes.generation.Changes;
 import org.ml_methods_group.core.entities.Solution;
 
 import java.util.NoSuchElementException;

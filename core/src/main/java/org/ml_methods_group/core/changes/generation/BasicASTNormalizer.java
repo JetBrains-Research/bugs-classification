@@ -1,14 +1,14 @@
-package org.ml_methods_group.core.changes;
+package org.ml_methods_group.core.changes.generation;
 
 import com.github.gumtreediff.tree.ITree;
 import com.github.gumtreediff.tree.TreeContext;
 import org.ml_methods_group.core.CommonUtils;
+import org.ml_methods_group.core.changes.NodeType;
 
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static java.util.stream.IntStream.range;
 import static org.ml_methods_group.core.changes.ASTUtils.getFirstChild;
 import static org.ml_methods_group.core.changes.NodeType.*;
 
@@ -114,15 +114,9 @@ public class BasicASTNormalizer implements ASTNormalizer {
             final String label = node.getLabel();
             final ITree path = createNode(SIMPLE_NAME, label.substring(0, label.lastIndexOf('.')));
             final ITree member = createNode(MY_MEMBER_NAME, label.substring(label.lastIndexOf('.') + 1));
+            member.setChildren(Collections.singletonList(path));
 
-            final List<ITree> children = new ArrayList<>(2);
-            children.add(visit(path));
-            children.add(visit(member));
-            children.removeIf(Objects::isNull);
-
-            node.setLabel("");
-            node.setChildren(children);
-            return node;
+            return visit(member);
         }
 
         @Override
@@ -179,10 +173,16 @@ public class BasicASTNormalizer implements ASTNormalizer {
         @Override
         protected ITree visitSimpleName(ITree node) {
             final String alias = getVariableAlias(node.getLabel());
-            if (alias != null) {
-                node.setLabel(alias);
+            if (alias == null) {
+                return node;
             }
-            return node;
+            return createNode(NodeType.MY_VARIABLE_NAME, alias);
+        }
+
+        @Override
+        protected ITree visitExpressionStatement(ITree node) {
+            assert node.getChildren().size() == 1;
+            return visit(node.getChild(0));
         }
 
         @Override
@@ -217,7 +217,7 @@ public class BasicASTNormalizer implements ASTNormalizer {
                     generated.add(result);
                 }
             }
-            final ITree argumentsNode = createNode(MY_METHOD_INVOCATION_ARGUMENTS, "");
+            final ITree argumentsNode = createNode(MY_METHOD_INVOCATION_ARGUMENTS, node.getLabel());
             argumentsNode.setChildren(arguments);
             generated.add(argumentsNode);
             node.setChildren(generated);

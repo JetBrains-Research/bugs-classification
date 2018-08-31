@@ -1,5 +1,6 @@
-package org.ml_methods_group.core.changes;
+package org.ml_methods_group.core.changes.generation;
 
+import org.ml_methods_group.core.changes.CodeChange;
 import org.ml_methods_group.core.entities.Solution;
 
 import java.util.List;

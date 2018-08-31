@@ -1,8 +1,11 @@
 package org.ml_methods_group.core.vectorization;
 
+import org.ml_methods_group.core.database.annotations.DataField;
+
 import java.util.Arrays;
 import java.util.List;
 
+@Deprecated
 public class MathUtils {
     public static void standardize(List<double[]> vectors) {
         if (vectors.isEmpty()) {

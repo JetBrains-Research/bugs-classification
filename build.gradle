@@ -23,6 +23,4 @@ dependencies {
     compile project(':database')
     compile project(':own-clusterers')
     compile project(':own-classifiers')
-    compile project(':user-interface')
-    compile project(':nearest-correct')
 }

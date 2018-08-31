@@ -44,6 +44,15 @@ public class CacheMarker<V, M> implements Marker<V, M> {
         return mark;
     }
 
+    public void cacheMark(V value, M mark) {
+        final int valueId = idExtractor.applyAsInt(value);
+        if (loadCached(valueId).isPresent()) {
+            //todo
+            return;
+        }
+        storeCached(valueId, mark);
+    }
+
     private Optional<M> loadCached(int valueId) {
         return repository.find(supplier.is("valueId", valueId))
                 .map(CachedMark::getMark)

@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+@Deprecated
 public class VectorTemplate implements Serializable {
     private final List<EncodingStrategy> strategies;
     private final Map<Long, Integer> codeToIndex = new HashMap<>();

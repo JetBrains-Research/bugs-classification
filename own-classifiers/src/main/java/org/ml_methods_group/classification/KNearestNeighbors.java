@@ -4,10 +4,11 @@ import org.ml_methods_group.core.Classifier;
 import org.ml_methods_group.core.Cluster;
 import org.ml_methods_group.core.DistanceFunction;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class KNearestNeighbors<T, M> implements Classifier<T, M> {
@@ -33,12 +34,12 @@ public class KNearestNeighbors<T, M> implements Classifier<T, M> {
 
     @Override
     public Map<M, Double> reliability(T value) {
-        //todo sum distance
         return Utils.kNearest(value, samples, k, metric)
                 .stream()
-                .collect(Collectors.groupingBy(marks::get, Collectors.counting()))
+                .collect(Collectors.toMap(marks::get, x -> metric.upperBound() - metric.distance(value, x),
+                        Double::sum))
                 .entrySet()
                 .stream()
-                .collect(Collectors.toMap(Entry::getKey, entry -> (double) entry.getValue() / k));
+                .collect(Collectors.toMap(Entry::getKey, entry -> entry.getValue() / k));
     }
 }

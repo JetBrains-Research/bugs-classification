@@ -1,7 +1,8 @@
-package org.ml_methods_group.core.changes;
+package org.ml_methods_group.core.changes.generation;
 
 import com.github.gumtreediff.tree.ITree;
 import com.github.gumtreediff.tree.TreeContext;
+import org.ml_methods_group.core.changes.NodeType;
 
 import java.util.List;
 import java.util.Objects;
@@ -220,6 +221,8 @@ public abstract class ASTProcessor {
                 return visitMyPathName(node);
             case MY_METHOD_INVOCATION_ARGUMENTS:
                 return visitMyMethodInvocationArguments(node);
+            case MY_VARIABLE_NAME:
+                return visitMyVariableName(node);
             default:
                 throw new RuntimeException("Unexpected node type");
         }
@@ -610,6 +613,10 @@ public abstract class ASTProcessor {
     }
 
     protected ITree visitMyMethodInvocationArguments(ITree node) {
+        return defaultVisit(node);
+    }
+
+    protected ITree visitMyVariableName(ITree node) {
         return defaultVisit(node);
     }
 

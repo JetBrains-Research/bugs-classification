@@ -1,8 +1,8 @@
 package org.ml_methods_group.core.algorithms;
 
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.function.BiPredicate;
-import java.util.function.IntPredicate;
 
 public abstract class DamerauLevenshteinDistance {
     private final int n;
@@ -76,6 +76,11 @@ public abstract class DamerauLevenshteinDistance {
         };
     }
 
+
+    public static <V> DamerauLevenshteinDistance problemFor(V[] first, V[] second) {
+        return problemFor(first, second, Objects::equals);
+    }
+
     public static DamerauLevenshteinDistance problemFor(int[] first, int[] second) {
         return new DamerauLevenshteinDistance(first.length, second.length) {
             @Override
@@ -90,6 +95,15 @@ public abstract class DamerauLevenshteinDistance {
             @Override
             protected boolean test(int i, int j) {
                 return first[i] == second[j];
+            }
+        };
+    }
+
+    public static DamerauLevenshteinDistance problemFor(String first, String second) {
+        return new DamerauLevenshteinDistance(first.length(), second.length()) {
+            @Override
+            protected boolean test(int i, int j) {
+                return first.charAt(i) == second.charAt(j);
             }
         };
     }

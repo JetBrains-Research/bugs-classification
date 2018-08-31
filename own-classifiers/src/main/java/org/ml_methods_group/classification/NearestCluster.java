@@ -41,7 +41,7 @@ public class NearestCluster<V, M> implements Classifier<V, M> {
         return clusters.entrySet()
                 .stream()
                 .collect(Collectors.toMap(Entry::getValue, e -> estimateReliability(value, e.getKey()),
-                        Math::min));
+                        Math::max));
     }
 
     private double estimateReliability(V value, Cluster<V> cluster) {

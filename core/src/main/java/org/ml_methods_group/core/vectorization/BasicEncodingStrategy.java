@@ -10,6 +10,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import static org.ml_methods_group.core.changes.ChangeType.*;
 import static org.ml_methods_group.core.vectorization.BasicEncodingStrategy.ChangeAttribute.*;
 
+@Deprecated
 public class BasicEncodingStrategy implements EncodingStrategy {
 
     private final Map<String, Integer> dictionary = new ConcurrentHashMap<>();
@@ -31,19 +32,20 @@ public class BasicEncodingStrategy implements EncodingStrategy {
 
     @Override
     public long encode(CodeChange change) {
-        if (!types.contains(change.getChangeType())) {
-            return 0;
-        }
-        long result = 0;
-        for (ChangeAttribute attribute : attributes) {
-            final int attributeCode = getAttributeCode(change, attribute);
-            final long attributeShiftedCode = encode(attributeCode, attribute.offset, attribute.limit);
-            if ((result & attributeShiftedCode) != 0) {
-                throw new RuntimeException("Unreachable situation");
-            }
-            result |= attributeShiftedCode;
-        }
-        return result;
+//        if (!types.contains(change.getChangeType())) {
+//            return 0;
+//        }
+//        long result = 0;
+//        for (ChangeAttribute attribute : attributes) {
+//            final int attributeCode = getAttributeCode(change, attribute);
+//            final long attributeShiftedCode = encode(attributeCode, attribute.offset, attribute.limit);
+//            if ((result & attributeShiftedCode) != 0) {
+//                throw new RuntimeException("Unreachable situation");
+//            }
+//            result |= attributeShiftedCode;
+//        }
+//        return result;
+        return 0;
     }
 
     private static long encode(int code, int shift, int limit) {
@@ -61,26 +63,26 @@ public class BasicEncodingStrategy implements EncodingStrategy {
         if (!attribute.isApplicable(change.getChangeType())) {
             return 0;
         }
-        switch (attribute) {
-            case CHANGE_TYPE:
-                return change.getChangeType().ordinal();
-            case NODE_TYPE:
-                return 1 + change.getNodeType().ordinal();
-            case PARENT_TYPE:
-                return 1 + change.getParentType().ordinal();
-            case PARENT_OF_PARENT_TYPE:
-                return 1 + change.getParentOfParentType().ordinal();
-            case OLD_PARENT_TYPE:
-                return 1 + change.getOldParentType().ordinal();
-            case OLD_PARENT_OF_PARENT_TYPE:
-                return 1 + change.getOldParentOfParentType().ordinal();
-            case LABEL_TYPE:
-                return 1 + dictionary.computeIfAbsent(change.getLabel(), label -> dictionary.size());
-            case OLD_LABEL_TYPE:
-                return 1 + dictionary.getOrDefault(change.getOldLabel(), 0);
-            case ENCODING_TYPE:
-                return 1 + encodingType;
-        }
+//        switch (attribute) {
+//            case CHANGE_TYPE:
+//                return change.getChangeType().ordinal();
+//            case NODE_TYPE:
+//                return 1 + change.getNodeType().ordinal();
+//            case PARENT_TYPE:
+//                return 1 + change.getParentType().ordinal();
+//            case PARENT_OF_PARENT_TYPE:
+//                return 1 + change.getParentOfParentType().ordinal();
+//            case OLD_PARENT_TYPE:
+//                return 1 + change.getOldParentType().ordinal();
+//            case OLD_PARENT_OF_PARENT_TYPE:
+//                return 1 + change.getOldParentOfParentType().ordinal();
+//            case LABEL_TYPE:
+//                return 1 + dictionary.computeIfAbsent(change.getLabel(), label -> dictionary.size());
+//            case OLD_LABEL_TYPE:
+//                return 1 + dictionary.getOrDefault(change.getOldLabel(), 0);
+//            case ENCODING_TYPE:
+//                return 1 + encodingType;
+//        }
         throw new RuntimeException("Unexpected attribute type");
     }
 

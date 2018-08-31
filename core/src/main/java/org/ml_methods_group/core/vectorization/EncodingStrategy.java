@@ -4,6 +4,7 @@ import org.ml_methods_group.core.changes.CodeChange;
 
 import java.io.Serializable;
 
+@Deprecated
 public interface EncodingStrategy extends Serializable {
     long encode(CodeChange value);
 }

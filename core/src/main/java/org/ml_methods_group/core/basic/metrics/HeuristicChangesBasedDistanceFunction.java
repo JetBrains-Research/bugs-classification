@@ -2,14 +2,11 @@ package org.ml_methods_group.core.basic.metrics;
 
 import com.github.gumtreediff.tree.ITree;
 import org.ml_methods_group.core.DistanceFunction;
-import org.ml_methods_group.core.changes.ChangeGenerator;
+import org.ml_methods_group.core.changes.generation.ChangeGenerator;
 import org.ml_methods_group.core.changes.NodeType;
 import org.ml_methods_group.core.entities.Solution;
 
 import java.lang.ref.SoftReference;
-import java.util.Arrays;
-import java.util.BitSet;
-import java.util.EnumMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 

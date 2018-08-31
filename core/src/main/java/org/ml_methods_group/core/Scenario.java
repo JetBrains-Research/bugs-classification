@@ -24,7 +24,7 @@ public class Scenario<V, M> {
         for (Cluster<V> cluster : clusters) {
             final M mark = marker.mark(cluster);
             if (mark != null) {
-                marks.put(cluster, null);
+                marks.put(cluster, mark);
             }
         }
         classifier.train(marks);

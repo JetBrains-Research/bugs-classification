@@ -1,4 +1,4 @@
-package org.ml_methods_group.core.changes;
+package org.ml_methods_group.core.changes.generation;
 
 import com.github.gumtreediff.actions.ActionGenerator;
 import com.github.gumtreediff.actions.model.*;
@@ -10,6 +10,8 @@ import com.github.gumtreediff.matchers.MappingStore;
 import com.github.gumtreediff.matchers.Matcher;
 import com.github.gumtreediff.tree.ITree;
 import com.github.gumtreediff.tree.TreeContext;
+import org.ml_methods_group.core.changes.*;
+import org.ml_methods_group.core.changes.CodeChange.NodeState;
 import org.ml_methods_group.core.entities.Solution;
 
 import java.io.IOException;
@@ -47,7 +49,7 @@ public class BasicChangeGenerator implements ChangeGenerator {
                 .min(Comparator.comparingInt(List::size))
                 .orElseGet(Collections::emptyList);
         final List<CodeChange> changes = actions.stream()
-                .map(action -> fromAction(action, before.getSolutionId(), after.getSolutionId()))
+                .map(action -> fromAction(action))
                 .filter(Objects::nonNull)
                 .collect(Collectors.toList());
         return new Changes(before, after, changes);
@@ -86,78 +88,95 @@ public class BasicChangeGenerator implements ChangeGenerator {
         }
     }
 
-    private CodeChange fromAction(Action action, int originalId, int targetId) {
+    private CodeChange fromAction(Action action) {
         if (action.getClass() == Insert.class) {
-            return fromAction((Insert) action, originalId, targetId);
+            return fromAction((Insert) action);
         } else if (action.getClass() == Delete.class) {
-            return fromAction((Delete) action, originalId, targetId);
+            return fromAction((Delete) action);
         } else if (action.getClass() == Move.class) {
-            return fromAction((Move) action, originalId, targetId);
+            return fromAction((Move) action);
         } else {
-            return fromAction((Update) action, originalId, targetId);
+            return fromAction((Update) action);
         }
     }
 
-    private CodeChange fromAction(Insert insert, int originalId, int targetId) {
+    private InsertChange fromAction(Insert insert) {
         final ITree node = insert.getNode();
-        return CodeChange.createInsertChange(
-                originalId,
-                targetId,
-                getNodeType(node, 0),
-                getNodeType(node, 1),
-                getNodeType(node, 2),
-                node.getLabel()
+        return new InsertChange(
+                getNodeState(node, 0),
+                getNodeState(node, 1),
+                getNodeState(node, 2),
+                getChildrenStates(node),
+                getChildrenStates(node.getParent())
         );
     }
 
-    private CodeChange fromAction(Delete delete, int originalId, int targetId) {
+    private DeleteChange fromAction(Delete delete) {
         final ITree node = delete.getNode();
-        return CodeChange.createDeleteChange(
-                originalId,
-                targetId,
-                getNodeType(node, 0),
-                getNodeType(node, 1),
-                getNodeType(node, 2),
-                node.getLabel()
+        return new DeleteChange(
+                getNodeState(node, 0),
+                getNodeState(node, 1),
+                getNodeState(node, 2),
+                getChildrenStates(node),
+                getChildrenStates(node.getParent())
         );
     }
 
 
-    private CodeChange fromAction(Move move, int originalId, int targetId) {
+    private MoveChange fromAction(Move move) {
         final ITree node = move.getNode();
         final ITree parent = move.getParent();
-        return CodeChange.createMoveChange(
-                originalId,
-                targetId,
-                getNodeType(node, 0),
-                getNodeType(parent, 0),
-                getNodeType(parent, 1),
-                getNodeType(node, 1),
-                getNodeType(node, 2),
-                node.getLabel()
+        return new MoveChange(
+                getNodeState(node, 0),
+                getNodeState(parent, 0),
+                getNodeState(node, 1),
+                getNodeState(parent, 1),
+                getNodeState(node, 2),
+                getChildrenStates(node),
+                getChildrenStates(parent),
+                getChildrenStates(node.getParent())
         );
     }
 
-    private CodeChange fromAction(Update update, int originalId, int targetId) {
+    private UpdateChange fromAction(Update update) {
         final ITree node = update.getNode();
-        return CodeChange.createUpdateChange(
-                originalId,
-                targetId,
-                getNodeType(node, 0),
-                getNodeType(node, 1),
-                getNodeType(node, 2),
-                update.getValue(),
-                node.getLabel()
+        return new UpdateChange(
+                new NodeState(NodeType.valueOf(node.getType()), update.getValue()),
+                getNodeState(node, 0).getLabel(),
+                getNodeState(node, 1),
+                getNodeState(node, 2),
+                getChildrenStates(node),
+                getChildrenStates(node.getParent())
         );
     }
 
-    private static NodeType getNodeType(ITree node, int steps) {
+    private static NodeState getNodeState(ITree node, int steps) {
         if (node == null) {
-            return NodeType.NONE;
+            return CodeChange.NONE_STATE;
         }
         if (steps == 0) {
-            return node.getType() < 0 ? NodeType.NONE : NodeType.valueOf(node.getType());
+            final NodeType type = node.getType() < 0 ? NodeType.NONE : NodeType.valueOf(node.getType());
+            final String label = node.getLabel().isEmpty() ? CodeChange.NO_LABEL : node.getLabel();
+            return new NodeState(type, label);
         }
-        return getNodeType(node.getParent(), steps - 1);
+        return getNodeState(node.getParent(), steps - 1);
+    }
+
+    private static NodeState[] getChildrenStates(ITree node) {
+        if (node == null || node.getType() == NodeType.BLOCK.ordinal()) {
+            return CodeChange.EMPTY_STATE_ARRAY;
+        }
+        final List<ITree> list = node.getChildren();
+        if (list.isEmpty()) {
+            return CodeChange.EMPTY_STATE_ARRAY;
+        }
+        final NodeState[] result = new NodeState[list.size()];
+        for (int i = 0; i < result.length; i++) {
+            final ITree child = list.get(i);
+            final NodeType type = child.getType() < 0 ? NodeType.NONE : NodeType.valueOf(child.getType());
+            final String label = child.getLabel().isEmpty() ? CodeChange.NO_LABEL : child.getLabel();
+            result[i] = new NodeState(type, label);
+        }
+        return result;
     }
 }

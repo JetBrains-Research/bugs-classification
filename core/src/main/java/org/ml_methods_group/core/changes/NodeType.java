@@ -97,6 +97,7 @@ public enum NodeType {
     TYPE_METHOD_REFERENCE,
     // My own nodes
     MY_MEMBER_NAME,
+    MY_VARIABLE_NAME,
     MY_PATH_NAME,
     MY_ALL_CLASSES,
     MY_METHOD_INVOCATION_ARGUMENTS;

@@ -7,7 +7,7 @@ import java.util.BitSet;
 import java.util.List;
 
 public class ASTUtils {
-    static ITree getFirstChild(ITree parent, NodeType... types) {
+    public static ITree getFirstChild(ITree parent, NodeType... types) {
         BitSet acceptable = new BitSet();
         Arrays.stream(types)
                 .mapToInt(NodeType::ordinal)

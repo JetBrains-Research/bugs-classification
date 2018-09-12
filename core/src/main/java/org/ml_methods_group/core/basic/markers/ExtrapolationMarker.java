@@ -32,17 +32,6 @@ public class ExtrapolationMarker<V, M> implements Marker<Cluster<V>, M> {
                 .filter(entry -> entry.getValue() >= bound)
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toList());
-
-        // todo remove
-        System.out.println();
-        System.out.println("Next Cluster");
-        System.out.println(cluster.size() + " " + tips);
-        List<V> l = cluster.elementsCopy();
-        Collections.shuffle(l);
-        l = l.subList(0, 5);
-        l.forEach(x -> System.out.println(((Solution) x).getCode()));
-
-//        return null;
         return tips.size() == 1 ? tips.get(0) : onFail(cluster);
     }
 

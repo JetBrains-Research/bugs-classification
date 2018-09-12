@@ -4,8 +4,10 @@ import org.ml_methods_group.core.database.annotations.BinaryFormat;
 import org.ml_methods_group.core.database.annotations.DataClass;
 import org.ml_methods_group.core.database.annotations.DataField;
 
+import java.io.Serializable;
+
 @DataClass(defaultStorageName = "solutions")
-public class Solution {
+public class Solution implements Serializable {
     @BinaryFormat
     @DataField
     private final String code;

@@ -8,7 +8,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public class Cluster<V> implements Iterable<V> {
+public class Cluster<V> implements Iterable<V>, Serializable {
     private final List<V> elements;
 
     public Cluster(List<V> elements) {

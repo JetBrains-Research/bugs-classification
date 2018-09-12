@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
-public class Utils {
+class Utils {
     static <V> List<V> kNearest(V value, List<V> targets, int k, DistanceFunction<V> metric) {
         double bound = Double.POSITIVE_INFINITY;
         final TreeSet<Wrapper<Double, Integer>> heap = new TreeSet<>(Wrapper::compare);

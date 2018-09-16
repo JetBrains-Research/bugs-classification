@@ -2,6 +2,7 @@ package org.ml_methods_group.clusterization;
 
 import org.ml_methods_group.core.Cluster;
 import org.ml_methods_group.core.Clusterer;
+import org.ml_methods_group.core.Clusters;
 import org.ml_methods_group.core.DistanceFunction;
 import org.ml_methods_group.core.parallel.ParallelContext;
 import org.ml_methods_group.core.parallel.ParallelUtils;
@@ -59,7 +60,7 @@ public class HAC<T> implements Clusterer<T> {
     }
 
     @Override
-    public List<Cluster<T>> buildClusters(List<T> values) {
+    public Clusters<T> buildClusters(List<T> values) {
         init(values);
         while (!heap.isEmpty() && communities.size() > minClustersCount) {
             final Triple minTriple = heap.first();
@@ -68,10 +69,11 @@ public class HAC<T> implements Clusterer<T> {
             final Community second = minTriple.second;
             mergeCommunities(first, second);
         }
-        return communities.stream()
+        final List<Cluster<T>> clusters = communities.stream()
                 .map(c -> c.entities)
                 .map(Cluster::new)
                 .collect(Collectors.toList());
+        return new Clusters<>(clusters);
     }
 
     private void mergeCommunities(Community first, Community second) {

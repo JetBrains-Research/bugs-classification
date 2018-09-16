@@ -3,6 +3,7 @@ package org.ml_methods_group.classification;
 import org.ml_methods_group.core.Classifier;
 import org.ml_methods_group.core.Cluster;
 import org.ml_methods_group.core.DistanceFunction;
+import org.ml_methods_group.core.MarkedClusters;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -24,12 +25,12 @@ public class NearestCluster<V, M> implements Classifier<V, M> {
     }
 
     @Override
-    public void train(Map<Cluster<V>, M> samples) {
+    public void train(MarkedClusters<V, M> samples) {
         clusters.clear();
         if (!mergeClusters) {
-            clusters.putAll(samples);
+            clusters.putAll(samples.getMarks());
         } else {
-            samples.entrySet().stream()
+            samples.getMarks().entrySet().stream()
                     .collect(Collectors.toMap(Entry::getValue, Entry::getKey, Cluster::merge))
                     .forEach((key, value) -> clusters.put(value, key));
         }

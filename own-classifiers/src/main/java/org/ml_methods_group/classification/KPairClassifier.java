@@ -32,8 +32,8 @@ public class KPairClassifier<V, F, M> implements Classifier<V, M> {
     }
 
     @Override
-    public void train(Map<Cluster<V>, M> samples) {
-        classifier.train(CommonUtils.mapKey(samples, Cluster.mapper(trainExtractor::process)));
+    public void train(MarkedClusters<V, M> samples) {
+        classifier.train(samples.map(trainExtractor::process));
     }
 
     @Override

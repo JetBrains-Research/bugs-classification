@@ -1,9 +1,6 @@
 package org.ml_methods_group.clusterization;
 
-import org.ml_methods_group.core.Cluster;
-import org.ml_methods_group.core.Clusterer;
-import org.ml_methods_group.core.FeaturesExtractor;
-import org.ml_methods_group.core.Wrapper;
+import org.ml_methods_group.core.*;
 import org.ml_methods_group.core.parallel.ParallelContext;
 import org.ml_methods_group.core.parallel.ParallelUtils;
 
@@ -22,7 +19,7 @@ public class CompositeClusterer<V, F> implements Clusterer<V> {
     }
 
     @Override
-    public List<Cluster<V>> buildClusters(List<V> values) {
+    public Clusters<V> buildClusters(List<V> values) {
         final Function<V, Wrapper<F, V>> processor = Wrapper.wrap(featuresExtractor::process);
         final List<Wrapper<F, V>> wrappers;
         try (ParallelContext context = new ParallelContext()) {
@@ -33,11 +30,6 @@ public class CompositeClusterer<V, F> implements Clusterer<V> {
                     ParallelUtils::combineLists);
         }
         return clusterer.buildClusters(wrappers)
-                .stream()
-                .map(cluster -> cluster.stream()
-                        .map(Wrapper::getMeta)
-                        .collect(Collectors.toList()))
-                .map(Cluster::new)
-                .collect(Collectors.toList());
+                .map(Wrapper::getMeta);
     }
 }

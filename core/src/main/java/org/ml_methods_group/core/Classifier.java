@@ -6,7 +6,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 
 public interface Classifier<T, M> extends Serializable {
-    void train(Map<Cluster<T>, M> samples);
+    void train(MarkedClusters<T, M> samples);
 
     default M classify(T value) {
         return reliability(value)

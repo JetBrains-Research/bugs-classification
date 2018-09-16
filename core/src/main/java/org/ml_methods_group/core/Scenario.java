@@ -19,15 +19,15 @@ public class Scenario<V, M> {
     }
 
     public void run() {
-        final List<Cluster<V>> clusters = clusterer.buildClusters(samples);
+        final Clusters<V> clusters = clusterer.buildClusters(samples);
         final Map<Cluster<V>, M> marks = new HashMap<>();
-        for (Cluster<V> cluster : clusters) {
+        for (Cluster<V> cluster : clusters.getClusters()) {
             final M mark = marker.mark(cluster);
             if (mark != null) {
                 marks.put(cluster, mark);
             }
         }
-        classifier.train(marks);
+        classifier.train(new MarkedClusters<>(marks));
     }
 
     public Classifier<V, M> getClassifier() {

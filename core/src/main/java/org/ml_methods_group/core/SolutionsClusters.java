@@ -11,6 +11,10 @@ public class SolutionsClusters extends Clusters<Solution> {
         super(clusters);
     }
 
+    public SolutionsClusters(Clusters<Solution> clusters) {
+        super(clusters.getClusters());
+    }
+
     public static SolutionsClusters load(Path path) throws IOException {
         try (FileInputStream fis = new FileInputStream(path.toFile());
              ObjectInputStream ois = new ObjectInputStream(fis)) {

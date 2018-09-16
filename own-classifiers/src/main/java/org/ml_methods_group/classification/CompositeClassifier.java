@@ -15,8 +15,8 @@ public class CompositeClassifier<T, F, M> implements Classifier<T, M> {
     }
 
     @Override
-    public void train(Map<Cluster<T>, M> samples) {
-        classifier.train(CommonUtils.mapKey(samples, Cluster.mapper(Wrapper.wrap(extractor::process))));
+    public void train(MarkedClusters<T, M> samples) {
+        classifier.train(samples.map(this::createWrapper));
     }
 
     @Override

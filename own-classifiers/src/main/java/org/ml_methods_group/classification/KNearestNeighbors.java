@@ -3,6 +3,7 @@ package org.ml_methods_group.classification;
 import org.ml_methods_group.core.Classifier;
 import org.ml_methods_group.core.Cluster;
 import org.ml_methods_group.core.DistanceFunction;
+import org.ml_methods_group.core.MarkedClusters;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -23,11 +24,9 @@ public class KNearestNeighbors<T, M> implements Classifier<T, M> {
     }
 
     @Override
-    public void train(Map<Cluster<T>, M> train) {
+    public void train(MarkedClusters<T, M> train) {
         marks.clear();
-        for (Entry<Cluster<T>, M> entry : train.entrySet()) {
-            entry.getKey().forEach(x -> marks.put(x, entry.getValue()));
-        }
+        marks.putAll(train.getFlatMarks());
         samples.clear();
         samples.addAll(marks.keySet());
     }

@@ -9,6 +9,12 @@ repositories {
     mavenCentral()
 }
 
+jar {
+    from {configurations.compile.collect { it.isDirectory() ? it : zipTree(it)} }
+    exclude 'META-INF/*.RSA', 'META-INF/*.SF','META-INF/*.DSA'
+    manifest { attributes 'Main-Class': 'org.ml_methods_group.Application' }
+
+}
 
 dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
@@ -19,10 +25,11 @@ dependencies {
     compile group: 'org.encog', name: 'encog-core', version: '3.4'
     // https://mvnrepository.com/artifact/com.mkobos/pca_transform
     compile group: 'com.mkobos', name: 'pca_transform', version: '1.0'
-    compile project(':core')
+    compile project(':common')
+    compile project(':marking')
+    compile project(':parsing')
     compile project(':database')
-    compile project(':own-clusterers')
-    compile project(':own-classifiers')
-    compile project(':user-interface')
-    compile project(':nearest-correct')
+    compile project(':clustering')
+    compile project(':classification')
+    compile project(':testing')
 }

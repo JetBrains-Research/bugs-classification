@@ -191,7 +191,7 @@ public class BasicASTNormalizer implements ASTNormalizer {
             final int bound;
             if (children.get(0).getType() != NodeType.SIMPLE_NAME.ordinal()) {
                 bound = 0;
-            } else if (text.matches("(?s)\\s*[а-яА-Яa-zA-Z0-9_]+\\s*\\(.*")) {
+            } else if (text.matches("(?s)\\s*[a-zA-Z0-9_]+\\s*\\(.*")) {
                 bound = 0;
             } else {
                 bound = 1;

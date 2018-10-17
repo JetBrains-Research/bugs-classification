@@ -53,7 +53,7 @@ class Table {
                         statement.setString(pointer++, data.get(i).toString());
                         break;
                     case STRING:
-                        statement.setString(pointer++, data.get(i).toString());
+                        statement.setBytes(pointer++, data.get(i).toString().getBytes(StandardCharsets.UTF_16));
                         break;
                     case INTEGER:
                         statement.setInt(pointer++, (Integer) data.get(i));
@@ -66,9 +66,6 @@ class Table {
                         break;
                     case BOOLEAN:
                         statement.setBoolean(pointer++, (Boolean) data.get(i));
-                        break;
-                    case BYTE_ARRAY:
-                        statement.setBytes(pointer++, data.get(i).toString().getBytes(StandardCharsets.UTF_16));
                         break;
                 }
             }
@@ -222,7 +219,7 @@ class Table {
         String getStringValue(Column column) {
             final int index = columnIndex(column);
             switch (columns.get(index).getType()) {
-                case BYTE_ARRAY:
+                case STRING:
                     return new String((byte[]) results[index], StandardCharsets.UTF_16);
                 default:
                     return results[index].toString();
@@ -266,8 +263,6 @@ class Table {
                     return (Integer) results[index] != 0;
                 case LONG:
                     return (Long) results[index] != 0L;
-                case STRING:
-                    return Boolean.parseBoolean((String) results[index]);
                 default:
                     throw new RuntimeException("Cant cast to boolean");
             }

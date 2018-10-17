@@ -1,6 +1,7 @@
 package org.ml_methods_group.common.metrics.selectors;
 
-import org.ml_methods_group.core.OptionSelector;
+
+import org.ml_methods_group.common.OptionSelector;
 
 import java.util.Collection;
 import java.util.List;

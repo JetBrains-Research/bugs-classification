@@ -1,4 +1,4 @@
-package org.ml_methods_group.testing.metrics;
+package org.ml_methods_group.common.metrics.functions;
 
 import com.github.gumtreediff.tree.ITree;
 import org.ml_methods_group.common.DistanceFunction;

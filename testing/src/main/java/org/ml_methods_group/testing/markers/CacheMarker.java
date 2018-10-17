@@ -1,11 +1,9 @@
 package org.ml_methods_group.testing.markers;
 
-import org.ml_methods_group.markers.Marker;
+import org.ml_methods_group.marking.markers.Marker;
 import org.ml_methods_group.testing.database.ConditionSupplier;
 import org.ml_methods_group.testing.database.Database;
 import org.ml_methods_group.testing.database.Repository;
-import org.ml_methods_group.testing.database.annotations.DataClass;
-import org.ml_methods_group.testing.database.annotations.DataField;
 
 import java.util.Optional;
 import java.util.function.Function;
@@ -63,11 +61,8 @@ public class CacheMarker<V, M> implements Marker<V, M> {
         repository.insert(new CachedMark(id, printer.apply(mark)));
     }
 
-    @DataClass(defaultStorageName = "marks_cache")
     public static class CachedMark {
-        @DataField
         private final int valueId;
-        @DataField
         private final String mark;
 
         private CachedMark(int valueId, String mark) {

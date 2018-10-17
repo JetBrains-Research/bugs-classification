@@ -1,6 +1,6 @@
 package org.ml_methods_group.common.metrics.functions;
 
-import org.ml_methods_group.core.DistanceFunction;
+import org.ml_methods_group.common.DistanceFunction;
 
 import java.util.List;
 import java.util.Map;

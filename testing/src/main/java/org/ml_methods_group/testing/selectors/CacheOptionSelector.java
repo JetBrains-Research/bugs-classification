@@ -4,8 +4,6 @@ import org.ml_methods_group.common.OptionSelector;
 import org.ml_methods_group.testing.database.ConditionSupplier;
 import org.ml_methods_group.testing.database.Database;
 import org.ml_methods_group.testing.database.Repository;
-import org.ml_methods_group.testing.database.annotations.DataClass;
-import org.ml_methods_group.testing.database.annotations.DataField;
 
 import java.util.*;
 import java.util.function.Function;
@@ -70,13 +68,9 @@ public class CacheOptionSelector<V, O> implements OptionSelector<V, O> {
     }
 
     @SuppressWarnings("unused")
-    @DataClass(defaultStorageName = "cache")
     public static class CachedDecision {
-        @DataField
         private final int valueId;
-        @DataField
         private final int optionId;
-        @DataField
         private final long hash;
 
         public CachedDecision() {

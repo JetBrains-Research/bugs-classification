@@ -1,11 +1,11 @@
-package org.ml_methods_group.common.preparation;
+package org.ml_methods_group.parsing;
 
 import com.github.javaparser.JavaParser;
 import com.github.javaparser.ParseProblemException;
 
 import java.util.Optional;
 
-public class JavaCodeValidator {
+public class JavaCodeValidator implements CodeValidator {
 
     public Optional<String> validate(String code) {
         if (checkValid(code)) {

@@ -3,24 +3,25 @@ package org.ml_methods_group.testing;
 import org.ml_methods_group.common.CommonUtils;
 import org.ml_methods_group.common.Solution;
 import org.ml_methods_group.common.Solution.Verdict;
+import org.ml_methods_group.common.serialization.SolutionsDataset;
 import org.ml_methods_group.testing.database.ConditionSupplier;
 import org.ml_methods_group.testing.database.Repository;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static org.ml_methods_group.common.Solution.Verdict.*;
+
 public class DatasetBuilder {
 
     private final long seed;
-    private final int problemId;
     private final List<Solution> correct;
     private final List<Solution> incorrect;
 
-    public DatasetBuilder(long seed, int problemId, Repository<Solution> repository) {
+    public DatasetBuilder(long seed, SolutionsDataset dataset) {
         this.seed = seed;
-        this.problemId = problemId;
-        correct = loadSolutions(repository, problemId, Verdict.OK);
-        incorrect = loadSolutions(repository, problemId, Verdict.FAIL);
+        correct = dataset.getValues(CommonUtils.check(Solution::getVerdict, OK::equals));
+        incorrect = dataset.getValues(CommonUtils.check(Solution::getVerdict, FAIL::equals));
         validate(correct, incorrect, seed);
     }
 
@@ -36,7 +37,7 @@ public class DatasetBuilder {
         return Collections.unmodifiableList(incorrect);
     }
 
-    public Dataset createDataset(int trainSize, int testSize) {
+    public TrainTestSplit createTrainTestSplit(int trainSize, int testSize) {
         final List<Solution> trainIncorrect = incorrect.subList(0, trainSize);
         final List<Solution> testIncorrect = incorrect.subList(trainSize, trainSize + testSize);
         final Set<Integer> testSessions = testIncorrect.stream()
@@ -45,7 +46,7 @@ public class DatasetBuilder {
         final List<Solution> trainCorrect = correct.stream()
                 .filter(CommonUtils.checkNot(Solution::getSessionId, testSessions::contains))
                 .collect(Collectors.toList());
-        return new Dataset(trainCorrect, trainIncorrect, testIncorrect);
+        return new TrainTestSplit(trainCorrect, trainIncorrect, testIncorrect);
     }
 
     private static List<Solution> loadSolutions(Repository<Solution> repository, int problemId, Verdict verdict) {
@@ -69,16 +70,12 @@ public class DatasetBuilder {
         return seed;
     }
 
-    public int getProblemId() {
-        return problemId;
-    }
-
-    public static class Dataset {
+    public static class TrainTestSplit {
         private final List<Solution> trainCorrect;
         private final List<Solution> trainIncorrect;
         private final List<Solution> testIncorrect;
 
-        private Dataset(List<Solution> trainCorrect, List<Solution> trainIncorrect, List<Solution> testIncorrect) {
+        private TrainTestSplit(List<Solution> trainCorrect, List<Solution> trainIncorrect, List<Solution> testIncorrect) {
             this.trainCorrect = trainCorrect;
             this.trainIncorrect = trainIncorrect;
             this.testIncorrect = testIncorrect;

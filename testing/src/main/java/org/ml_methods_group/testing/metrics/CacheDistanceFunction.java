@@ -4,8 +4,6 @@ import org.ml_methods_group.common.DistanceFunction;
 import org.ml_methods_group.testing.database.ConditionSupplier;
 import org.ml_methods_group.testing.database.Database;
 import org.ml_methods_group.testing.database.Repository;
-import org.ml_methods_group.testing.database.annotations.DataClass;
-import org.ml_methods_group.testing.database.annotations.DataField;
 
 import java.util.Optional;
 import java.util.function.ToIntFunction;
@@ -47,13 +45,9 @@ public class CacheDistanceFunction<T> implements DistanceFunction<T> {
         repository.insert(new CachedDistance(firstId, secondId, value));
     }
 
-    @DataClass(defaultStorageName = "distance_cache")
     public static class CachedDistance {
-        @DataField
         private final int firstId;
-        @DataField
         private final int secondId;
-        @DataField
         private final double distance;
 
         public CachedDistance() {

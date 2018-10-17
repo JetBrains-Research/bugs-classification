@@ -16,4 +16,5 @@ include 'testing'
 include 'classification'
 include 'testing'
 include 'classification'
+include 'parsing'
 

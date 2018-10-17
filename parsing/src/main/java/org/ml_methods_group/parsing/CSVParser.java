@@ -1,4 +1,4 @@
-package org.ml_methods_group.clustering.preparation;
+package org.ml_methods_group.parsing;
 
 import au.com.bytecode.opencsv.CSVReader;
 import jdk.nashorn.internal.parser.Token;

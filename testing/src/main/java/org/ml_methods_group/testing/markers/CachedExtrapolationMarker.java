@@ -1,7 +1,7 @@
 package org.ml_methods_group.testing.markers;
 
 import org.ml_methods_group.common.Cluster;
-import org.ml_methods_group.markers.Marker;
+import org.ml_methods_group.marking.markers.Marker;
 
 import java.util.Collections;
 import java.util.List;

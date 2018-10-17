@@ -5,10 +5,9 @@ enum DataType {
     DOUBLE("FLOAT", false, double.class, Double.class),
     LONG("BIGINT", false, long.class, Long.class),
     BOOLEAN("BOOL", false, boolean.class, Boolean.class),
-    STRING("TEXT", false, String.class),
+    STRING("BYTEA", false, String.class),
     ENUM("TEXT", false),
-    SERIAL("SERIAL", true),
-    BYTE_ARRAY("BYTEA", false);
+    SERIAL("SERIAL", true);
 
     private final Class[] supported;
     public final String sqlName;

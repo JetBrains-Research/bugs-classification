@@ -4,9 +4,6 @@ import org.ml_methods_group.testing.database.Condition;
 import org.ml_methods_group.testing.database.ConditionSupplier;
 import org.ml_methods_group.testing.database.Proxy;
 import org.ml_methods_group.testing.database.Repository;
-import org.ml_methods_group.testing.database.annotations.BinaryFormat;
-import org.ml_methods_group.testing.database.annotations.DataClass;
-import org.ml_methods_group.testing.database.annotations.DataField;
 
 import java.lang.reflect.Field;
 import java.util.*;
@@ -24,7 +21,6 @@ public class SQLRepository<T> implements Repository<T> {
         this.fields = new HashMap<>();
 
         final List<Field> dataFields = Arrays.stream(template.getDeclaredFields())
-                .filter(field -> field.getAnnotation(DataField.class) != null)
                 .sorted(Comparator.comparing(SQLRepository::getCanonicalName))
                 .peek(field -> field.setAccessible(true))
                 .collect(Collectors.toCollection(ArrayList::new));
@@ -39,7 +35,7 @@ public class SQLRepository<T> implements Repository<T> {
     }
 
     SQLRepository(Class<T> template, SQLDatabase database) {
-        this(template.getAnnotation(DataClass.class).defaultStorageName(), template, database);
+        this(template.getSimpleName(), template, database);
     }
 
     @Override
@@ -129,21 +125,9 @@ public class SQLRepository<T> implements Repository<T> {
     }
 
     private static Column generateColumn(Field field) {
-        final DataType dataType = getDataTypeFor(field);
-        final String columnName = getColumnNameFor(field);
+        final DataType dataType = DataType.getDefaultTypeFor(field.getType());
+        final String columnName = field.getName();
         return new Column(columnName, dataType);
-    }
-
-    private static DataType getDataTypeFor(Field field) {
-        if (field.getAnnotation(BinaryFormat.class) != null) {
-            return DataType.BYTE_ARRAY;
-        }
-        return DataType.getDefaultTypeFor(field.getType());
-    }
-
-    private static String getColumnNameFor(Field field) {
-        final DataField meta = field.getAnnotation(DataField.class);
-        return meta.columnName().isEmpty() ? field.getName() : meta.columnName();
     }
 
     private static String getCanonicalName(Field field) {

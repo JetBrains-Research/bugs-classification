@@ -1,10 +1,12 @@
-package org.ml_methods_group.common;
+package org.ml_methods_group.common.serialization;
 
-import org.ml_methods_group.core.entities.Solution;
+import org.ml_methods_group.common.Clusterer;
+import org.ml_methods_group.common.Solution;
 
+import java.io.Serializable;
 import java.util.List;
 
-public class SolutionsClusterer implements Clusterer<Solution> {
+public class SolutionsClusterer implements Clusterer<Solution>, Serializable {
 
     private final Clusterer<Solution> clusterer;
 

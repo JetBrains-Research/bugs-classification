@@ -1,6 +1,6 @@
 package org.ml_methods_group.classification.classifiers;
 
-import org.ml_methods_group.classification.Utils;
+import org.ml_methods_group.classification.ClassificationUtils;
 import org.ml_methods_group.common.*;
 
 import java.util.ArrayList;
@@ -31,7 +31,7 @@ public class KNearestNeighbors<T, M> implements Classifier<T, M> {
 
     @Override
     public Map<M, Double> reliability(T value) {
-        return Utils.kNearest(value, samples, k, metric)
+        return ClassificationUtils.kNearest(value, samples, k, metric)
                 .stream()
                 .collect(Collectors.toMap(marks::get, x -> metric.upperBound() - metric.distance(value, x),
                         Double::sum))

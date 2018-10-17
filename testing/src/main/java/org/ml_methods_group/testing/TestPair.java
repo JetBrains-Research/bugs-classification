@@ -1,15 +1,9 @@
 package org.ml_methods_group.testing;
 
-import org.ml_methods_group.testing.database.annotations.DataClass;
-import org.ml_methods_group.testing.database.annotations.DataField;
 
-@DataClass(defaultStorageName = "tests")
 public class TestPair {
-    @DataField
     private final int firstSessionId;
-    @DataField
     private final int secondSessionId;
-    @DataField
     private final PairGuess guess;
 
     public TestPair() {

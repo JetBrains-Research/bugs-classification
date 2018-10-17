@@ -1,6 +1,6 @@
 package org.ml_methods_group.classification.classifiers;
 
-import org.ml_methods_group.classification.Utils;
+import org.ml_methods_group.classification.ClassificationUtils;
 import org.ml_methods_group.common.*;
 
 import java.util.List;
@@ -39,7 +39,7 @@ public class KPairClassifier<V, F, M> implements Classifier<V, M> {
 
     @Override
     public Map<M, Double> reliability(V value) {
-        final List<V> options = Utils.kNearest(value, this.options, k, metric);
+        final List<V> options = ClassificationUtils.kNearest(value, this.options, k, metric);
         Map<M, Double> result = classifier.reliability(testExtractor.process(value, options.get(0)));
         for (V option : options.subList(1, options.size())) {
             final Map<M, Double> current = classifier.reliability(testExtractor.process(value, option));

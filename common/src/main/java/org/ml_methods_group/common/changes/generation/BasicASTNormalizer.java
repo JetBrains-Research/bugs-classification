@@ -2,14 +2,10 @@ package org.ml_methods_group.common.changes.generation;
 
 import com.github.gumtreediff.tree.ITree;
 import com.github.gumtreediff.tree.TreeContext;
-import org.ml_methods_group.common.CommonUtils;
 import org.ml_methods_group.common.changes.NodeType;
 
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
-
-import static org.ml_methods_group.common.changes.ASTUtils.getFirstChild;
 
 
 public class BasicASTNormalizer implements ASTNormalizer {
@@ -20,88 +16,11 @@ public class BasicASTNormalizer implements ASTNormalizer {
     }
 
     private static class Normalizer extends ASTProcessor {
-        private final ArrayDeque<Map<String, String>> aliases = new ArrayDeque<>();
-        private final Map<String, Integer> totalCounters = new HashMap<>();
-        private final ArrayDeque<Map<String, Integer>> counters = new ArrayDeque<>();
-        private final ArrayDeque<String> typeDeclarations = new ArrayDeque<>();
         private final String code;
 
         private Normalizer(TreeContext context, String code) {
             super(context);
             this.code = code;
-            aliases.add(new HashMap<>());
-            counters.add(new HashMap<>());
-        }
-
-        private void register(String name) {
-            assert !typeDeclarations.isEmpty();
-            register(name, typeDeclarations.peekLast());
-        }
-
-        private void registerAsArray(String name, int arity) {
-            assert !typeDeclarations.isEmpty();
-            final String type = IntStream.range(0, arity)
-                    .mapToObj(x -> "[]")
-                    .collect(Collectors.joining("", typeDeclarations.peekLast(), ""));
-            register(name, type);
-        }
-
-        private void register(String name, String type) {
-            final int id = totalCounters.compute(type, (t, count) -> (count == null ? 0 : count) + 1);
-            counters.peekLast().compute(type, (t, count) -> (count == null ? 0 : count) + 1);
-            final String alias = type + "@" + id;
-            aliases.peekLast().put(name, alias);
-        }
-
-        private String getVariableAlias(String name) {
-            final Iterator<Map<String, String>> iterator = aliases.descendingIterator();
-            while (iterator.hasNext()) {
-                final String alias = iterator.next().get(name);
-                if (alias != null) {
-                    return alias;
-                }
-            }
-            return null;
-        }
-
-        private void pushLayer() {
-            aliases.addLast(new HashMap<>());
-            counters.addLast(new HashMap<>());
-        }
-
-        private void popLayer() {
-            aliases.pollLast();
-            for (Map.Entry<String, Integer> entry : counters.pollLast().entrySet()) {
-                totalCounters.compute(entry.getKey(), (t, count) -> count - entry.getValue());
-            }
-        }
-
-        private void pushTypeDeclaration(String type) {
-            typeDeclarations.addLast(type);
-        }
-
-        private void popTypeDeclaration() {
-            typeDeclarations.pollFirst();
-        }
-
-        @Override
-        protected ITree visitFieldDeclaration(ITree node) {
-            final ITree type = getFirstChild(node, NodeType.SIMPLE_TYPE, NodeType.PARAMETERIZED_TYPE, NodeType.PRIMITIVE_TYPE, NodeType.ARRAY_TYPE);
-            assert type != null;
-            pushTypeDeclaration(getTypeName(type));
-            final ITree result = defaultVisit(node);
-            popTypeDeclaration();
-            return result;
-        }
-
-        @Override
-        protected ITree visitLambdaExpression(ITree node) {
-            pushLayer();
-            pushTypeDeclaration("UnknownLambdaArgumentType");
-            final ITree result = defaultVisit(node);
-            popTypeDeclaration();
-            popLayer();
-            return result;
         }
 
         @Override
@@ -122,14 +41,6 @@ public class BasicASTNormalizer implements ASTNormalizer {
         protected ITree visitVariableDeclarationFragment(ITree node) {
             final List<ITree> children = node.getChildren();
             assert children.get(0).getType() == NodeType.SIMPLE_NAME.ordinal();
-            final int arity = (int) children.stream()
-                    .filter(CommonUtils.check(ITree::getType, type -> type == NodeType.DIMENSION.ordinal()))
-                    .count();
-            if (arity != 0) {
-                registerAsArray(children.get(0).getLabel(), arity);
-            } else {
-                register(children.get(0).getLabel());
-            }
             final List<ITree> generated = new ArrayList<>();
             children.subList(1, children.size())
                     .forEach(tree -> generated.add(visit(tree)));
@@ -138,44 +49,11 @@ public class BasicASTNormalizer implements ASTNormalizer {
         }
 
         @Override
-        protected ITree visitVariableDeclarationStatement(ITree node) {
-            final ITree type = getFirstChild(node, NodeType.SIMPLE_TYPE, NodeType.PARAMETERIZED_TYPE, NodeType.PRIMITIVE_TYPE, NodeType.ARRAY_TYPE);
-            assert type != null;
-            final String typeName = getTypeName(type);
-            pushTypeDeclaration(typeName);
-            node.setLabel(typeName);
-            final ITree result = defaultVisit(node);
-            popTypeDeclaration();
-            return result;
-        }
-
-        @Override
-        protected ITree visitVariableDeclarationExpression(ITree node) {
-            final ITree type = getFirstChild(node, NodeType.SIMPLE_TYPE, NodeType.PARAMETERIZED_TYPE, NodeType.PRIMITIVE_TYPE, NodeType.ARRAY_TYPE);
-            assert type != null;
-            final String typeName = getTypeName(type);
-            pushTypeDeclaration(typeName);
-            final ITree result = defaultVisit(node);
-            result.setLabel(typeName);
-            popTypeDeclaration();
-            return result;
-        }
-
-        @Override
         protected ITree visitSimpleType(ITree node) {
             final String label = node.getLabel();
             node.setLabel(label.substring(label.lastIndexOf('.') + 1));
             node.setChildren(Collections.emptyList());
             return node;
-        }
-
-        @Override
-        protected ITree visitSimpleName(ITree node) {
-            final String alias = getVariableAlias(node.getLabel());
-            if (alias == null) {
-                return node;
-            }
-            return createNode(NodeType.MY_VARIABLE_NAME, alias);
         }
 
         @Override
@@ -263,57 +141,23 @@ public class BasicASTNormalizer implements ASTNormalizer {
         }
 
         @Override
-        protected ITree visitSingleVariableDeclaration(ITree node) {
-            final ITree name = getFirstChild(node, NodeType.SIMPLE_NAME);
-            final ITree type = getFirstChild(node, NodeType.SIMPLE_TYPE, NodeType.PARAMETERIZED_TYPE, NodeType.PRIMITIVE_TYPE,
-                    NodeType.ARRAY_TYPE, NodeType.UNION_TYPE);
-            assert name != null;
-            assert type != null;
-            pushTypeDeclaration(getTypeName(type));
-            register(name.getLabel());
-            final ITree result = defaultVisit(node);
-            popTypeDeclaration();
-            return result;
-        }
-
-        @Override
-        protected ITree visitBlock(ITree node) {
-            pushLayer();
-            final ITree result = defaultVisit(node);
-            popLayer();
-            return result;
-        }
-
-        @Override
         protected ITree visitForStatement(ITree node) {
-            pushLayer();
-            final ITree result = checkBlocks(node, 3);
-            popLayer();
-            return result;
+            return checkBlocks(node, 3);
         }
 
         @Override
         protected ITree visitWhileStatement(ITree node) {
-            pushLayer();
-            final ITree result = checkBlocks(node, 1);
-            popLayer();
-            return result;
+            return checkBlocks(node, 1);
         }
 
         @Override
         protected ITree visitIfStatement(ITree node) {
-            pushLayer();
-            final ITree result = checkBlocks(node, 1, 2);
-            popLayer();
-            return result;
+            return checkBlocks(node, 1, 2);
         }
 
         @Override
         protected ITree visitEnhancedForStatement(ITree node) {
-            pushLayer();
-            final ITree result = checkBlocks(node, 2);
-            popLayer();
-            return result;
+            return checkBlocks(node, 2);
         }
 
         @Override
@@ -329,29 +173,6 @@ public class BasicASTNormalizer implements ASTNormalizer {
                     .collect(Collectors.joining("|"));
             node.setLabel(label);
             return node;
-        }
-
-        private static String getTypeName(ITree node) {
-            final NodeType type = NodeType.valueOf(node.getType());
-            if (type == null) {
-                throw new RuntimeException();
-            }
-            switch (type) {
-                case PRIMITIVE_TYPE:
-                    return node.getLabel();
-                case SIMPLE_TYPE:
-                    final String label = node.getLabel();
-                    return label.substring(label.lastIndexOf('.') + 1);
-                case PARAMETERIZED_TYPE:
-                    final ITree child = getFirstChild(node, NodeType.SIMPLE_TYPE);
-                    assert child != null;
-                    return child.getLabel();
-                case ARRAY_TYPE:
-                    return node.getLabel();
-                case UNION_TYPE:
-                    return "UnionThrowable";
-            }
-            throw new RuntimeException("Unexpected type!");
         }
 
         private ITree checkBlocks(ITree node, int... positions) {

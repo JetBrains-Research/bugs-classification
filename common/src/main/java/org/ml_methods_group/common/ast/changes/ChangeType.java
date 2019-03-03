@@ -1,4 +1,4 @@
-package org.ml_methods_group.common.changes;
+package org.ml_methods_group.common.ast.changes;
 
 public enum ChangeType {
     DELETE, INSERT, MOVE, UPDATE;

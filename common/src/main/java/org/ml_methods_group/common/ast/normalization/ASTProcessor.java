@@ -1,8 +1,8 @@
-package org.ml_methods_group.common.changes.generation;
+package org.ml_methods_group.common.ast.normalization;
 
 import com.github.gumtreediff.tree.ITree;
 import com.github.gumtreediff.tree.TreeContext;
-import org.ml_methods_group.common.changes.NodeType;
+import org.ml_methods_group.common.ast.NodeType;
 
 import java.util.List;
 import java.util.Objects;

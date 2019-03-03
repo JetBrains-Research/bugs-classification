@@ -1,4 +1,4 @@
-package org.ml_methods_group.common.changes.generation;
+package org.ml_methods_group.common.ast.normalization;
 
 import com.github.gumtreediff.tree.TreeContext;
 

@@ -1,42 +1,43 @@
-package org.ml_methods_group.common.changes.generation;
+package org.ml_methods_group.common.ast.normalization;
 
 import com.github.gumtreediff.tree.ITree;
 import com.github.gumtreediff.tree.TreeContext;
 import org.ml_methods_group.common.CommonUtils;
-import org.ml_methods_group.common.changes.NodeType;
+import org.ml_methods_group.common.ast.NodeType;
+import org.ml_methods_group.common.ast.changes.MetadataKeys;
 
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static org.ml_methods_group.common.changes.ASTUtils.getFirstChild;
+import static org.ml_methods_group.common.ast.ASTUtils.getFirstChild;
+import static org.ml_methods_group.common.ast.NodeType.*;
 
-public class NamesASTNormalizer {
+
+public class BasicASTNormalizer implements ASTNormalizer {
+
     public void normalize(TreeContext context, String code) {
-        context.setRoot(new Normalizer(context, code).visit(context.getRoot()));
+        context.setRoot(new StructureProcessor(context, code).visit(context.getRoot()));
         context.validate();
     }
 
-    private static class Normalizer extends ASTProcessor {
-        private final ArrayDeque<Map<String, String>> aliases = new ArrayDeque<>();
-        private final Map<String, Integer> totalCounters = new HashMap<>();
-        private final ArrayDeque<Map<String, Integer>> counters = new ArrayDeque<>();
-        private final ArrayDeque<String> typeDeclarations = new ArrayDeque<>();
-        private final String code;
+    protected static class StructureProcessor extends ASTProcessor {
+        final ArrayDeque<Map<String, String>> variablesTypes = new ArrayDeque<>();
+        final ArrayDeque<String> typeDeclarations = new ArrayDeque<>();
+        final String code;
 
-        private Normalizer(TreeContext context, String code) {
+        StructureProcessor(TreeContext context, String code) {
             super(context);
             this.code = code;
-            aliases.add(new HashMap<>());
-            counters.add(new HashMap<>());
+            variablesTypes.add(new HashMap<>());
         }
 
-        private void register(String name) {
+        void register(String name) {
             assert !typeDeclarations.isEmpty();
             register(name, typeDeclarations.peekLast());
         }
 
-        private void registerAsArray(String name, int arity) {
+        void registerAsArray(String name, int arity) {
             assert !typeDeclarations.isEmpty();
             final String type = IntStream.range(0, arity)
                     .mapToObj(x -> "[]")
@@ -44,15 +45,12 @@ public class NamesASTNormalizer {
             register(name, type);
         }
 
-        private void register(String name, String type) {
-            final int id = totalCounters.compute(type, (t, count) -> (count == null ? 0 : count) + 1);
-            counters.peekLast().compute(type, (t, count) -> (count == null ? 0 : count) + 1);
-            final String alias = type + "@" + id;
-            aliases.peekLast().put(name, alias);
+        void register(String name, String type) {
+            variablesTypes.peekLast().put(name, type);
         }
 
-        private String getVariableAlias(String name) {
-            final Iterator<Map<String, String>> iterator = aliases.descendingIterator();
+        private String getVariableType(String name) {
+            final Iterator<Map<String, String>> iterator = variablesTypes.descendingIterator();
             while (iterator.hasNext()) {
                 final String alias = iterator.next().get(name);
                 if (alias != null) {
@@ -62,16 +60,12 @@ public class NamesASTNormalizer {
             return null;
         }
 
-        private void pushLayer() {
-            aliases.addLast(new HashMap<>());
-            counters.addLast(new HashMap<>());
+        void pushLayer() {
+            variablesTypes.addLast(new HashMap<>());
         }
 
-        private void popLayer() {
-            aliases.pollLast();
-            for (Map.Entry<String, Integer> entry : counters.pollLast().entrySet()) {
-                totalCounters.compute(entry.getKey(), (t, count) -> count - entry.getValue());
-            }
+         void popLayer() {
+            variablesTypes.pollLast();
         }
 
         private void pushTypeDeclaration(String type) {
@@ -84,7 +78,7 @@ public class NamesASTNormalizer {
 
         @Override
         protected ITree visitFieldDeclaration(ITree node) {
-            final ITree type = getFirstChild(node, NodeType.SIMPLE_TYPE, NodeType.PARAMETERIZED_TYPE, NodeType.PRIMITIVE_TYPE, NodeType.ARRAY_TYPE);
+            final ITree type = getFirstChild(node, SIMPLE_TYPE, PARAMETERIZED_TYPE, PRIMITIVE_TYPE, ARRAY_TYPE);
             assert type != null;
             pushTypeDeclaration(getTypeName(type));
             final ITree result = defaultVisit(node);
@@ -112,7 +106,6 @@ public class NamesASTNormalizer {
             final ITree path = createNode(NodeType.SIMPLE_NAME, label.substring(0, label.lastIndexOf('.')));
             final ITree member = createNode(NodeType.MY_MEMBER_NAME, label.substring(label.lastIndexOf('.') + 1));
             member.setChildren(Collections.singletonList(path));
-
             return visit(member);
         }
 
@@ -120,15 +113,17 @@ public class NamesASTNormalizer {
         protected ITree visitVariableDeclarationFragment(ITree node) {
             final List<ITree> children = node.getChildren();
             assert children.get(0).getType() == NodeType.SIMPLE_NAME.ordinal();
+            final String name = children.get(0).getLabel();
             final int arity = (int) children.stream()
                     .filter(CommonUtils.check(ITree::getType, type -> type == NodeType.DIMENSION.ordinal()))
                     .count();
             if (arity != 0) {
-                registerAsArray(children.get(0).getLabel(), arity);
+                registerAsArray(name, arity);
             } else {
-                register(children.get(0).getLabel());
+                register(name);
             }
             final List<ITree> generated = new ArrayList<>();
+            generated.add(visit(createNode(MY_VARIABLE_NAME, name)));
             children.subList(1, children.size())
                     .forEach(tree -> generated.add(visit(tree)));
             node.setChildren(generated);
@@ -137,7 +132,7 @@ public class NamesASTNormalizer {
 
         @Override
         protected ITree visitVariableDeclarationStatement(ITree node) {
-            final ITree type = getFirstChild(node, NodeType.SIMPLE_TYPE, NodeType.PARAMETERIZED_TYPE, NodeType.PRIMITIVE_TYPE, NodeType.ARRAY_TYPE);
+            final ITree type = getFirstChild(node, SIMPLE_TYPE, PARAMETERIZED_TYPE, PRIMITIVE_TYPE, ARRAY_TYPE);
             assert type != null;
             final String typeName = getTypeName(type);
             pushTypeDeclaration(typeName);
@@ -149,7 +144,7 @@ public class NamesASTNormalizer {
 
         @Override
         protected ITree visitVariableDeclarationExpression(ITree node) {
-            final ITree type = getFirstChild(node, NodeType.SIMPLE_TYPE, NodeType.PARAMETERIZED_TYPE, NodeType.PRIMITIVE_TYPE, NodeType.ARRAY_TYPE);
+            final ITree type = getFirstChild(node, SIMPLE_TYPE, PARAMETERIZED_TYPE, PRIMITIVE_TYPE, ARRAY_TYPE);
             assert type != null;
             final String typeName = getTypeName(type);
             pushTypeDeclaration(typeName);
@@ -169,11 +164,13 @@ public class NamesASTNormalizer {
 
         @Override
         protected ITree visitSimpleName(ITree node) {
-            final String alias = getVariableAlias(node.getLabel());
-            if (alias == null) {
+            final String type = getVariableType(node.getLabel());
+            if (type == null) {
                 return node;
             }
-            return createNode(NodeType.MY_VARIABLE_NAME, alias);
+            final ITree result = createNode(NodeType.MY_VARIABLE_NAME, node.getLabel());
+            result.setMetadata(MetadataKeys.JAVA_TYPE, type);
+            return visit(result);
         }
 
         @Override
@@ -229,7 +226,7 @@ public class NamesASTNormalizer {
             final String name = children.get(0).getLabel();
             final int separatorIndex = name.lastIndexOf('.');
             if (separatorIndex == -1) {
-                generated.add(visit(createNode(NodeType.SIMPLE_TYPE, name)));
+                generated.add(visit(createNode(SIMPLE_TYPE, name)));
             } else {
                 final String path = name.substring(0, separatorIndex);
                 final String type = name.substring(separatorIndex + 1);
@@ -237,7 +234,7 @@ public class NamesASTNormalizer {
                 if (type.equals("*")) {
                     generated.add(visit(createNode(NodeType.MY_ALL_CLASSES, "")));
                 } else {
-                    generated.add(visit(createNode(NodeType.SIMPLE_TYPE, type)));
+                    generated.add(visit(createNode(SIMPLE_TYPE, type)));
                 }
             }
             generated.removeIf(Objects::isNull);
@@ -263,8 +260,8 @@ public class NamesASTNormalizer {
         @Override
         protected ITree visitSingleVariableDeclaration(ITree node) {
             final ITree name = getFirstChild(node, NodeType.SIMPLE_NAME);
-            final ITree type = getFirstChild(node, NodeType.SIMPLE_TYPE, NodeType.PARAMETERIZED_TYPE, NodeType.PRIMITIVE_TYPE,
-                    NodeType.ARRAY_TYPE, NodeType.UNION_TYPE);
+            final ITree type = getFirstChild(node, SIMPLE_TYPE, PARAMETERIZED_TYPE, PRIMITIVE_TYPE,
+                    ARRAY_TYPE, NodeType.UNION_TYPE);
             assert name != null;
             assert type != null;
             pushTypeDeclaration(getTypeName(type));
@@ -341,7 +338,7 @@ public class NamesASTNormalizer {
                     final String label = node.getLabel();
                     return label.substring(label.lastIndexOf('.') + 1);
                 case PARAMETERIZED_TYPE:
-                    final ITree child = getFirstChild(node, NodeType.SIMPLE_TYPE);
+                    final ITree child = getFirstChild(node, SIMPLE_TYPE);
                     assert child != null;
                     return child.getLabel();
                 case ARRAY_TYPE:

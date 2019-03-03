@@ -1,6 +1,5 @@
-package org.ml_methods_group.common.changes.generation;
+package org.ml_methods_group.common.ast.changes;
 
-import org.ml_methods_group.common.changes.CodeChange;
 import org.ml_methods_group.common.Solution;
 
 import java.util.List;

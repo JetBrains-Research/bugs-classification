@@ -1,4 +1,4 @@
-package org.ml_methods_group.common.changes;
+package org.ml_methods_group.common.ast;
 
 import com.github.gumtreediff.tree.ITree;
 

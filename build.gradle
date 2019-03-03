@@ -31,5 +31,5 @@ dependencies {
     compile project(':testing')
     compile project(':clustering')
     compile project(':classification')
-    compile project(':testing')
+    compile project(':database')
 }

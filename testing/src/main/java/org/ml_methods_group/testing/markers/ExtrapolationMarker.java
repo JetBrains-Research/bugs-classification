@@ -28,7 +28,7 @@ public class ExtrapolationMarker<V, M> implements Marker<Cluster<V>, M> {
                 .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()))
                 .entrySet()
                 .stream()
-                .filter(entry -> entry.getValue() >= bound)
+                .filter(entry -> entry.getValue() >= Math.min(bound, cluster.size()))
                 .map(Map.Entry::getKey)
                 .collect(Collectors.toList());
         return tips.size() == 1 ? tips.get(0) : onFail(cluster);

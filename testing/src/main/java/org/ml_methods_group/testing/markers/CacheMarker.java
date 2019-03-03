@@ -63,7 +63,8 @@ public class CacheMarker<V, M> implements Marker<V, M> {
 
     public static class CachedMark {
         private final int valueId;
-        private final String mark;
+        //todo fix visibility
+        public final String mark;
 
         private CachedMark(int valueId, String mark) {
             this.valueId = valueId;

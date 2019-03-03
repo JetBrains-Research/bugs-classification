@@ -21,7 +21,7 @@ public class ClassificationTestingResult implements TestingResults {
     }
 
     public double getCoverage(double threshold) {
-        return (double) count((x, a) -> x >= threshold) / confidence.size();
+        return (double) count((x, a) -> x >= threshold && a) / confidence.size();
     }
 
     public double getPrecision(double threshold) {

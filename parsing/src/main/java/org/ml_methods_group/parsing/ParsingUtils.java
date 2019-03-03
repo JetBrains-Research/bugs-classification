@@ -22,6 +22,7 @@ public class ParsingUtils {
         final HashMap<Long, Integer> sessionIds = new HashMap<>();
         final Map<Long, Solution> lastSolution = new HashMap<>();
         final Map<Long, Long> lastTime = new HashMap<>();
+
         while (parser.hasNextLine()) {
             parser.nextLine();
             final int problemId = parser.getInt(Column.PROBLEM_ID);

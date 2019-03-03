@@ -33,7 +33,7 @@ public class KNearestNeighbors<T, M> implements Classifier<T, M> {
     public Map<M, Double> reliability(T value) {
         return ClassificationUtils.kNearest(value, samples, k, metric)
                 .stream()
-                .collect(Collectors.toMap(marks::get, x -> metric.upperBound() - metric.distance(value, x),
+                .collect(Collectors.toMap(marks::get, x -> 1 - metric.distance(value, x),
                         Double::sum))
                 .entrySet()
                 .stream()

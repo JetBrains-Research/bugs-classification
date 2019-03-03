@@ -3,6 +3,7 @@ package org.ml_methods_group.classification.classifiers;
 import org.ml_methods_group.common.*;
 
 import java.util.Map;
+import java.util.Optional;
 
 public class CompositeClassifier<T, F, M> implements Classifier<T, M> {
 
@@ -20,7 +21,7 @@ public class CompositeClassifier<T, F, M> implements Classifier<T, M> {
     }
 
     @Override
-    public M classify(T value) {
+    public Optional<M> classify(T value) {
         return classifier.classify(createWrapper(value));
     }
 

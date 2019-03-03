@@ -1,5 +1,6 @@
 package org.ml_methods_group.common.metrics.functions;
 
+import org.ml_methods_group.common.SimilarityMetric;
 import org.ml_methods_group.common.metrics.algorithms.AssignmentProblem;
 import org.ml_methods_group.common.DistanceFunction;
 
@@ -10,26 +11,24 @@ import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyList;
 
-public class FuzzyListDistanceFunction<T> implements DistanceFunction<List<T>> {
+public class FuzzyJaccardDistanceFunction<T> implements DistanceFunction<List<T>> {
 
-    private final DistanceFunction<T> metric;
-    private final Function<T, Integer> classifier;
+    private final SimilarityMetric<T> metric;
 
-    public FuzzyListDistanceFunction(DistanceFunction<T> metric, Function<T, Integer> classifier) {
+    public FuzzyJaccardDistanceFunction(SimilarityMetric<T> metric) {
         this.metric = metric;
-        this.classifier = classifier;
     }
 
     @Override
     public double distance(List<T> first, List<T> second) {
         final Map<Integer, List<T>> firstGroups = first.stream()
-                .collect(Collectors.groupingBy(classifier, Collectors.toList()));
+                .collect(Collectors.groupingBy(metric::getElementType, Collectors.toList()));
         final Map<Integer, List<T>> secondGroups = second.stream()
-                .collect(Collectors.groupingBy(classifier, Collectors.toList()));
+                .collect(Collectors.groupingBy(metric::getElementType, Collectors.toList()));
         final double intersection = firstGroups.entrySet().stream()
                 .mapToDouble(entry -> match(entry.getValue(), secondGroups.getOrDefault(entry.getKey(), emptyList())))
                 .sum();
-        return 1 - intersection / Math.max(first.size(), second.size());
+        return 1 - intersection / (first.size() + second.size() - intersection);
     }
 
     private double match(List<T> first, List<T> second) {
@@ -45,21 +44,21 @@ public class FuzzyListDistanceFunction<T> implements DistanceFunction<List<T>> {
         final int[][] weights = new int[first.size()][second.size()];
         for (int i = 0; i < first.size(); i++) {
             for (int j = 0; j < second.size(); j++) {
-                weights[i][j] = toDiscrete(metric.upperBound() - metric.distance(first.get(i), second.get(j)));
+                weights[i][j] = toDiscrete(metric.measure(first.get(i), second.get(j)));
             }
         }
-        return toFloat(new AssignmentProblem(weights).solve());
+        return toFloat(new AssignmentProblem(weights, false).solve());
     }
 
     private double bestMatch(T element, List<T> list) {
-        double best = Double.POSITIVE_INFINITY;
+        double best = 0;
         for (T another : list) {
-            final double current = metric.distance(element, another, best);
-            if (current < best) {
+            final double current = metric.measure(element, another);
+            if (current > best) {
                 best = current;
             }
         }
-        return toFloat(toDiscrete(metric.upperBound() - best));
+        return toFloat(toDiscrete(best));
     }
     
     private int toDiscrete(double value) {

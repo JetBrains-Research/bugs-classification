@@ -7,7 +7,8 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public class ListDistanceFunction<T> implements DistanceFunction<List<T>> {
+public class JaccardDistanceFunction<T> implements DistanceFunction<List<T>> {
+
     @Override
     public double distance(List<T> first, List<T> second) {
         if (first.isEmpty() && second.isEmpty()) {

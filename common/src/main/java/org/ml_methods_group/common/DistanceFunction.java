@@ -9,8 +9,4 @@ public interface DistanceFunction<V> extends Serializable {
     default double distance(V first, V second, double upperBound) {
         return Math.min(distance(first, second), upperBound);
     }
-
-    default double upperBound() {
-        return 1;
-    }
 }

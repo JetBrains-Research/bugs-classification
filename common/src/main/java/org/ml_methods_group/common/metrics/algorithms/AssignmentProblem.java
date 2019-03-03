@@ -9,8 +9,9 @@ public class AssignmentProblem {
     private final boolean[] vx, vy;
     private final int[] maxRow;
     private final int[] minColumn;
+    private final int inverse;
 
-    public AssignmentProblem(int[][] weights) {
+    public AssignmentProblem(int[][] weights, boolean findMin) {
         final int n = Math.max(weights.length, weights[0].length);
         this.xyMatching = new int[n];
         this.yxMatching = new int[n];
@@ -21,6 +22,22 @@ public class AssignmentProblem {
         this.weights = new int[n][n];
         for (int i = 0; i < weights.length; i++) {
             System.arraycopy(weights[i], 0, this.weights[i], 0, weights[i].length);
+        }
+        if (findMin) {
+            int maxValue = 0;
+            for (int i = 0; i < n; i++) {
+                for (int j = 0; j < n; j++) {
+                    maxValue = Math.max(this.weights[i][j], maxValue);
+                }
+            }
+            for (int i = 0; i < n; i++) {
+                for (int j = 0; j < n; j++) {
+                    this.weights[i][j] = maxValue - this.weights[i][j];
+                }
+            }
+            inverse = maxValue;
+        } else {
+            inverse = -1;
         }
     }
 
@@ -68,7 +85,7 @@ public class AssignmentProblem {
         for (int i = 0; i < weights.length; i++) {
             result += weights[i][xyMatching[i]];
         }
-        return result;
+        return inverse == -1 ? result : inverse * vx.length - result;
     }
 
     private boolean tryImprove(int i) {

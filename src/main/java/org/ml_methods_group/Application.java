@@ -66,7 +66,7 @@ public class Application {
     private static void classify(String classifier, String input) throws IOException {
         final String code = Files.lines(Paths.get(input)).collect(Collectors.joining(System.lineSeparator()));
         final Solution fake = new Solution(code, -1, -1, -1, Solution.Verdict.FAIL);
-        final String mark = SolutionClassifier.load(Paths.get(classifier)).classify(fake);
+        final String mark = SolutionClassifier.load(Paths.get(classifier)).classify(fake).orElse("None");
         System.out.println(mark);
     }
 }

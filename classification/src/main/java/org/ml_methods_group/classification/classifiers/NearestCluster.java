@@ -43,9 +43,9 @@ public class NearestCluster<V, M> implements Classifier<V, M> {
     }
 
     private double estimateReliability(V value, Cluster<V> cluster) {
-        return metric.upperBound() - cluster.stream()
+        return 1 - 2 / Math.PI * Math.atan(cluster.stream()
                 .mapToDouble(element -> metric.distance(value, element))
                 .average()
-                .orElseGet(metric::upperBound);
+                .orElseThrow(RuntimeException::new));
     }
 }

@@ -1,4 +1,4 @@
-package org.ml_methods_group.testing;
+package org.ml_methods_group.database;
 
 public class DatabaseException extends RuntimeException {
     DatabaseException(String message) {

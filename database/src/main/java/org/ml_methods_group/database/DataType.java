@@ -1,11 +1,11 @@
-package org.ml_methods_group.testing;
+package org.ml_methods_group.database;
 
 enum DataType {
     INTEGER("INTEGER", false, int.class, Integer.class),
     DOUBLE("FLOAT", false, double.class, Double.class),
     LONG("BIGINT", false, long.class, Long.class),
     BOOLEAN("BOOL", false, boolean.class, Boolean.class),
-    STRING("BYTEA", false, String.class),
+    STRING("TEXT", false, String.class),
     ENUM("TEXT", false),
     SERIAL("SERIAL", true);
 

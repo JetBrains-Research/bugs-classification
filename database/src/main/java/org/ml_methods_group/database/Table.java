@@ -1,10 +1,9 @@
-package org.ml_methods_group.testing;
+package org.ml_methods_group.database;
 
 import org.ml_methods_group.testing.database.Condition;
 
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Method;
-import java.nio.charset.StandardCharsets;
 import java.sql.*;
 import java.util.Arrays;
 import java.util.Iterator;
@@ -53,7 +52,7 @@ class Table {
                         statement.setString(pointer++, data.get(i).toString());
                         break;
                     case STRING:
-                        statement.setBytes(pointer++, data.get(i).toString().getBytes(StandardCharsets.UTF_16));
+                        statement.setString(pointer++, (String) data.get(i));
                         break;
                     case INTEGER:
                         statement.setInt(pointer++, (Integer) data.get(i));
@@ -218,12 +217,7 @@ class Table {
 
         String getStringValue(Column column) {
             final int index = columnIndex(column);
-            switch (columns.get(index).getType()) {
-                case STRING:
-                    return new String((byte[]) results[index], StandardCharsets.UTF_16);
-                default:
-                    return results[index].toString();
-            }
+            return results[index].toString();
         }
 
         int getIntValue(Column column) {

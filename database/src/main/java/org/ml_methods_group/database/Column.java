@@ -1,9 +1,7 @@
-package org.ml_methods_group.testing;
-
-import static org.ml_methods_group.testing.DataType.SERIAL;
+package org.ml_methods_group.database;
 
 class Column {
-    static final Column ID = new Column("ID", SERIAL, true);
+    static final Column ID = new Column("ID", DataType.SERIAL, true);
 
     private final String name;
     private final DataType type;

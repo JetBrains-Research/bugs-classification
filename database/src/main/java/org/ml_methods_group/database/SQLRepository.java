@@ -1,4 +1,4 @@
-package org.ml_methods_group.testing;
+package org.ml_methods_group.database;
 
 import org.ml_methods_group.testing.database.Condition;
 import org.ml_methods_group.testing.database.ConditionSupplier;

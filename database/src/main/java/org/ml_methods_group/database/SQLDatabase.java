@@ -1,4 +1,4 @@
-package org.ml_methods_group.testing;
+package org.ml_methods_group.database;
 
 import org.ml_methods_group.testing.database.Database;
 import org.ml_methods_group.testing.database.Repository;
@@ -17,7 +17,7 @@ public class SQLDatabase implements Database {
         try {
             DriverManager.registerDriver(new Driver());
             connection = DriverManager
-                    .getConnection("jdbc:postgresql://localhost/database?user=myRole&ssl=false");
+                    .getConnection("jdbc:postgresql://localhost/testing?user=myRole&ssl=false");
         } catch (SQLException e) {
             throw new DatabaseException(e);
         }

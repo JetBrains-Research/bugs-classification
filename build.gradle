@@ -28,7 +28,7 @@ dependencies {
     compile project(':common')
     compile project(':marking')
     compile project(':parsing')
-    compile project(':database')
+    compile project(':testing')
     compile project(':clustering')
     compile project(':classification')
     compile project(':testing')

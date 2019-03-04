@@ -2,7 +2,6 @@ package org.ml_methods_group.database;
 
 import org.ml_methods_group.testing.database.Database;
 import org.ml_methods_group.testing.database.Repository;
-import org.postgresql.Driver;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -11,13 +10,22 @@ import java.util.List;
 
 public class SQLDatabase implements Database {
 
+    static {
+        try {
+            DriverManager.registerDriver(new org.postgresql.Driver());
+        } catch (SQLException ignored) {
+        }
+    }
+
     private final Connection connection;
 
     public SQLDatabase() {
+        this("jdbc:postgresql://localhost/database", "myRole", "");
+    }
+
+    public SQLDatabase(String uri, String user, String password) {
         try {
-            DriverManager.registerDriver(new Driver());
-            connection = DriverManager
-                    .getConnection("jdbc:postgresql://localhost/testing?user=myRole&ssl=false");
+            connection = DriverManager.getConnection(uri, user, password);
         } catch (SQLException e) {
             throw new DatabaseException(e);
         }

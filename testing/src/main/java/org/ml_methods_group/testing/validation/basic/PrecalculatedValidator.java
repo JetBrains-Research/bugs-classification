@@ -47,7 +47,7 @@ public class PrecalculatedValidator implements Validator<Solution, String>, Seri
                 System.out.println();
                 label:
                 while (true) {
-                    System.out.println("Current marks: " + marks.stream().collect(Collectors.joining(" ")));
+                    System.out.println("Current marks: " + String.join(" ", marks));
                     System.out.print(addMode ? "Add mark: " : "Remove mark: ");
                     final String mark = scanner.next();
                     switch (mark) {

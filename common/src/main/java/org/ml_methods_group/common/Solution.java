@@ -42,7 +42,20 @@ public class Solution implements Serializable {
         return solutionId;
     }
 
-    public enum Verdict {OK, FAIL, UNKNOWN}
+    public enum Verdict {
+        OK, FAIL, UNKNOWN;
+
+        public static Verdict valueOf(int id) {
+            if (id == OK.ordinal()) {
+                return OK;
+            } else if (id == FAIL.ordinal()) {
+                return FAIL;
+            } else if (id == UNKNOWN.ordinal()) {
+                return UNKNOWN;
+            }
+            throw new IllegalArgumentException("Unexpected enum id");
+        }
+    }
 
     @Override
     public String toString() {

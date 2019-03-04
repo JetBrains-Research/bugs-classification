@@ -1,17 +1,24 @@
 package org.ml_methods_group.clustering;
 
+import org.ml_methods_group.common.CommonUtils;
+import org.ml_methods_group.common.Solution;
 import org.ml_methods_group.common.serialization.SolutionsClusters;
 import org.ml_methods_group.common.serialization.SolutionsDataset;
 
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import static org.ml_methods_group.common.Solution.Verdict.FAIL;
+import static org.ml_methods_group.common.Solution.Verdict.OK;
+
 public class ClusterizationUtils {
     public static SolutionsClusters buildClusters(SolutionsDataset dataset) {
-//        final List<Solution> correct = dataset.getValues(CommonUtils.check(Solution::getVerdict, OK::equals));
-//        final List<Solution> incorrect = dataset.getValues(CommonUtils.check(Solution::getVerdict, FAIL::equals));
-//        final Set<Integer> correctId = correct.stream()
-//                .map(Solution::getSessionId)
-//                .collect(Collectors.toSet());
-//        // todo may be shouldn't remove them
-//        incorrect.removeIf(CommonUtils.checkNot(Solution::getSessionId, correctId::contains));
+        final List<Solution> correct = dataset.getValues(CommonUtils.check(Solution::getVerdict, OK::equals));
+        final List<Solution> incorrect = dataset.getValues(CommonUtils.check(Solution::getVerdict, FAIL::equals));
+        final Set<Integer> correctId = correct.stream()
+                .map(Solution::getSessionId)
+                .collect(Collectors.toSet());
 //
 //        final ChangeGenerator generator = new BasicChangeGenerator(new CachedASTGenerator(new BasicASTNormalizer()));
 //        final DistanceFunction<Solution> solutionsMetric = new HeuristicChangesBasedDistanceFunction(generator);

@@ -22,7 +22,7 @@ public class CodeChange implements Serializable {
     private final NodeContext destinationContext;
     private final ChangeType changeType;
 
-    protected CodeChange(NodeContext originalContext, NodeContext destinationContext, ChangeType changeType) {
+    public CodeChange(NodeContext originalContext, NodeContext destinationContext, ChangeType changeType) {
         this.originalContext = originalContext;
         this.destinationContext = destinationContext;
         this.changeType = changeType;

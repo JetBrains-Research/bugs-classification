@@ -10,7 +10,7 @@ public class Changes {
     private final Solution target;
     private final List<CodeChange> changes;
 
-    Changes(Solution origin, Solution target, List<CodeChange> changes) {
+    public Changes(Solution origin, Solution target, List<CodeChange> changes) {
         this.origin = origin;
         this.target = target;
         this.changes = changes;

@@ -19,7 +19,7 @@ public class Cluster<V> implements Iterable<V>, Serializable {
         return elements.size();
     }
 
-    public <T> Cluster<T> map(Function<V, T> mapping) {
+    public <T> Cluster<T> map(Function<? super V, T> mapping) {
         final List<T> buffer = elements.stream()
                 .map(mapping)
                 .collect(Collectors.toList());

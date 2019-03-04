@@ -1,0 +1,75 @@
+syntax = "proto3";
+
+option java_package = "org.ml_methods_group.common.proto";
+option java_multiple_files = true;
+
+
+message ProtoSolution {
+    string code = 1;
+    int32 problem_id = 2;
+    int32 session_id = 3;
+    int32 solution_id = 4;
+    int32 verdict = 5;
+}
+
+message ProtoNodeState {
+    int32 node_type = 1;
+    int32 position_in_parent = 2;
+    string java_type = 3;
+    string label = 4;
+    string original_label = 5;
+}
+
+message ProtoNodeContext {
+    ProtoNodeState node = 1;
+    ProtoNodeState parent = 2;
+    ProtoNodeState parent_of_parent = 3;
+    repeated ProtoNodeState uncles = 4;
+    repeated ProtoNodeState brothers = 5;
+    repeated ProtoNodeState children = 6;
+}
+
+message ProtoAtomicChange {
+    int32 changeType = 3;
+    ProtoNodeContext original_context = 1;
+    ProtoNodeContext destination_context = 2;
+}
+
+message ProtoChanges {
+    ProtoSolution src = 1;
+    ProtoSolution dst = 2;
+    repeated ProtoAtomicChange changes = 3;
+}
+
+message ProtoVectorFeatures {
+    repeated double features = 1;
+}
+
+message ProtoVectorListFeatures {
+    repeated ProtoVectorFeatures features = 1;
+}
+
+message ProtoStringListFeatures {
+    repeated string features = 1;
+}
+
+message ProtoChangeListFeatures {
+    repeated ProtoAtomicChange features = 1;
+}
+
+message ProtoFeaturesWrapper {
+    ProtoSolution solution = 1;
+    ProtoStringListFeatures string_list_features = 2;
+    ProtoChangeListFeatures change_list_features = 3;
+    ProtoVectorListFeatures vector_list_features = 4;
+    ProtoVectorFeatures vector_features = 5;
+}
+
+message ProtoCluster {
+    repeated ProtoFeaturesWrapper solutions = 1;
+}
+
+message ProtoMarkedCluster {
+    repeated ProtoFeaturesWrapper solutions = 1;
+    string mark = 2;
+}

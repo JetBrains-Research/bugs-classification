@@ -1,6 +1,5 @@
 package org.ml_methods_group.common.embedding;
 
-import org.ml_methods_group.common.FeaturesExtractor;
 import org.ml_methods_group.common.ast.NodeType;
 import org.ml_methods_group.common.ast.changes.CodeChange.NodeState;
 import org.ml_methods_group.common.metrics.functions.FunctionsUtils;

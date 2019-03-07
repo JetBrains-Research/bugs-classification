@@ -2,7 +2,6 @@ package org.ml_methods_group.common.embedding;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;

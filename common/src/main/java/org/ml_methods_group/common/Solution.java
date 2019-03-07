@@ -63,4 +63,28 @@ public class Solution implements Serializable {
                 ", solution id: " + solutionId +
                 ", verdict: " + verdict + ")";
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        Solution solution = (Solution) o;
+
+        if (problemId != solution.problemId) return false;
+        if (sessionId != solution.sessionId) return false;
+        if (solutionId != solution.solutionId) return false;
+        if (!code.equals(solution.code)) return false;
+        return verdict == solution.verdict;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = code.hashCode();
+        result = 31 * result + problemId;
+        result = 31 * result + sessionId;
+        result = 31 * result + solutionId;
+        result = 31 * result + verdict.hashCode();
+        return result;
+    }
 }

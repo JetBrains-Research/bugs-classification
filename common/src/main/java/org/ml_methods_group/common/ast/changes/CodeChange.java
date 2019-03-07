@@ -6,7 +6,9 @@ import com.github.gumtreediff.tree.ITree;
 import org.ml_methods_group.common.ast.NodeType;
 
 import java.io.Serializable;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 
 import static org.ml_methods_group.common.ast.changes.CodeChange.NodeState.getState;
@@ -83,6 +85,26 @@ public class CodeChange implements Serializable {
                 ChangeType.UPDATE);
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        CodeChange that = (CodeChange) o;
+
+        if (!originalContext.equals(that.originalContext)) return false;
+        if (!destinationContext.equals(that.destinationContext)) return false;
+        return changeType == that.changeType;
+    }
+
+    @Override
+    public int hashCode() {
+        int result = originalContext.hashCode();
+        result = 31 * result + destinationContext.hashCode();
+        result = 31 * result + changeType.hashCode();
+        return result;
+    }
+
     public static class NodeState implements Serializable {
 
         private final NodeType type;
@@ -148,18 +170,22 @@ public class CodeChange implements Serializable {
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
-            NodeState state = (NodeState) o;
-            return positionInParent == state.positionInParent && type == state.type
-                    && javaType.equals(state.javaType) && label.equals(state.label)
-                    && originalLabel.equals(state.originalLabel);
+
+            NodeState nodeState = (NodeState) o;
+
+            if (positionInParent != nodeState.positionInParent) return false;
+            if (type != nodeState.type) return false;
+            if (!Objects.equals(javaType, nodeState.javaType)) return false;
+            if (!label.equals(nodeState.label)) return false;
+            return Objects.equals(originalLabel, nodeState.originalLabel);
         }
 
         @Override
         public int hashCode() {
             int result = type.hashCode();
-            result = 31 * result + javaType.hashCode();
+            result = 31 * result + (javaType != null ? javaType.hashCode() : 0);
             result = 31 * result + label.hashCode();
-            result = 31 * result + originalLabel.hashCode();
+            result = 31 * result + (originalLabel != null ? originalLabel.hashCode() : 0);
             result = 31 * result + positionInParent;
             return result;
         }
@@ -223,6 +249,35 @@ public class CodeChange implements Serializable {
 
         public NodeState[] getChildren() {
             return children;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            NodeContext that = (NodeContext) o;
+
+            if (!node.equals(that.node)) return false;
+            if (!parent.equals(that.parent)) return false;
+            if (!parentOfParent.equals(that.parentOfParent)) return false;
+            // Probably incorrect - comparing Object[] arrays with Arrays.equals
+            if (!Arrays.equals(uncles, that.uncles)) return false;
+            // Probably incorrect - comparing Object[] arrays with Arrays.equals
+            if (!Arrays.equals(brothers, that.brothers)) return false;
+            // Probably incorrect - comparing Object[] arrays with Arrays.equals
+            return Arrays.equals(children, that.children);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = node.hashCode();
+            result = 31 * result + parent.hashCode();
+            result = 31 * result + parentOfParent.hashCode();
+            result = 31 * result + Arrays.hashCode(uncles);
+            result = 31 * result + Arrays.hashCode(brothers);
+            result = 31 * result + Arrays.hashCode(children);
+            return result;
         }
     }
 }

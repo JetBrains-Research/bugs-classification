@@ -16,10 +16,10 @@ public class MarkedSolutionsClusters extends MarkedClusters<Solution, String> {
 
 
     public static MarkedSolutionsClusters load(Path path) throws IOException {
-        return SerializationUtils.loadObject(MarkedSolutionsClusters.class, path);
+        return JavaSerializationUtils.loadObject(MarkedSolutionsClusters.class, path);
     }
 
     public void store(Path path) throws IOException {
-        SerializationUtils.storeObject(this, path);
+        JavaSerializationUtils.storeObject(this, path);
     }
 }

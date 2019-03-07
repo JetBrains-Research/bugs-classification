@@ -39,10 +39,10 @@ public class SolutionClassifier implements Classifier<Solution, String>, Seriali
     }
 
     public void store(Path path) throws IOException {
-        SerializationUtils.storeObject(this, path);
+        JavaSerializationUtils.storeObject(this, path);
     }
 
     public static SolutionClassifier load(Path path) throws IOException {
-        return SerializationUtils.loadObject(SolutionClassifier.class, path);
+        return JavaSerializationUtils.loadObject(SolutionClassifier.class, path);
     }
 }

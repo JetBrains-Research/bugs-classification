@@ -73,3 +73,7 @@ message ProtoMarkedCluster {
     repeated ProtoFeaturesWrapper solutions = 1;
     string mark = 2;
 }
+
+message ProtoClusters {
+    repeated ProtoCluster clusters = 1;
+}

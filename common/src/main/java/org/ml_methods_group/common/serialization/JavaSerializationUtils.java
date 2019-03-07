@@ -1,12 +1,13 @@
 package org.ml_methods_group.common.serialization;
 
+import org.ml_methods_group.common.Cluster;
 import org.ml_methods_group.common.Clusters;
 import org.ml_methods_group.common.Solution;
 
 import java.io.*;
 import java.nio.file.Path;
 
-public class SerializationUtils {
+public class JavaSerializationUtils {
     public static void storeObject(Object object, Path path) throws IOException {
         final File directory = path.getParent().toFile();
         if (!directory.exists() && !directory.mkdirs()) {

@@ -1,6 +1,7 @@
 package org.ml_methods_group.common.serialization;
 
 import org.ml_methods_group.common.Cluster;
+import org.ml_methods_group.common.Clusters;
 import org.ml_methods_group.common.Solution;
 import org.ml_methods_group.common.Wrapper;
 import org.ml_methods_group.common.ast.NodeType;
@@ -15,7 +16,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class ProtoToEntityUtils {
-    public static Solution mapProtoToSolution(ProtoSolution proto) {
+    public static Solution transform(ProtoSolution proto) {
         return new Solution(
                 proto.getCode(),
                 proto.getProblemId(),
@@ -25,7 +26,7 @@ public class ProtoToEntityUtils {
         );
     }
 
-    public static CodeChange.NodeState mapProtoToNodeState(ProtoNodeState proto) {
+    public static CodeChange.NodeState transform(ProtoNodeState proto) {
         return new CodeChange.NodeState(
                 NodeType.valueOf(proto.getNodeType()),
                 proto.getJavaType(),
@@ -35,40 +36,40 @@ public class ProtoToEntityUtils {
         );
     }
 
-    public static CodeChange.NodeState[] mapProtoToNodeStateArray(List<ProtoNodeState> protos) {
-        return protos.stream().map(ProtoToEntityUtils::mapProtoToNodeState).toArray(CodeChange.NodeState[]::new);
+    public static CodeChange.NodeState[] transform(List<ProtoNodeState> protos) {
+        return protos.stream().map(ProtoToEntityUtils::transform).toArray(CodeChange.NodeState[]::new);
     }
 
-    public static CodeChange.NodeContext mapProtoToNodeContext(ProtoNodeContext proto) {
+    public static CodeChange.NodeContext transform(ProtoNodeContext proto) {
         return new CodeChange.NodeContext(
-                mapProtoToNodeState(proto.getNode()),
-                mapProtoToNodeState(proto.getParent()),
-                mapProtoToNodeState(proto.getParentOfParent()),
-                mapProtoToNodeStateArray(proto.getUnclesList()),
-                mapProtoToNodeStateArray(proto.getBrothersList()),
-                mapProtoToNodeStateArray(proto.getChildrenList())
+                transform(proto.getNode()),
+                transform(proto.getParent()),
+                transform(proto.getParentOfParent()),
+                transform(proto.getUnclesList()),
+                transform(proto.getBrothersList()),
+                transform(proto.getChildrenList())
         );
     }
 
-    public static CodeChange mapProtoToCodeChange(ProtoAtomicChange proto) {
+    public static CodeChange transform(ProtoAtomicChange proto) {
         return new CodeChange(
-                mapProtoToNodeContext(proto.getOriginalContext()),
-                mapProtoToNodeContext(proto.getDestinationContext()),
+                transform(proto.getOriginalContext()),
+                transform(proto.getDestinationContext()),
                 ChangeType.valueOf(proto.getChangeType())
         );
     }
 
-    public static Changes mapProtoToChanges(ProtoChanges proto) {
+    public static Changes transform(ProtoChanges proto) {
         return new Changes(
-                mapProtoToSolution(proto.getSrc()),
-                mapProtoToSolution(proto.getDst()),
+                transform(proto.getSrc()),
+                transform(proto.getDst()),
                 proto.getChangesList().stream()
-                        .map(ProtoToEntityUtils::mapProtoToCodeChange)
+                        .map(ProtoToEntityUtils::transform)
                         .collect(Collectors.toList())
         );
     }
 
-    public static double[] mapProtoToVectorFeatures(ProtoVectorFeatures proto) {
+    public static double[] transform(ProtoVectorFeatures proto) {
         final double[] vector = new double[proto.getFeaturesCount()];
         for (int i = 0; i < vector.length; i++) {
             vector[i] = proto.getFeatures(i);
@@ -76,15 +77,29 @@ public class ProtoToEntityUtils {
         return vector;
     }
 
+    public static List<double[]> transform(ProtoVectorListFeatures proto) {
+        return proto.getFeaturesList().stream()
+                .map(ProtoToEntityUtils::transform)
+                .collect(Collectors.toList());
+    }
+
+    public static List<String> transform(ProtoStringListFeatures proto) {
+        return proto.getFeaturesList();
+    }
+
+    public static List<CodeChange> transform(ProtoChangeListFeatures proto) {
+        return proto.getFeaturesList().stream()
+                .map(ProtoToEntityUtils::transform)
+                .collect(Collectors.toList());
+    }
+
     public static Wrapper<List<double[]>, Solution> extractVectorListFeatures(ProtoFeaturesWrapper proto) {
         if (!proto.hasVectorListFeatures()) {
             throw new IllegalArgumentException("Such features type wasn't provided!");
         }
         return new Wrapper<>(
-                proto.getVectorListFeatures().getFeaturesList().stream()
-                        .map(ProtoToEntityUtils::mapProtoToVectorFeatures)
-                        .collect(Collectors.toList()),
-                mapProtoToSolution(proto.getSolution())
+                transform(proto.getVectorListFeatures()),
+                transform(proto.getSolution())
         );
     }
 
@@ -93,8 +108,8 @@ public class ProtoToEntityUtils {
             throw new IllegalArgumentException("Such features type wasn't provided!");
         }
         return new Wrapper<>(
-                proto.getStringListFeatures().getFeaturesList(),
-                mapProtoToSolution(proto.getSolution())
+                transform(proto.getStringListFeatures()),
+                transform(proto.getSolution())
         );
     }
 
@@ -103,10 +118,8 @@ public class ProtoToEntityUtils {
             throw new IllegalArgumentException("Such features type wasn't provided!");
         }
         return new Wrapper<>(
-                proto.getChangeListFeatures().getFeaturesList().stream()
-                        .map(ProtoToEntityUtils::mapProtoToCodeChange)
-                        .collect(Collectors.toList()),
-                mapProtoToSolution(proto.getSolution())
+                transform(proto.getChangeListFeatures()),
+                transform(proto.getSolution())
         );
     }
 
@@ -115,17 +128,17 @@ public class ProtoToEntityUtils {
             throw new IllegalArgumentException("Such features type wasn't provided!");
         }
         return new Wrapper<>(
-                mapProtoToVectorFeatures(proto.getVectorFeatures()),
-                mapProtoToSolution(proto.getSolution())
+                transform(proto.getVectorFeatures()),
+                transform(proto.getSolution())
         );
     }
 
     public static Solution extractSolutions(ProtoFeaturesWrapper proto) {
-        return mapProtoToSolution(proto.getSolution());
+        return transform(proto.getSolution());
     }
 
-    public static <F> Cluster<F> mapCluster(ProtoCluster proto,
-                                            Function<ProtoFeaturesWrapper, F> extractor) {
+    public static <F> Cluster<F> transformCluster(ProtoCluster proto,
+                                                  Function<ProtoFeaturesWrapper, F> extractor) {
         final List<F> solutions = proto.getSolutionsList().stream()
                 .map(extractor)
                 .collect(Collectors.toList());
@@ -138,5 +151,13 @@ public class ProtoToEntityUtils {
                 .map(extractor)
                 .collect(Collectors.toList());
         return Map.entry(new Cluster<>(solutions), proto.getMark());
+    }
+
+    public static <F> Clusters<F> transformClusters(ProtoClusters clusters,
+                                                    Function<ProtoFeaturesWrapper, F> extractor) {
+        final var clustersList = clusters.getClustersList().stream()
+                .map(cluster -> transformCluster(cluster, extractor))
+                .collect(Collectors.toList());
+        return new Clusters<>(clustersList);
     }
 }

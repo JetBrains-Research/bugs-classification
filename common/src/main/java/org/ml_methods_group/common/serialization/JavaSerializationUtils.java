@@ -9,8 +9,8 @@ import java.nio.file.Path;
 
 public class JavaSerializationUtils {
     public static void storeObject(Object object, Path path) throws IOException {
-        final File directory = path.getParent().toFile();
-        if (!directory.exists() && !directory.mkdirs()) {
+        final Path directory = path.getParent();
+        if (directory != null && !directory.toFile().exists() && !directory.toFile().mkdirs()) {
             throw new IOException("Failed to create parent directories: " + directory.toString());
         }
         try (FileOutputStream fos = new FileOutputStream(path.toFile());

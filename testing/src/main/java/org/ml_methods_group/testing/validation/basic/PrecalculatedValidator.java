@@ -1,14 +1,13 @@
 package org.ml_methods_group.testing.validation.basic;
 
 import org.ml_methods_group.common.Solution;
-import org.ml_methods_group.common.serialization.SerializationUtils;
+import org.ml_methods_group.common.serialization.JavaSerializationUtils;
 import org.ml_methods_group.testing.validation.Validator;
 
 import java.io.IOException;
 import java.io.Serializable;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class PrecalculatedValidator implements Validator<Solution, String>, Serializable {
 
@@ -28,11 +27,11 @@ public class PrecalculatedValidator implements Validator<Solution, String>, Seri
     }
 
     public void store(Path path) throws IOException {
-        SerializationUtils.storeObject(this, path);
+        JavaSerializationUtils.storeObject(this, path);
     }
 
     public static PrecalculatedValidator load(Path path) throws IOException {
-        return SerializationUtils.loadObject(PrecalculatedValidator.class, path);
+        return JavaSerializationUtils.loadObject(PrecalculatedValidator.class, path);
     }
 
     public static PrecalculatedValidator create(List<Solution> solutions) {

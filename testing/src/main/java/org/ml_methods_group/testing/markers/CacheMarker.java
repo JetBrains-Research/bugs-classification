@@ -1,82 +1,40 @@
 package org.ml_methods_group.testing.markers;
 
+import org.ml_methods_group.common.Repository;
+import org.ml_methods_group.common.Database;
 import org.ml_methods_group.marking.markers.Marker;
-import org.ml_methods_group.testing.database.ConditionSupplier;
-import org.ml_methods_group.testing.database.Database;
-import org.ml_methods_group.testing.database.Repository;
 
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.function.ToIntFunction;
 
 public class CacheMarker<V, M> implements Marker<V, M> {
 
-    private final Repository<CachedMark> repository;
-    private final ConditionSupplier supplier;
-    private final Function<M, String> printer;
-    private final Function<String, M> parser;
+    private final Repository<Integer, M> repository;
     private final ToIntFunction<V> idExtractor;
     private final Marker<V, M> oracle;
 
-    public CacheMarker(Function<M, String> printer, Function<String, M> parser,
-                       ToIntFunction<V> idExtractor, Database database, Marker<V, M> oracle) {
-        this.repository = database.getRepository(CachedMark.class);
-        this.supplier = repository.conditionSupplier();
-        this.printer = printer;
-        this.parser = parser;
+    public CacheMarker(ToIntFunction<V> idExtractor, Class<M> markClass, Marker<V, M> oracle,
+                       Database database) throws Exception {
+        this.repository = database.repositoryForName("marks_cache", Integer.class, markClass);
         this.idExtractor = idExtractor;
         this.oracle = oracle;
+    }
+
+    public void cacheMark(V value, M mark) {
+        repository.storeValue(idExtractor.applyAsInt(value), mark);
     }
 
     @Override
     public M mark(V value) {
         final int valueId = idExtractor.applyAsInt(value);
-        final Optional<M> cache = loadCached(valueId);
+        final Optional<M> cache = repository.loadValue(valueId);
         if (cache.isPresent()) {
             return cache.get();
         }
         final M mark = oracle.mark(value);
         if (mark != null) {
-            storeCached(valueId, mark);
+            repository.storeValue(valueId, mark);
         }
         return mark;
-    }
-
-    public void cacheMark(V value, M mark) {
-        final int valueId = idExtractor.applyAsInt(value);
-        if (loadCached(valueId).isPresent()) {
-            //todo
-            return;
-        }
-        storeCached(valueId, mark);
-    }
-
-    private Optional<M> loadCached(int valueId) {
-        return repository.find(supplier.is("valueId", valueId))
-                .map(CachedMark::getMark)
-                .map(parser);
-    }
-
-    private void storeCached(int id, M mark) {
-        repository.insert(new CachedMark(id, printer.apply(mark)));
-    }
-
-    public static class CachedMark {
-        private final int valueId;
-        //todo fix visibility
-        public final String mark;
-
-        private CachedMark(int valueId, String mark) {
-            this.valueId = valueId;
-            this.mark = mark;
-        }
-
-        public CachedMark() {
-            this(0, "");
-        }
-
-        private String getMark() {
-            return mark;
-        }
     }
 }

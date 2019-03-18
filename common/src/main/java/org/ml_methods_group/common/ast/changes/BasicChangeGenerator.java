@@ -10,6 +10,7 @@ import com.github.gumtreediff.tree.ITree;
 import org.ml_methods_group.common.Solution;
 import org.ml_methods_group.common.ast.generation.ASTGenerator;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
@@ -28,8 +29,10 @@ public class BasicChangeGenerator implements ChangeGenerator {
 
     public BasicChangeGenerator(ASTGenerator generator) {
         this(generator, Arrays.asList(
-                (x, y) -> new CompleteGumtreeMatcher(x, y, new MappingStore()),
-                (x, y) -> new ClassicGumtree(x, y, new MappingStore())
+                (Serializable & BiFunction<ITree, ITree, Matcher>) (x, y) ->
+                        new CompleteGumtreeMatcher(x, y, new MappingStore()),
+                (Serializable & BiFunction<ITree, ITree, Matcher>) (x, y) ->
+                        new ClassicGumtree(x, y, new MappingStore())
         ));
     }
 

@@ -1,7 +1,9 @@
 package org.ml_methods_group.common;
 
+import java.io.Serializable;
+
 @FunctionalInterface
-public interface SimilarityMetric<V> {
+public interface SimilarityMetric<V> extends Serializable {
     double measure(V first, V second);
 
     /**

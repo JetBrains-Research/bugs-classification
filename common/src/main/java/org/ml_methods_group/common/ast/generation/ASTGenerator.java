@@ -3,6 +3,8 @@ package org.ml_methods_group.common.ast.generation;
 import com.github.gumtreediff.tree.ITree;
 import org.ml_methods_group.common.Solution;
 
-public interface ASTGenerator {
+import java.io.Serializable;
+
+public interface ASTGenerator extends Serializable {
     ITree buildTree(Solution solution);
 }

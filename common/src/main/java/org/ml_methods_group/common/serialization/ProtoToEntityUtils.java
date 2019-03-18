@@ -1,15 +1,13 @@
 package org.ml_methods_group.common.serialization;
 
-import org.ml_methods_group.common.Cluster;
-import org.ml_methods_group.common.Clusters;
-import org.ml_methods_group.common.Solution;
-import org.ml_methods_group.common.Wrapper;
+import org.ml_methods_group.common.*;
 import org.ml_methods_group.common.ast.NodeType;
 import org.ml_methods_group.common.ast.changes.ChangeType;
 import org.ml_methods_group.common.ast.changes.Changes;
 import org.ml_methods_group.common.ast.changes.CodeChange;
 import org.ml_methods_group.common.proto.*;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -145,19 +143,26 @@ public class ProtoToEntityUtils {
         return new Cluster<>(solutions);
     }
 
-    public static <F> Map.Entry<Cluster<F>, String> mapMarkedCluster(ProtoMarkedCluster proto,
-                                                                     Function<ProtoFeaturesWrapper, F> extractor) {
-        final List<F> solutions = proto.getSolutionsList().stream()
-                .map(extractor)
-                .collect(Collectors.toList());
-        return Map.entry(new Cluster<>(solutions), proto.getMark());
-    }
-
     public static <F> Clusters<F> transformClusters(ProtoClusters clusters,
                                                     Function<ProtoFeaturesWrapper, F> extractor) {
         final var clustersList = clusters.getClustersList().stream()
                 .map(cluster -> transformCluster(cluster, extractor))
                 .collect(Collectors.toList());
         return new Clusters<>(clustersList);
+    }
+
+    public static Map.Entry<Cluster<Solution>, String> transformMarkedCluster(ProtoMarkedCluster proto) {
+        final List<Solution> solutions = proto.getSolutionsList().stream()
+                .map(ProtoToEntityUtils::transform)
+                .collect(Collectors.toList());
+        return Map.entry(new Cluster<>(solutions), proto.getMark());
+    }
+
+    public static MarkedClusters<Solution, String> transformMarkedClusters(ProtoMarkedClusters proto) {
+        final Map<Cluster<Solution>, String> map = new HashMap<>();
+        proto.getClustersList().stream()
+                .map(ProtoToEntityUtils::transformMarkedCluster)
+                .forEach(e -> map.put(e.getKey(), e.getValue()));
+        return new MarkedClusters<>(map);
     }
 }

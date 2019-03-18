@@ -1,9 +1,6 @@
 package org.ml_methods_group.common.serialization;
 
-import org.ml_methods_group.common.Cluster;
-import org.ml_methods_group.common.Clusters;
-import org.ml_methods_group.common.Solution;
-import org.ml_methods_group.common.Wrapper;
+import org.ml_methods_group.common.*;
 import org.ml_methods_group.common.ast.changes.Changes;
 import org.ml_methods_group.common.ast.changes.CodeChange;
 import org.ml_methods_group.common.ast.changes.CodeChange.NodeState;
@@ -169,6 +166,26 @@ public class EntityToProtoUtils {
                 .map(EntityToProtoUtils::transform)
                 .collect(Collectors.toList());
         return ProtoClusters.newBuilder()
+                .addAllClusters(proto)
+                .build();
+    }
+
+    public static ProtoMarkedCluster transform(Cluster<Solution> cluster, String mark) {
+        final List<ProtoSolution> proto = cluster.stream()
+                .map(EntityToProtoUtils::transform)
+                .collect(Collectors.toList());
+        return ProtoMarkedCluster.newBuilder()
+                .addAllSolutions(proto)
+                .setMark(mark)
+                .build();
+    }
+
+    public static ProtoMarkedClusters transform(MarkedClusters<Solution, String> clusters) {
+        final List<ProtoMarkedCluster> proto = clusters.getMarks().entrySet()
+                .stream()
+                .map(e -> transform(e.getKey(), e.getValue()))
+                .collect(Collectors.toList());
+        return ProtoMarkedClusters.newBuilder()
                 .addAllClusters(proto)
                 .build();
     }

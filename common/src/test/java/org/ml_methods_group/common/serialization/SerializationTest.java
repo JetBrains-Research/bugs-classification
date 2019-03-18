@@ -1,10 +1,7 @@
 package org.ml_methods_group.common.serialization;
 
 import org.junit.Test;
-import org.ml_methods_group.common.Cluster;
-import org.ml_methods_group.common.Clusters;
-import org.ml_methods_group.common.Solution;
-import org.ml_methods_group.common.Wrapper;
+import org.ml_methods_group.common.*;
 import org.ml_methods_group.common.ast.changes.ChangeType;
 import org.ml_methods_group.common.ast.changes.Changes;
 import org.ml_methods_group.common.ast.changes.CodeChange;
@@ -16,6 +13,7 @@ import java.io.*;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 
 import static java.util.Arrays.deepEquals;
@@ -395,5 +393,33 @@ public class SerializationTest {
             final var parsedElement = parsed.next();
             assertArrayEquals(originalElement.elementsCopy().toArray(), parsedElement.elementsCopy().toArray());
         }
+    }
+
+    @Test
+    public void testMarkedClustersTransformation() throws Exception {
+        final List<Solution> solutions = Arrays.asList(
+                new Solution("some code1", 1, 1, 1, OK),
+                new Solution("some code2", 1, 2, 4, OK),
+                new Solution("some code3", 1, 3, 6, OK),
+                new Solution("some code4", 2, 4, 8, OK),
+                new Solution("some code5", 2, 5, 10, OK),
+                new Solution("some code6", 2, 6, 12, OK));
+        final var clusters = new MarkedClusters<>(Map.of(
+                new Cluster<>(solutions.subList(0, 3)),
+                "mark1",
+                new Cluster<>(solutions.subList(3, 6)),
+                "mark2"));
+        final var parsedClusters = SerializationTest.writeAndRead(clusters,
+                EntityToProtoUtils::transform,
+                ProtoToEntityUtils::transformMarkedClusters,
+                ProtoMarkedClusters::writeTo,
+                ProtoMarkedClusters::parseFrom);
+        final Map<Solution, String> marks = parsedClusters.getFlatMarks();
+        assertEquals("mark1", marks.get(solutions.get(0)));
+        assertEquals("mark1", marks.get(solutions.get(1)));
+        assertEquals("mark1", marks.get(solutions.get(2)));
+        assertEquals("mark2", marks.get(solutions.get(3)));
+        assertEquals("mark2", marks.get(solutions.get(4)));
+        assertEquals("mark2", marks.get(solutions.get(5)));
     }
 }

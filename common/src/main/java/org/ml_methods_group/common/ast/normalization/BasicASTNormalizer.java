@@ -64,7 +64,7 @@ public class BasicASTNormalizer implements ASTNormalizer {
             variablesTypes.addLast(new HashMap<>());
         }
 
-         void popLayer() {
+        void popLayer() {
             variablesTypes.pollLast();
         }
 
@@ -280,6 +280,22 @@ public class BasicASTNormalizer implements ASTNormalizer {
         }
 
         @Override
+        protected ITree visitCatchClause(ITree node) {
+            pushLayer();
+            final ITree result = defaultVisit(node);
+            popLayer();
+            return result;
+        }
+
+        @Override
+        protected ITree visitTryStatement(ITree node) {
+            pushLayer();
+            final ITree result = defaultVisit(node);
+            popLayer();
+            return result;
+        }
+
+        @Override
         protected ITree visitForStatement(ITree node) {
             pushLayer();
             final ITree result = checkBlocks(node, 3);
@@ -317,13 +333,20 @@ public class BasicASTNormalizer implements ASTNormalizer {
                     .stream()
                     .map(this::visit)
                     .filter(Objects::nonNull)
+                    .sorted(Comparator.comparing(ITree::getLabel))
                     .collect(Collectors.toList());
             node.setChildren(children);
-            final String label = Arrays.stream(node.getLabel().split("\\|"))
-                    .sorted()
+            final String label = children.stream()
+                    .map(ITree::getLabel)
                     .collect(Collectors.joining("|"));
             node.setLabel(label);
             return node;
+        }
+
+        @Override
+        protected ITree visitParenthesizedExpression(ITree node) {
+            assert node.getChildren().size() == 1;
+            return visit(node.getChild(0));
         }
 
         private static String getTypeName(ITree node) {

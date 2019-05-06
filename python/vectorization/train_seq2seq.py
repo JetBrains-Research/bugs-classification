@@ -133,7 +133,7 @@ class Seq2SeqTrain(object):
     
                 output = self.model(prev_gpu, edit_gpu)
     
-                _, correct, total = accuracy(output, updated_gpu)
+                _, correct, total = accuracy(output, updated_gpu, self.device)
                 
                 correct_samples += correct
                 total_samples += total

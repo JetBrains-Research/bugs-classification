@@ -44,7 +44,7 @@ def get_words_by_vectors(vectors, n = 1):
             word_matrix[step].append(closest_words)
     return np.asarray(word_matrix)
 
-def topn(decoder_output, upd_vec, n = 1):
+def topn(decoder_output, upd_vec, device, n = 1):
     seq_len, batch_size, token_vocab_size = upd_vec.size()  
 
     upd_vec = upd_vec.numpy()
@@ -76,7 +76,7 @@ n_grams_to_weight = {
     4 : (0.25, 0.25, 0.25, 0.25)
 }
 
-def bleu(decoder_output, upd_vec, n_gram = 3):
+def bleu(decoder_output, upd_vec, device, n_gram = 3):
     seq_len, batch_size, token_vocab_size = upd_vec.size()  
     
     eos_tensor= torch.from_numpy(eos_vec).to(device).squeeze(0)

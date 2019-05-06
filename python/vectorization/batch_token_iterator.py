@@ -8,10 +8,11 @@ import numpy as np
 from helper import EDIT_NAME, PREV_NAME, UPD_NAME, edit_eos, eos_vec
 
 class BatchTokenIterator(object):
-    def __init__(self, dir_path, batch_size = 1):
+    def __init__(self, dir_path, device, batch_size = 1):
         self.batch_size = batch_size
         self.dir_path = dir_path
         self.n_batched = -1
+        self.device = device
         
     def __iter__(self):
         with open(os.path.join(self.dir_path, EDIT_NAME), 'rb') as edit_file:
@@ -62,6 +63,6 @@ class BatchTokenIterator(object):
                         edit = np.transpose(np.array(edit_batch, dtype = np.float32), axes = (1, 0, 2))
                         prev = np.transpose(np.array(prev_batch, dtype = np.float32), axes = (1, 0, 2))
                         upd = np.transpose(np.array(upd_batch, dtype = np.float32), axes = (1, 0, 2))
-                        yield torch.from_numpy(edit) \
-                            , torch.from_numpy(prev) \
-                            , torch.from_numpy(upd)
+                        yield torch.from_numpy(edit).to(self.device) \
+                            , torch.from_numpy(prev).to(self.device) \
+                            , torch.from_numpy(upd).to(self.device)

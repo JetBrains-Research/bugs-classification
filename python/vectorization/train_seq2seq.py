@@ -7,13 +7,14 @@ import numpy as np
 
 from torch import nn
 from torch import optim
+from torch.optim.lr_scheduler import ReduceLROnPlateau
 
 from encoder import Encoder
 from decoder import Decoder
 from seq2seq import Seq2Seq
 
 from batch_token_iterator import BatchTokenIterator
-from loss import loss_with_eos
+from loss import loss_with_eos, topn, bleu
 
 HIDDEN_SIZE = 512
 N_LAYERS = 2
@@ -62,9 +63,11 @@ class Seq2SeqTrain(object):
 
         self.model = Seq2Seq(encoder, decoder, device).to(device)
         self.optimizer = optim.Adam(self.model.parameters())
+        self.lr_scheduler = ReduceLROnPlateau(self.optimizer, mode = 'max', factor = 0.4
+                                              , patience = 4, verbose = True, min_lr = 1e-6)
         
         
-    def train(self, train_iterator, val_iterator, loss, clip, n_epochs):
+    def train(self, train_iterator, val_iterator, loss, accuracy, clip, n_epochs):
         loss_history = []
         val_history = []
         
@@ -85,7 +88,7 @@ class Seq2SeqTrain(object):
                 # updated = (seq_len, batch size, token_vocab_size)
                 # outputs = (seq_len, batch_size, token_vocab_size)
         
-                loss_value = loss(output, updated_gpu)  
+                loss_value = loss(output, updated_gpu, self.device)  
     
                 self.optimizer.zero_grad()
                 loss_value.backward()
@@ -98,26 +101,29 @@ class Seq2SeqTrain(object):
                 print('Train batch: %i/%i' % (i_step + 1, train_iterator.n_batches), end = '\r')
     
             ave_loss = epoch_loss / i_step
-            val_loss = self.compute_loss(val_iterator, loss)
+            val_acc = self.compute_accuracy(val_iterator, accuracy)
             
             loss_history.append(ave_loss)
-            val_history.append(val_loss)
+            val_history.append(val_acc)
             
-            if best_val > val_loss:
-                best_val = val_loss
+            self.lr_scheduler.step(val_acc)
+            
+            if best_val > val_acc:
+                best_val = val_acc
                 with open(MODEL_SAVE_PATH, 'wb') as model_file:
                     pickle.dump(self.model, model_file)
             
-            print("Train loss: %f, Val loss: %f" % (ave_loss, val_loss))
+            print("Train loss: %f, Val accuracy: %f" % (ave_loss, val_acc))
             
         return loss_history, val_history
     
-    def compute_loss(self, val_iterator, loss):
+    def compute_accuracy(self, val_iterator, accuracy):
     
         self.model.eval()    
-        epoch_loss = 0.0
         
         with torch.no_grad():
+            correct_samples = 0
+            total_samples = 0
             
             for i_step, (edit, prev, updated) in enumerate(val_iterator):
             
@@ -127,25 +133,29 @@ class Seq2SeqTrain(object):
     
                 output = self.model(prev_gpu, edit_gpu)
     
-                loss_value = loss(output, updated_gpu)
+                _, correct, total = accuracy(output, updated_gpu)
                 
-                epoch_loss += loss_value
+                correct_samples += correct
+                total_samples += total
             
-            return epoch_loss / i_step
+            return float(correct_samples) / total_samples
     
 if __name__ == '__main__':
     train_iterator = BatchTokenIterator(
         dir_path = TRAIN_FOLDER
+        , device = device
         , batch_size = BATCH_SIZE
     )
     
     valid_iterator = BatchTokenIterator(
         dir_path = VALID_FOLDER
+        , device = device
         , batch_size = BATCH_SIZE
     )
     
     test_iterator = BatchTokenIterator(
         dir_path = TEST_FOLDER
+        , device = device
         , batch_size = BATCH_SIZE
     )
     
@@ -165,6 +175,7 @@ if __name__ == '__main__':
         train_iterator = train_iterator
         , val_iterator = valid_iterator
         , loss = loss_with_eos
+        , accuracy = bleu
         , clip = CLIP
         , n_epochs = N_EPOCHS
     )

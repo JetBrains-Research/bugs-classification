@@ -20,9 +20,9 @@ test_dir = 'data/tokens/test'
 if not os.path.exists(test_dir):
     os.makedirs(test_dir)
 
-edit_name = 'edit_vecs.pickle'
-prev_name = 'prev_vecs.pickle'
-upd_name = 'upd_vecs.pickle'
+edit_name = 'edits.pickle'
+prev_name = 'prevs.pickle'
+upd_name = 'updates.pickle'
 
 src_data_path = 'data/github_commits.dataset.jsonl'
 
@@ -52,7 +52,7 @@ def create_token_datasets():
 load tokens from prev_tokens_path and upd_tokens_path and train gensim.Word2Vec on it
 '''
 def train_word2vec():
-    print('create and train token2vec')
+    print('Create and train token2vec')
     vocab = TokenVecTrain(
         dim = 300
         , min_count = 1
@@ -68,7 +68,7 @@ def train_word2vec():
 convert tokens from prev_tokens_path and upd_tokens_path to vectors according word2vec model
 '''
 def convert_tokens_to_vectors():
-    print('convert tokens to vectors')
+    print('Convert tokens to vectors')
     converter = Token2VecConverter(w2v_vecs_path)    
     converter.convert(prev_tokens_path, os.path.join(all_dir, prev_name))
     converter.convert(upd_tokens_path, os.path.join(all_dir, upd_name))
@@ -77,7 +77,7 @@ def convert_tokens_to_vectors():
 divide dataset into 3 parts: train, valid and test
 '''
 def divide_dataset():
-    print('divide dataset (train, valid, test)')
+    print('Divide dataset (train, valid, test)')
     def run_division(name):
         divide_set(
             in_path = os.path.join(all_dir, name)

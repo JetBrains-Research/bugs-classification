@@ -23,7 +23,7 @@ class TokenDataset(object):
                     json_row = json.loads(row)
                     json_lines.append(json_row)
                 except json.JSONDecodeError:
-                    print('Error at %d row' % row_id)
+                    pass
         return json_lines
 
     def get_tokens_from_jsonl(self, json_lines):

@@ -189,4 +189,22 @@ public class EntityToProtoUtils {
                 .addAllClusters(proto)
                 .build();
     }
+
+    public static ProtoSolutionMarksHolder transform(SolutionMarksHolder holder) {
+        final var builder = ProtoSolutionMarksHolder.newBuilder();
+        for (var entry : holder) {
+           final var solutionMarks = ProtoSolutionsMarks.newBuilder()
+                    .addAllMarks(entry.getValue())
+                    .setSolution(transform(entry.getKey()))
+                    .build();
+           builder.addMap(solutionMarks);
+        }
+        return builder.build();
+    }
+
+    public static ProtoDataset transform(Dataset dataset) {
+        final var builder = ProtoDataset.newBuilder();
+        dataset.forEach(x -> builder.addSolutions(transform(x)));
+        return builder.build();
+    }
 }

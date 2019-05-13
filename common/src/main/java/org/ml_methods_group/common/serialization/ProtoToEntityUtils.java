@@ -7,6 +7,7 @@ import org.ml_methods_group.common.ast.changes.Changes;
 import org.ml_methods_group.common.ast.changes.CodeChange;
 import org.ml_methods_group.common.proto.*;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -151,18 +152,34 @@ public class ProtoToEntityUtils {
         return new Clusters<>(clustersList);
     }
 
-    public static Map.Entry<Cluster<Solution>, String> transformMarkedCluster(ProtoMarkedCluster proto) {
+    public static Map.Entry<Cluster<Solution>, String> transform(ProtoMarkedCluster proto) {
         final List<Solution> solutions = proto.getSolutionsList().stream()
                 .map(ProtoToEntityUtils::transform)
                 .collect(Collectors.toList());
         return Map.entry(new Cluster<>(solutions), proto.getMark());
     }
 
-    public static MarkedClusters<Solution, String> transformMarkedClusters(ProtoMarkedClusters proto) {
+    public static MarkedClusters<Solution, String> transform(ProtoMarkedClusters proto) {
         final Map<Cluster<Solution>, String> map = new HashMap<>();
         proto.getClustersList().stream()
-                .map(ProtoToEntityUtils::transformMarkedCluster)
+                .map(ProtoToEntityUtils::transform)
                 .forEach(e -> map.put(e.getKey(), e.getValue()));
         return new MarkedClusters<>(map);
+    }
+
+    public static SolutionMarksHolder transform(ProtoSolutionMarksHolder proto) {
+        final HashMap<Solution, List<String>> buffer = new HashMap<>();
+        for (var solutionMarks : proto.getMapList()) {
+            buffer.put(transform(solutionMarks.getSolution()),
+                    new ArrayList<>(solutionMarks.getMarksList()));
+        }
+        return new SolutionMarksHolder(buffer);
+    }
+
+    public static Dataset transform(ProtoDataset proto) {
+        final List<Solution> solutions = proto.getSolutionsList().stream()
+                .map(ProtoToEntityUtils::transform)
+                .collect(Collectors.toList());
+        return new Dataset(solutions);
     }
 }

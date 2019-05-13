@@ -65,10 +65,6 @@ message ProtoFeaturesWrapper {
     ProtoVectorFeatures vector_features = 5;
 }
 
-message ProtoDataset {
-    repeated ProtoFeaturesWrapper solutions = 1;
-}
-
 message ProtoCluster {
     repeated ProtoFeaturesWrapper solutions = 1;
 }
@@ -84,4 +80,17 @@ message ProtoClusters {
 
 message ProtoMarkedClusters {
     repeated ProtoMarkedCluster clusters = 1;
+}
+
+message ProtoSolutionsMarks {
+    ProtoSolution solution = 1;
+    repeated string marks = 2;
+}
+
+message ProtoSolutionMarksHolder {
+    repeated ProtoSolutionsMarks map = 1;
+}
+
+message ProtoDataset {
+    repeated ProtoSolution solutions = 1;
 }

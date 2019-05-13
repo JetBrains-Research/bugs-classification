@@ -411,7 +411,7 @@ public class SerializationTest {
                 "mark2"));
         final var parsedClusters = SerializationTest.writeAndRead(clusters,
                 EntityToProtoUtils::transform,
-                ProtoToEntityUtils::transformMarkedClusters,
+                ProtoToEntityUtils::transform,
                 ProtoMarkedClusters::writeTo,
                 ProtoMarkedClusters::parseFrom);
         final Map<Solution, String> marks = parsedClusters.getFlatMarks();
@@ -421,5 +421,50 @@ public class SerializationTest {
         assertEquals("mark2", marks.get(solutions.get(3)));
         assertEquals("mark2", marks.get(solutions.get(4)));
         assertEquals("mark2", marks.get(solutions.get(5)));
+    }
+
+    @Test
+    public void testSolutionMarksHolderTransformation() throws Exception {
+        final Solution solution1 = new Solution("", 1, 1, 1, FAIL);
+        final Solution solution2 = new Solution("", 1, 2, 4, FAIL);
+        final Solution solution3 = new Solution("", 2, 3, 6, FAIL);
+
+        final var holder = new SolutionMarksHolder();
+        holder.addMark(solution1, "mark11");
+        holder.addMark(solution1, "mark12");
+        holder.addMark(solution2, "mark21");
+        holder.addMark(solution3, "mark31");
+        holder.addMark(solution3, "mark32");
+        holder.addMark(solution3, "mark33");
+        final var parsedHolder = SerializationTest.writeAndRead(holder,
+                EntityToProtoUtils::transform,
+                ProtoToEntityUtils::transform,
+                ProtoSolutionMarksHolder::writeTo,
+                ProtoSolutionMarksHolder::parseFrom);
+        assertArrayEquals(holder.getMarks(solution1).map(List::toArray).get(),
+                parsedHolder.getMarks(solution1).map(List::toArray).get());
+        assertArrayEquals(holder.getMarks(solution2).map(List::toArray).get(),
+                parsedHolder.getMarks(solution2).map(List::toArray).get());
+        assertArrayEquals(holder.getMarks(solution3).map(List::toArray).get(),
+                parsedHolder.getMarks(solution3).map(List::toArray).get());
+    }
+
+    @Test
+    public void testDatasetTransformation() throws Exception {
+        final Solution solution1 = new Solution("", 1, 1, 1, FAIL);
+        final Solution solution2 = new Solution("", 1, 2, 4, FAIL);
+        final Solution solution3 = new Solution("", 2, 3, 6, FAIL);
+        final Dataset dataset = new Dataset(Arrays.asList(solution1, solution2, solution3));
+
+        final var parsedDataset = SerializationTest.writeAndRead(dataset,
+                EntityToProtoUtils::transform,
+                ProtoToEntityUtils::transform,
+                ProtoDataset::writeTo,
+                ProtoDataset::parseFrom);
+        final List<Solution> data = parsedDataset.getValues();
+        assertEquals(3, data.size());
+        assertEquals(data.get(0), solution1);
+        assertEquals(data.get(1), solution2);
+        assertEquals(data.get(2), solution3);
     }
 }

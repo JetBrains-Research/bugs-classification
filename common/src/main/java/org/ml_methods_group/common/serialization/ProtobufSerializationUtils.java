@@ -1,13 +1,8 @@
 package org.ml_methods_group.common.serialization;
 
-import org.ml_methods_group.common.Clusters;
-import org.ml_methods_group.common.MarkedClusters;
-import org.ml_methods_group.common.Solution;
-import org.ml_methods_group.common.Wrapper;
+import org.ml_methods_group.common.*;
 import org.ml_methods_group.common.ast.changes.CodeChange;
-import org.ml_methods_group.common.proto.ProtoClusters;
-import org.ml_methods_group.common.proto.ProtoFeaturesWrapper;
-import org.ml_methods_group.common.proto.ProtoMarkedClusters;
+import org.ml_methods_group.common.proto.*;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -82,7 +77,39 @@ public class ProtobufSerializationUtils {
     public static MarkedClusters<Solution, String> loadMarkedClusters(Path path)
             throws IOException {
         try (FileInputStream inputStream = new FileInputStream(path.toFile())) {
-            return ProtoToEntityUtils.transformMarkedClusters(ProtoMarkedClusters.parseFrom(inputStream));
+            return ProtoToEntityUtils.transform(ProtoMarkedClusters.parseFrom(inputStream));
+        }
+    }
+
+    public static void storeSolutionMarksHolder(SolutionMarksHolder holder, Path path) throws IOException {
+        final File directory = path.getParent().toFile();
+        if (!directory.exists() && !directory.mkdirs()) {
+            throw new IOException("Failed to create parent directories: " + directory.toString());
+        }
+        try (FileOutputStream outputStream = new FileOutputStream(path.toFile())) {
+            EntityToProtoUtils.transform(holder).writeTo(outputStream);
+        }
+    }
+
+    public static SolutionMarksHolder loadSolutionMarksHolder(Path path) throws IOException {
+        try (FileInputStream inputStream = new FileInputStream(path.toFile())) {
+            return ProtoToEntityUtils.transform(ProtoSolutionMarksHolder.parseFrom(inputStream));
+        }
+    }
+
+    public static void storeDataset(Dataset dataset, Path path) throws IOException {
+        final File directory = path.getParent().toFile();
+        if (!directory.exists() && !directory.mkdirs()) {
+            throw new IOException("Failed to create parent directories: " + directory.toString());
+        }
+        try (FileOutputStream outputStream = new FileOutputStream(path.toFile())) {
+            EntityToProtoUtils.transform(dataset).writeTo(outputStream);
+        }
+    }
+
+    public static Dataset loadDataset(Path path) throws IOException {
+        try (FileInputStream inputStream = new FileInputStream(path.toFile())) {
+            return ProtoToEntityUtils.transform(ProtoDataset.parseFrom(inputStream));
         }
     }
 

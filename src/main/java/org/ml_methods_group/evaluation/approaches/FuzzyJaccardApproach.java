@@ -8,12 +8,14 @@ import org.ml_methods_group.common.ast.changes.CodeChange;
 import org.ml_methods_group.common.metrics.functions.CodeChangeSimilarityMetric;
 import org.ml_methods_group.common.metrics.functions.FuzzyJaccardDistanceFunction;
 
-import javax.sql.rowset.serial.SerialArray;
 import java.io.Serializable;
 import java.util.List;
 import java.util.function.Function;
 
 public class FuzzyJaccardApproach {
+
+    public static final ApproachTemplate<Changes> TEMPLATE = (d, g) -> getDefaultApproach(g);
+
     public static Approach<Changes> getDefaultApproach(FeaturesExtractor<Solution, Changes> generator) {
         return new Approach<>(generator,
                 CommonUtils.metricFor(

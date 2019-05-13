@@ -105,6 +105,41 @@ public class CodeChange implements Serializable {
         return result;
     }
 
+    @Override
+    public String toString() {
+        switch (changeType) {
+            case UPDATE:
+                return String.format("UPDATE(%s(%s->%s):%s(%s))",
+                        originalContext.node.type,
+                        originalContext.node.label,
+                        destinationContext.node.label,
+                        originalContext.parent.type,
+                        originalContext.parent.label);
+            case MOVE:
+                return String.format("MOVE(%s(%s):%s(%s)->%s(%s))",
+                        originalContext.node.type,
+                        originalContext.node.label,
+                        originalContext.parent.type,
+                        originalContext.parent.label,
+                        destinationContext.parent.type,
+                        destinationContext.parent.label);
+            case DELETE:
+                return String.format("DELETE(%s(%s):%s(%s))",
+                        originalContext.node.type,
+                        originalContext.node.label,
+                        originalContext.parent.type,
+                        originalContext.parent.label);
+            case INSERT:
+                return String.format("INSERT(%s(%s):%s(%s))",
+                        destinationContext.node.type,
+                        destinationContext.node.label,
+                        destinationContext.parent.type,
+                        destinationContext.parent.label);
+            default:
+                throw new IllegalStateException();
+        }
+    }
+
     public static class NodeState implements Serializable {
 
         private final NodeType type;

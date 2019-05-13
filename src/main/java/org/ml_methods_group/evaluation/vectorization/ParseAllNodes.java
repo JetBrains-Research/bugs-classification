@@ -1,6 +1,7 @@
 package org.ml_methods_group.evaluation.vectorization;
 
 import com.github.gumtreediff.tree.ITree;
+import org.ml_methods_group.common.Dataset;
 import org.ml_methods_group.common.Solution;
 import org.ml_methods_group.common.ast.changes.CodeChange.NodeContext;
 import org.ml_methods_group.common.ast.changes.CodeChange.NodeState;
@@ -8,7 +9,7 @@ import org.ml_methods_group.common.ast.changes.MetadataKeys;
 import org.ml_methods_group.common.ast.generation.ASTGenerator;
 import org.ml_methods_group.common.ast.generation.BasicASTGenerator;
 import org.ml_methods_group.common.ast.normalization.BasicASTNormalizer;
-import org.ml_methods_group.common.serialization.SolutionsDataset;
+import org.ml_methods_group.common.serialization.ProtobufSerializationUtils;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -18,7 +19,7 @@ import java.util.List;
 
 public class ParseAllNodes {
     public static void main(String[] args) throws IOException {
-        final SolutionsDataset dataset = SolutionsDataset.load(
+        final Dataset dataset = ProtobufSerializationUtils.loadDataset(
                 Paths.get(".cache", "datasets", "train_dataset.tmp"));
         System.out.println("Loaded");
         final ASTGenerator generator = new BasicASTGenerator(new BasicASTNormalizer());

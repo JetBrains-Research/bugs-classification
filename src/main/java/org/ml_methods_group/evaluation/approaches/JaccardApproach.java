@@ -52,4 +52,6 @@ public class JaccardApproach {
                 .compose(new PointwiseExtractor<>(extractor)),
                 new JaccardDistanceFunction<>(), "ful_jac");
     }
+
+    public static final ApproachTemplate<List<String>> TEMPLATE = (d, g) -> getDefaultApproach(g);
 }

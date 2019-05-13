@@ -1,11 +1,12 @@
 package org.ml_methods_group.parsing;
 
+import org.ml_methods_group.common.Dataset;
 import org.ml_methods_group.common.Solution;
 import org.ml_methods_group.common.Solution.Verdict;
-import org.ml_methods_group.common.serialization.SolutionsDataset;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.ObjectInputStream;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -16,8 +17,8 @@ import static org.ml_methods_group.common.Solution.Verdict.FAIL;
 import static org.ml_methods_group.common.Solution.Verdict.OK;
 
 public class ParsingUtils {
-    public static SolutionsDataset parse(InputStream stream, CodeValidator validator,
-                                         IntPredicate problemFilter) throws IOException {
+    public static Dataset parse(InputStream stream, CodeValidator validator,
+                                IntPredicate problemFilter) throws IOException {
         CSVParser<Column> parser = new CSVParser<>(stream, Column::byName, Column.class);
         final HashMap<Long, Integer> sessionIds = new HashMap<>();
         final Map<Long, Solution> lastSolution = new HashMap<>();
@@ -30,7 +31,7 @@ public class ParsingUtils {
                 continue;
             }
             final Optional<String> code = validator.validate(parser.getToken(Column.CODE));
-            if (!code.isPresent()) {
+            if (code.isEmpty()) {
                 continue;
             }
             final int userId = parser.getInt(Column.USER_ID);
@@ -50,10 +51,10 @@ public class ParsingUtils {
                 lastTime.put(id, time);
             }
         }
-        return new SolutionsDataset(lastSolution.values());
+        return new Dataset(lastSolution.values());
     }
 
-    public static SolutionsDataset parseJavaSolutions(InputStream stream, int problemId) throws IOException {
+    public static Dataset parseJavaSolutions(InputStream stream, int problemId) throws IOException {
         return parse(stream, new JavaCodeValidator(), x -> x == problemId);
     }
 

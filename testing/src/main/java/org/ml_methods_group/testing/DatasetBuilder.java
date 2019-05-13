@@ -1,8 +1,8 @@
 package org.ml_methods_group.testing;
 
 import org.ml_methods_group.common.CommonUtils;
+import org.ml_methods_group.common.Dataset;
 import org.ml_methods_group.common.Solution;
-import org.ml_methods_group.common.serialization.SolutionsDataset;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -16,7 +16,7 @@ public class DatasetBuilder {
     private final List<Solution> correct;
     private final List<Solution> incorrect;
 
-    public DatasetBuilder(long seed, SolutionsDataset dataset) {
+    public DatasetBuilder(long seed, Dataset dataset) {
         this.seed = seed;
         correct = dataset.getValues(CommonUtils.check(Solution::getVerdict, OK::equals));
         incorrect = dataset.getValues(CommonUtils.check(Solution::getVerdict, FAIL::equals));

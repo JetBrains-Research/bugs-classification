@@ -2,6 +2,7 @@ package org.ml_methods_group.common;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.function.Function;
@@ -33,8 +34,8 @@ public class Cluster<V> implements Iterable<V>, Serializable {
         return new Cluster<>(buffer);
     }
 
-    public static <V, T> Function<Cluster<V>, Cluster<T>> mapper(Function<V, T> mapping) {
-        return (Serializable & Function<Cluster<V>, Cluster<T>>) x -> x.map(mapping);
+    public List<V> getElements() {
+        return Collections.unmodifiableList(elements);
     }
 
     public List<V> elementsCopy() {

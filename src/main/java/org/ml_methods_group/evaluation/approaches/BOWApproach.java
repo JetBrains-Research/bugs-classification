@@ -1,5 +1,6 @@
 package org.ml_methods_group.evaluation.approaches;
 
+import org.ml_methods_group.common.Dataset;
 import org.ml_methods_group.common.FeaturesExtractor;
 import org.ml_methods_group.common.Solution;
 import org.ml_methods_group.common.ast.NodeType;
@@ -11,7 +12,6 @@ import org.ml_methods_group.common.ast.changes.CodeChange.NodeState;
 import org.ml_methods_group.common.extractors.BOWExtractor;
 import org.ml_methods_group.common.extractors.BOWExtractor.BOWVector;
 import org.ml_methods_group.common.extractors.HashExtractor;
-import org.ml_methods_group.common.serialization.SolutionsDataset;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -56,7 +56,9 @@ public class BOWApproach {
             .hashComponent(NodeState::getJavaType)
             .build();
 
-    public static Approach<BOWVector> getDefaultApproach(int wordsLimit, SolutionsDataset train,
+    public static final ApproachTemplate<BOWVector> TEMPLATE = (d, g) -> getDefaultApproach(20000, d, g);
+
+    public static Approach<BOWVector> getDefaultApproach(int wordsLimit, Dataset train,
                                               FeaturesExtractor<Solution, Changes> generator) {
         final HashExtractor<NodeContext> weak = HashExtractor.<NodeContext>builder()
                 .append("TOC")
@@ -108,7 +110,7 @@ public class BOWApproach {
                 .build();
     }
 
-    private static Approach<BOWVector> getApproach(int wordsLimit, SolutionsDataset train,
+    private static Approach<BOWVector> getApproach(int wordsLimit, Dataset train,
                                         FeaturesExtractor<Solution, Changes> generator,
                                         List<HashExtractor<CodeChange>> extractors) {
         final List<CodeChange> changes = train.getValues(x -> x.getVerdict() == FAIL)

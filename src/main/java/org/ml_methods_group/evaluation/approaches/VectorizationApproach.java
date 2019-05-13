@@ -1,5 +1,6 @@
 package org.ml_methods_group.evaluation.approaches;
 
+import org.ml_methods_group.common.Dataset;
 import org.ml_methods_group.common.FeaturesExtractor;
 import org.ml_methods_group.common.Solution;
 import org.ml_methods_group.common.ast.NodeType;
@@ -12,7 +13,6 @@ import org.ml_methods_group.common.embedding.*;
 import org.ml_methods_group.common.extractors.PointwiseExtractor;
 import org.ml_methods_group.common.metrics.functions.FunctionsUtils;
 import org.ml_methods_group.common.metrics.functions.FuzzyJaccardDistanceFunction;
-import org.ml_methods_group.common.serialization.SolutionsDataset;
 import org.ml_methods_group.evaluation.vectorization.SerializationUtils;
 
 import java.io.File;
@@ -27,7 +27,7 @@ import static org.ml_methods_group.common.embedding.ListEmbeddingExtractor.Reduc
 
 public class VectorizationApproach {
 
-    public static Approach<List<double[]>> getDefaultApproach(SolutionsDataset train,
+    public static Approach<List<double[]>> getDefaultApproach(Dataset train,
                                                               FeaturesExtractor<Solution, Changes> generator)
             throws FileNotFoundException {
         final Map<String, Integer> wordsDict = SerializationUtils.readMap(".cache/dicts/words_dict.txt");
@@ -47,7 +47,7 @@ public class VectorizationApproach {
                 new FuzzyJaccardDistanceFunction<>(FunctionsUtils::cosineSimilarity), "def_vec");
     }
 
-    public static Approach<double[]> getSumApproach(SolutionsDataset train,
+    public static Approach<double[]> getSumApproach(Dataset train,
                                                     FeaturesExtractor<Solution, Changes> generator)
             throws FileNotFoundException {
         final Map<String, Integer> wordsDict = SerializationUtils.readMap(".cache/dicts/words_dict.txt");
@@ -67,7 +67,7 @@ public class VectorizationApproach {
                 FunctionsUtils::cosineDistance, "sum_vec");
     }
 
-    public static Approach<double[]> getMeanApproach(SolutionsDataset train,
+    public static Approach<double[]> getMeanApproach(Dataset train,
                                                     FeaturesExtractor<Solution, Changes> generator)
             throws FileNotFoundException {
         final Map<String, Integer> wordsDict = SerializationUtils.readMap(".cache/dicts/words_dict.txt");

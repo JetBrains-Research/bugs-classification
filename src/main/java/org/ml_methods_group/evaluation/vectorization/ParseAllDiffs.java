@@ -1,5 +1,6 @@
 package org.ml_methods_group.evaluation.vectorization;
 
+import org.ml_methods_group.common.Dataset;
 import org.ml_methods_group.common.Solution;
 import org.ml_methods_group.common.ast.changes.BasicChangeGenerator;
 import org.ml_methods_group.common.ast.changes.ChangeGenerator;
@@ -7,7 +8,7 @@ import org.ml_methods_group.common.ast.changes.Changes;
 import org.ml_methods_group.common.ast.changes.CodeChange;
 import org.ml_methods_group.common.ast.generation.CachedASTGenerator;
 import org.ml_methods_group.common.ast.normalization.NamesASTNormalizer;
-import org.ml_methods_group.common.serialization.SolutionsDataset;
+import org.ml_methods_group.common.serialization.ProtobufSerializationUtils;
 
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -24,7 +25,7 @@ import static org.ml_methods_group.common.Solution.Verdict.OK;
 
 public class ParseAllDiffs {
     public static void main(String[] args) throws IOException {
-        final SolutionsDataset dataset = SolutionsDataset.load(
+        final Dataset dataset = ProtobufSerializationUtils.loadDataset(
                 Paths.get(".cache", "datasets", "train_dataset.tmp"));
         final List<Solution> incorrect = dataset.getValues(check(Solution::getVerdict, FAIL::equals));
         final Map<Integer, Solution> correct = dataset.getValues(check(Solution::getVerdict, OK::equals))

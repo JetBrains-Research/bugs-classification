@@ -25,7 +25,8 @@ public class ClassificationTestingResult implements TestingResults {
     }
 
     public double getPrecision(double threshold) {
-        return (double) count((x, a) -> x >= threshold && a) / count((x, a) -> x >= threshold);
+        final long positive = count((x, a) -> x >= threshold);
+        return positive == 0? 1.0 : (double) count((x, a) -> x >= threshold && a) / positive;
     }
 
     public double getAccuracy() {

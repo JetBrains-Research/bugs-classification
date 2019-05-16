@@ -77,12 +77,14 @@ public class Application {
         final var treeGenerator = new CachedASTGenerator(normalizer);
         final var changeGenerator = new BasicChangeGenerator(treeGenerator);
         final var extractor = new ChangesExtractor(changeGenerator, selector);
-        final var approach = template.createApproach(dataset, extractor);
+        final var approach = template.createApproach(
+                dataset.filter(x -> selector.selectOption(x).isPresent()),
+                extractor);
         final var clusterer = approach.getClusterer(threshold);
         final Predicate<Solution> checker = x -> x.getVerdict() == FAIL && selector.selectOption(x).isPresent();
         final var clusters = clusterer.buildClusters(dataset.getValues(checker));
         ProtobufSerializationUtils.storeSolutionClusters(clusters, storage);
-        
+
         System.out.println("Total number of clusters: " + clusters.getClusters().size());
         System.out.println("Total number of clusters (size >= 5): " + clusters.getClusters().stream()
                 .filter(x -> x.size() >= 5).count());

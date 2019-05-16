@@ -65,10 +65,7 @@ public class ProtobufSerializationUtils {
     }
 
     public static void storeMarkedClusters(MarkedClusters<Solution, String> clusters, Path path) throws IOException {
-        final File directory = path.getParent().toFile();
-        if (!directory.exists() && !directory.mkdirs()) {
-            throw new IOException("Failed to create parent directories: " + directory.toString());
-        }
+        checkFolders(path);
         try (FileOutputStream outputStream = new FileOutputStream(path.toFile())) {
             EntityToProtoUtils.transform(clusters).writeTo(outputStream);
         }
@@ -82,10 +79,7 @@ public class ProtobufSerializationUtils {
     }
 
     public static void storeSolutionMarksHolder(SolutionMarksHolder holder, Path path) throws IOException {
-        final File directory = path.getParent().toFile();
-        if (!directory.exists() && !directory.mkdirs()) {
-            throw new IOException("Failed to create parent directories: " + directory.toString());
-        }
+        checkFolders(path);
         try (FileOutputStream outputStream = new FileOutputStream(path.toFile())) {
             EntityToProtoUtils.transform(holder).writeTo(outputStream);
         }
@@ -98,10 +92,7 @@ public class ProtobufSerializationUtils {
     }
 
     public static void storeDataset(Dataset dataset, Path path) throws IOException {
-        final File directory = path.getParent().toFile();
-        if (!directory.exists() && !directory.mkdirs()) {
-            throw new IOException("Failed to create parent directories: " + directory.toString());
-        }
+        checkFolders(path);
         try (FileOutputStream outputStream = new FileOutputStream(path.toFile())) {
             EntityToProtoUtils.transform(dataset).writeTo(outputStream);
         }
@@ -116,10 +107,7 @@ public class ProtobufSerializationUtils {
     //unsafe methods
 
     private static void unsafeStoreClusters(Clusters<?> clusters, Path path) throws IOException {
-        final File directory = path.getParent().toFile();
-        if (!directory.exists() && !directory.mkdirs()) {
-            throw new IOException("Failed to create parent directories: " + directory.toString());
-        }
+        checkFolders(path);
         try (FileOutputStream outputStream = new FileOutputStream(path.toFile())) {
             EntityToProtoUtils.transform(clusters).writeTo(outputStream);
         }
@@ -129,6 +117,17 @@ public class ProtobufSerializationUtils {
                                                       Function<ProtoFeaturesWrapper, T> extractor) throws IOException {
         try (FileInputStream inputStream = new FileInputStream(path.toFile())) {
             return ProtoToEntityUtils.transformClusters(ProtoClusters.parseFrom(inputStream), extractor);
+        }
+    }
+
+    private static void checkFolders(Path pathToFile) throws IOException {
+        final Path parent = pathToFile.getParent();
+        if (parent == null) {
+            return;
+        }
+        final File directory = parent.toFile();
+        if (!directory.exists() && !directory.mkdirs()) {
+            throw new IOException("Failed to create parent directories: " + directory.toString());
         }
     }
 }

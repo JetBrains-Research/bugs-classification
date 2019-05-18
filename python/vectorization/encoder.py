@@ -9,7 +9,6 @@ class Encoder(nn.Module):
         super().__init__()
         self.hidden_size = hidden_size
         self.n_layers = n_layers
-        self.dropout = nn.Dropout(p = dropout)
         
         if embeddings is None:
             self.embedding = nn.Embedding(vocab_size, token_emb_dim).to(device)

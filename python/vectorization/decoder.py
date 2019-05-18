@@ -29,7 +29,6 @@ class Decoder(nn.Module):
         ).to(device)
         
         self.out = nn.Linear(hidden_size, vocab_size).to(device)       
-        self.dropout = nn.Dropout(dropout).to(device)
         
     def forward(self, enc_out, prevs, hidden, cell):
         # enc_out.shape = (batch_size, 2 * encoder.hidden_size)

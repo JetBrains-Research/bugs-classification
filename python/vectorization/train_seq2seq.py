@@ -21,14 +21,14 @@ from helper import w2v_model, token2id_path, save_dir, model_save_path, \
 
 HIDDEN_SIZE = 64
 N_LAYERS = 2
-ENC_DROPOUT = 0.5
-DEC_DROPOUT = 0.5
+ENC_DROPOUT = 0.1
+DEC_DROPOUT = 0.1
 EDIT_DIM = 4
 
 N_EPOCHS = 20
 CLIP = 1
 
-BATCH_SIZE = 50
+BATCH_SIZE = 70
 
 if not os.path.isdir(save_dir):
     os.makedirs(save_dir)
@@ -37,7 +37,8 @@ plot_dir = 'plots'
 if not os.path.isdir(plot_dir):
     os.makedirs(plot_dir)
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+#device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+device = torch.device("cpu")
 
 def create_datasets():
     train_iterator = BatchTokenIterator(
@@ -146,7 +147,7 @@ def train(model, device, optimizer, lr_scheduler,
             with open(model_save_path, 'wb') as model_file:
                 pickle.dump(model, model_file)
             
-        print("Train loss: %f, Train acc: %f, Valid accuracy: %f" % (ave_loss, train_acc, valid_acc))
+        print("Epoch: %i, Train loss: %f, Train acc: %f, Valid accuracy: %f" % (epoch, ave_loss, train_acc, valid_acc))
             
     return train_loss_history, train_acc_history, valid_acc_history
     
@@ -186,6 +187,7 @@ def draw_plots(train_loss_history, train_acc_history, valid_acc_history):
     plt.plot(valid_acc_history, label = 'valid')
     plt.legend()
     plt.savefig(os.path.join(plot_dir,'accuracy.png'))
+
   
 if __name__ == '__main__':
     train_iterator, valid_iterator, test_iterator = create_datasets()
@@ -198,7 +200,7 @@ if __name__ == '__main__':
                 embeddings[ind] = w2v_model.get_vector(token)
                 
     model = create_model(embeddings)
-    optimizer = optim.Adagrad(model.parameters(), lr = 0.05)
+    optimizer = optim.Adagrad(model.parameters(), lr = 0.09)
     lr_scheduler = ReduceLROnPlateau(optimizer, mode = 'max', factor = 0.4
                                      , patience = 3, verbose = True, min_lr = 1e-6)
     

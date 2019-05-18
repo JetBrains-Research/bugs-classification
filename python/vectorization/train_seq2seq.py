@@ -37,8 +37,7 @@ plot_dir = 'plots'
 if not os.path.isdir(plot_dir):
     os.makedirs(plot_dir)
 
-#device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-device = torch.device("cpu")
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 def create_datasets():
     train_iterator = BatchTokenIterator(

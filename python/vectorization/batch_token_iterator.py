@@ -5,16 +5,15 @@ import torch
 import pickle
 import numpy as np
 
-from helper import EDIT_NAME, PREV_NAME, UPD_NAME, edit_eos, eos_vec
+from helper import EDIT_NAME, PREV_NAME, UPD_NAME
 
 class BatchTokenIterator(object):
-    def __init__(self, dir_path, device, batch_size = 1):
+    def __init__(self, dir_path, batch_size = 1):
         self.batch_size = batch_size
         self.dir_path = dir_path
         self.n_batched = -1
-        self.device = device
         
-    def __iter__(self):
+    def __iter__(self):        
         with open(os.path.join(self.dir_path, EDIT_NAME), 'rb') as edit_file:
             with open(os.path.join(self.dir_path, PREV_NAME), 'rb') as prev_file:
                 with open(os.path.join(self.dir_path, UPD_NAME), 'rb') as upd_file:
@@ -22,47 +21,28 @@ class BatchTokenIterator(object):
                     prev_tokens = pickle.load(prev_file)
                     upd_tokens = pickle.load(upd_file)
                     
-                    self.n_batches = len(edit_tokens) // self.batch_size
-                    cur_id = 0
-                    for _ in range(self.n_batches):
-                        edit_batch = []
-                        prev_batch = []
-                        upd_batch = []
-                        max_len = -1
-                        for _ in range(self.batch_size):
-                            max_len = max(max_len, len(edit_tokens[cur_id]))
-                            edit_batch.append(edit_tokens[cur_id])
-                            prev_batch.append(prev_tokens[cur_id])
-                            upd_batch.append(upd_tokens[cur_id])
-                            if cur_id == len(edit_tokens) - 1:
-                                cur_id = -1
-                            cur_id += 1
+                    n_samples = len(edit_tokens)
+                    self.n_batches = n_samples // self.batch_size
+                    edit_dim = len(edit_tokens[0][0])
+        
+                    indices = np.arange(n_samples)
+                    np.random.shuffle(indices)
+                    
+                    for start in range(0, n_samples, self.batch_size):
+                        end = min(start + self.batch_size, n_samples)
                         
-                        for i in range(self.batch_size):
-                            edit_batch[i] = np.concatenate(
-                                [np.array(edit_batch[i], dtype = np.float32)
-                                    , np.repeat([edit_eos], max_len - len(edit_batch[i]), axis = 0)]
-                                , axis = 0
-                            )
-                            assert len(edit_batch[i]) == max_len
-
-                            prev_batch[i] = np.concatenate(
-                                [np.array(prev_batch[i], dtype = np.float32)
-                                    , np.repeat([eos_vec], max_len - len(prev_batch[i]), axis = 0)]
-                                , axis = 0
-                            )
-                            assert len(prev_batch[i]) == max_len
-                            
-                            upd_batch[i] = np.concatenate(
-                                [np.array(upd_batch[i], dtype = np.float32)
-                                    , np.repeat([eos_vec], max_len - len(upd_batch[i]), axis = 0)]
-                                , axis = 0
-                            )
-                            assert len(upd_batch[i]) == max_len
+                        batch_indices = indices[start:end]
                         
-                        edit = np.transpose(np.array(edit_batch, dtype = np.float32), axes = (1, 0, 2))
-                        prev = np.transpose(np.array(prev_batch, dtype = np.float32), axes = (1, 0, 2))
-                        upd = np.transpose(np.array(upd_batch, dtype = np.float32), axes = (1, 0, 2))
-                        yield torch.from_numpy(edit).to(self.device) \
-                            , torch.from_numpy(prev).to(self.device) \
-                            , torch.from_numpy(upd).to(self.device)
+                        max_len = max(len(edit_tokens[ind]) for ind in batch_indices)
+                        edit_batch = np.zeros((max_len, len(batch_indices), edit_dim), dtype = np.int64)
+                        prev_batch = np.zeros((max_len, len(batch_indices)), dtype = np.int64)
+                        upd_batch = np.zeros((max_len, len(batch_indices)), dtype = np.int64)
+                        
+                        for batch_ind, sample_ind in enumerate(batch_indices):
+                            edit_batch[:len(edit_tokens[sample_ind]), batch_ind, :] = edit_tokens[sample_ind]
+                            prev_batch[:len(prev_tokens[sample_ind]), batch_ind] = prev_tokens[sample_ind]
+                            upd_batch[:len(upd_tokens[sample_ind]), batch_ind] = upd_tokens[sample_ind]
+                         
+                        yield torch.from_numpy(edit_batch) \
+                            , torch.from_numpy(prev_batch) \
+                            , torch.from_numpy(upd_batch)

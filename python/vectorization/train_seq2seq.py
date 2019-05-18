@@ -4,6 +4,7 @@ import os
 import torch
 import pickle
 import numpy as np
+import matplotlib.pyplot as plt
 
 from torch import nn
 from torch import optim
@@ -14,16 +15,16 @@ from decoder import Decoder
 from seq2seq import Seq2Seq
 
 from batch_token_iterator import BatchTokenIterator
-from loss import loss_with_eos, topn, bleu
+from metrics import top1, bleu
+from helper import w2v_model, token2id_path, id2token_path
 
-HIDDEN_SIZE = 512
+HIDDEN_SIZE = 64
 N_LAYERS = 2
 ENC_DROPOUT = 0.5
 DEC_DROPOUT = 0.5
 EDIT_DIM = 4
-VEC_TOKEN_DIM = 300
 
-N_EPOCHS = 10
+N_EPOCHS = 20
 CLIP = 1
 
 BATCH_SIZE = 50
@@ -34,148 +35,188 @@ TEST_FOLDER = 'datasets/data/tokens/test'
 
 SAVE_DIR = 'models'
 MODEL_SAVE_PATH = os.path.join(SAVE_DIR, 'token_seq_model.pt')
-
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
 if not os.path.isdir(SAVE_DIR):
     os.makedirs(SAVE_DIR)
 
-class Seq2SeqTrain(object):
-    def __init__(self, device, edit_dim, hidden_size, n_layers, enc_dropout, dec_dropout, vec_token_dim):
-        
-        self.device = device
-        
-        encoder = Encoder(
-            device = device
-            , input_dim = edit_dim
-            , hidden_size = hidden_size
-            , n_layers = n_layers
-            , dropout = enc_dropout
-        )
+PLOT_DIR = 'plots'
+if not os.path.isdir(PLOT_DIR):
+    os.makedirs(PLOT_DIR)
 
-        decoder = Decoder(
-            input_dim = 2 * hidden_size + vec_token_dim
-            , hidden_size = hidden_size
-            , output_dim = vec_token_dim
-            , n_layers = n_layers
-            , dropout = dec_dropout
-        )
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-        self.model = Seq2Seq(encoder, decoder, device).to(device)
-        self.optimizer = optim.Adam(self.model.parameters())
-        self.lr_scheduler = ReduceLROnPlateau(self.optimizer, mode = 'max', factor = 0.4
-                                              , patience = 4, verbose = True, min_lr = 1e-6)
-        
-        
-    def train(self, train_iterator, val_iterator, loss, accuracy, clip, n_epochs):
-        loss_history = []
-        val_history = []
-        
-        best_val = np.Inf
-        
-        for epoch in range(n_epochs):
-            self.model.train()
-    
-            epoch_loss = 0.0 
-            for i_step, (edit, prev, updated) in enumerate(train_iterator):
-    
-                edit_gpu = edit.to(self.device)
-                prev_gpu = prev.to(self.device)
-                updated_gpu = updated.to(self.device).contiguous()
-    
-                output = self.model(prev_gpu, edit_gpu)
-    
-                # updated = (seq_len, batch size, token_vocab_size)
-                # outputs = (seq_len, batch_size, token_vocab_size)
-        
-                loss_value = loss(output, updated_gpu, self.device)  
-    
-                self.optimizer.zero_grad()
-                loss_value.backward()
-                self.optimizer.step()
-    
-                nn.utils.clip_grad_norm_(self.model.parameters(), clip)
-    
-                epoch_loss += loss_value
-    
-                print('Train batch: %i/%i' % (i_step + 1, train_iterator.n_batches), end = '\r')
-    
-            ave_loss = epoch_loss / i_step
-            val_acc = self.compute_accuracy(val_iterator, accuracy)
-            
-            loss_history.append(ave_loss)
-            val_history.append(val_acc)
-            
-            self.lr_scheduler.step(val_acc)
-            
-            if best_val > val_acc:
-                best_val = val_acc
-                with open(MODEL_SAVE_PATH, 'wb') as model_file:
-                    pickle.dump(self.model, model_file)
-            
-            print("Train loss: %f, Val accuracy: %f" % (ave_loss, val_acc))
-            
-        return loss_history, val_history
-    
-    def compute_accuracy(self, val_iterator, accuracy):
-    
-        self.model.eval()    
-        
-        with torch.no_grad():
-            correct_samples = 0
-            total_samples = 0
-            
-            for i_step, (edit, prev, updated) in enumerate(val_iterator):
-            
-                edit_gpu = edit.to(self.device)
-                prev_gpu = prev.to(self.device)
-                updated_gpu = updated.to(self.device).contiguous()
-    
-                output = self.model(prev_gpu, edit_gpu)
-    
-                _, correct, total = accuracy(output, updated_gpu, self.device)
-                
-                correct_samples += correct
-                total_samples += total
-            
-            return float(correct_samples) / total_samples
-    
-if __name__ == '__main__':
+def create_datasets():
     train_iterator = BatchTokenIterator(
         dir_path = TRAIN_FOLDER
-        , device = device
         , batch_size = BATCH_SIZE
     )
     
     valid_iterator = BatchTokenIterator(
         dir_path = VALID_FOLDER
-        , device = device
         , batch_size = BATCH_SIZE
     )
     
     test_iterator = BatchTokenIterator(
         dir_path = TEST_FOLDER
-        , device = device
         , batch_size = BATCH_SIZE
-    )
+    ) 
     
-    best_valid_loss = float('inf')
+    return train_iterator, valid_iterator, test_iterator       
+        
+def create_model(embeddings):
+    vocab_size, token_emb_dim = embeddings.shape
     
-    trainer = Seq2SeqTrain(
+    encoder = Encoder(
         device = device
-        , edit_dim = EDIT_DIM
+        , token_emb_dim = token_emb_dim
+        , input_dim = EDIT_DIM + 2 * token_emb_dim
         , hidden_size = HIDDEN_SIZE
         , n_layers = N_LAYERS
-        , enc_dropout = ENC_DROPOUT
-        , dec_dropout = DEC_DROPOUT
-        , vec_token_dim = VEC_TOKEN_DIM
+        , dropout = ENC_DROPOUT
+        , embeddings = embeddings
     )
+
+    decoder = Decoder(
+        device = device
+        , enc_out_dim = 2 * HIDDEN_SIZE
+        , token_emb_dim = token_emb_dim
+        , hidden_size = 2 * HIDDEN_SIZE
+        , vocab_size = vocab_size
+        , n_layers = N_LAYERS
+        , dropout = DEC_DROPOUT
+        , embeddings = embeddings
+    )
+
+    return Seq2Seq(encoder, decoder, device).to(device)
+
+def train(model, device, optimizer, lr_scheduler, 
+          train_iterator, valid_iterator, 
+          loss, accuracy, n_epochs):
+    
+    train_loss_history = []
+    train_acc_history = []
+    valid_acc_history = []
         
-    trainer.train(
-        train_iterator = train_iterator
-        , val_iterator = valid_iterator
-        , loss = loss_with_eos
-        , accuracy = bleu
-        , clip = CLIP
-        , n_epochs = N_EPOCHS
+    best_valid = np.Inf
+        
+    for epoch in range(n_epochs):
+        model.train()
+    
+        epoch_loss = 0.0 
+        correct_samples = 0
+        total_samples = 0
+        for i_step, (edit, prev, updated) in enumerate(train_iterator):
+    
+            edit_gpu = edit.to(device)
+            prev_gpu = prev.to(device)
+            updated_gpu = updated.to(device).contiguous()
+    
+            probs = model(edit_gpu, prev_gpu, updated_gpu)
+    
+            # updated = (seq_len, batch size)
+            # outputs = (seq_len, batch_size, vocab_size)       
+            loss_value = loss(probs.permute(1, 2, 0), updated_gpu.t())      
+            optimizer.zero_grad()
+            loss_value.backward()
+            optimizer.step()
+            
+            _, indices = torch.max(probs, 2)
+            _, cur_correct_count, cur_sum_count = accuracy(device, indices, updated_gpu)
+            correct_samples += cur_correct_count
+            total_samples += cur_sum_count
+    
+            nn.utils.clip_grad_norm_(model.parameters(), CLIP)
+    
+            epoch_loss += loss_value.item()
+    
+            print('Train batch: %i/%i' % (min(i_step + 1, train_iterator.n_batches), train_iterator.n_batches), end = '\r')
+    
+        ave_loss = float(epoch_loss) / train_iterator.n_batches
+        train_loss_history.append(ave_loss)
+        
+        train_acc = float(correct_samples) / total_samples
+        train_acc_history.append(train_acc)
+        
+        valid_acc = compute_accuracy(
+            model = model, 
+            valid_iterator = valid_iterator, 
+            accuracy = accuracy
+        )
+            
+        valid_acc_history.append(valid_acc)
+            
+        lr_scheduler.step(valid_acc)
+            
+        if best_valid > valid_acc:
+            best_valid = valid_acc
+            with open(MODEL_SAVE_PATH, 'wb') as model_file:
+                pickle.dump(model, model_file)
+            
+        print("Train loss: %f, Train acc: %f, Valid accuracy: %f" % (ave_loss, train_acc, valid_acc))
+            
+    return train_loss_history, train_acc_history, valid_acc_history
+    
+def compute_accuracy(model, valid_iterator, accuracy):   
+    model.eval()    
+        
+    with torch.no_grad():
+        correct_samples = 0
+        total_samples = 0
+            
+        for i_step, (edit, prev, updated) in enumerate(valid_iterator):
+            
+            edit_gpu = edit.to(device)
+            prev_gpu = prev.to(device)
+            updated_gpu = updated.to(device).contiguous()
+    
+            probs = model(edit_gpu, prev_gpu, updated_gpu)
+            _, indices = torch.max(probs, 2)
+            
+            _, cur_correct_count, cur_sum_count = accuracy(device, indices, updated_gpu)
+            correct_samples += cur_correct_count
+            total_samples += cur_sum_count
+            
+        return float(correct_samples) / total_samples
+
+  
+if __name__ == '__main__':
+    train_iterator, valid_iterator, test_iterator = create_datasets()
+    
+    with open(token2id_path, 'rb') as token2id_file:
+        token2id = pickle.load(token2id_file)  
+        embeddings = np.zeros((len(token2id), w2v_model.vectors.shape[1]), dtype = np.float32)
+        for token, ind in token2id.items():
+            if token in w2v_model.vocab:
+                embeddings[ind] = w2v_model.get_vector(token)
+                
+    model = create_model(embeddings)
+    optimizer = optim.Adagrad(model.parameters(), lr = 0.05)
+    lr_scheduler = ReduceLROnPlateau(optimizer, mode = 'max', factor = 0.4
+                                     , patience = 4, verbose = True, min_lr = 1e-6)
+    
+    loss = nn.CrossEntropyLoss(ignore_index = 0)
+
+    train_loss_history, train_acc_history, valid_acc_history = train(
+        model = model,
+        device = device,
+        optimizer = optimizer,
+        lr_scheduler = lr_scheduler,
+        train_iterator = train_iterator,
+        valid_iterator = valid_iterator,
+        loss = loss,
+        accuracy = top1,
+        n_epochs = N_EPOCHS
     )
+    
+    plt.figure(figsize=(15, 7))
+    plt.subplot(111)
+    plt.title("Loss")
+    plt.plot(train_loss_history)
+    plt.savefig(os.path.join(PLOT_DIR,'loss.png'))
+    
+    plt.figure(figsize=(15, 7))
+    plt.subplot(111)
+    plt.title("Train/validation accuracy")
+    plt.plot(train_acc_history, label = 'train')
+    plt.plot(valid_acc_history, label = 'valid')
+    plt.legend()
+    plt.savefig(os.path.join(PLOT_DIR,'accuracy.png'))

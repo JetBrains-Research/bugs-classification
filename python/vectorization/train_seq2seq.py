@@ -146,7 +146,7 @@ def train(model, device, optimizer, lr_scheduler,
             with open(model_save_path, 'wb') as model_file:
                 pickle.dump(model, model_file)
             
-        print("Epoch: %i, Train loss: %f, Train acc: %f, Valid accuracy: %f" % (epoch, ave_loss, train_acc, valid_acc))
+        print("Epoch: %i, Train loss: %f, Train acc: %f, Valid accuracy: %f" % (epoch + 1, ave_loss, train_acc, valid_acc))
             
     return train_loss_history, train_acc_history, valid_acc_history
     

@@ -45,7 +45,7 @@ class Decoder(nn.Module):
         
         # output.shape = (1, batch_size, hidden_size)
         # hidden.shape = cell.shape = (n_layers, batch_size, hidden_size)
-        prediction = F.log_softmax(self.out(output.squeeze(0)), dim = 1)
+        prediction = self.out(output.squeeze(0))
         
         #prediction.shape = (batch_size, vocab_size)
-        return prediction.float(), (hidden, cell)
+        return prediction, (hidden, cell)

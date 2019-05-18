@@ -5,7 +5,7 @@ import torch
 import pickle
 import numpy as np
 
-from helper import EDIT_NAME, PREV_NAME, UPD_NAME
+from helper import edit_name, prev_name, upd_name
 
 class BatchTokenIterator(object):
     def __init__(self, dir_path, batch_size = 1):
@@ -13,10 +13,43 @@ class BatchTokenIterator(object):
         self.dir_path = dir_path
         self.n_batched = -1
         
+        self.edit_tokens = None
+        self.prev_tokens = None
+        self.upd_tokens = None
+        
+    def get_sample_by_id(self, ind):
+        if self.edit_tokens is None:
+            with open(os.path.join(self.dir_path, edit_name), 'rb') as edit_file:
+                self.edit_tokens = pickle.load(edit_file)
+                
+        if self.prev_tokens is None:
+            with open(os.path.join(self.dir_path, prev_name), 'rb') as prev_file:
+                self.prev_tokens = pickle.load(prev_file)
+                
+        if self.upd_tokens is None:
+            with open(os.path.join(self.dir_path, upd_name), 'rb') as upd_file:
+                self.upd_tokens = pickle.load(upd_file)
+            
+        seq_len = len(self.edit_tokens[ind])
+        edit = np.array(self.edit_tokens[ind], dtype = np.int64).reshape((seq_len, 1, -1))
+        prev = np.array(self.prev_tokens[ind], dtype = np.int64).reshape((seq_len, 1))
+        upd = np.array(self.upd_tokens[ind], dtype = np.int64).reshape((seq_len, 1))
+                
+        return torch.from_numpy(edit), \
+            torch.from_numpy(prev), \
+            torch.from_numpy(upd)
+    
+    def get_n_samples(self):
+        if self.edit_tokens is None:
+            with open(os.path.join(self.dir_path, edit_name), 'rb') as edit_file:
+                self.edit_tokens = pickle.load(edit_file)
+        return len(self.edit_tokens)
+            
+        
     def __iter__(self):        
-        with open(os.path.join(self.dir_path, EDIT_NAME), 'rb') as edit_file:
-            with open(os.path.join(self.dir_path, PREV_NAME), 'rb') as prev_file:
-                with open(os.path.join(self.dir_path, UPD_NAME), 'rb') as upd_file:
+        with open(os.path.join(self.dir_path, edit_name), 'rb') as edit_file:
+            with open(os.path.join(self.dir_path, prev_name), 'rb') as prev_file:
+                with open(os.path.join(self.dir_path, upd_name), 'rb') as upd_file:
                     edit_tokens = pickle.load(edit_file)
                     prev_tokens = pickle.load(prev_file)
                     upd_tokens = pickle.load(upd_file)

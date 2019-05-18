@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
-from torch import nn
 import torch
+from torch import nn
 
 class Encoder(nn.Module):
     def __init__(self, device, token_emb_dim, input_dim, hidden_size = 128, n_layers = 2, dropout = 0.2

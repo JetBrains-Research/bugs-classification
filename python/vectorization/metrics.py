@@ -5,7 +5,29 @@ import numpy as np
 import torch.nn.functional as F
 from nltk.translate.bleu_score import sentence_bleu
 
-from helper import eos_vec, w2v_model, EOS_TOKEN
+from helper import eos_vec, w2v_model, eos_token
+
+def loss_with_eos(decoder_output, upd_vec, device):
+    # shape = (seq_len, batch size, token_vocab_size)
+    seq_len, batch_size, token_vocab_size = upd_vec.size()
+    
+    eos_tensor= torch.from_numpy(eos_vec).to(device).squeeze(0)
+    
+    eos_id = torch.tensor(seq_len, device = device)
+    eos_ids = eos_id.repeat(batch_size)
+    for i in range(batch_size):
+        for j in range(seq_len):
+            if (torch.allclose(upd_vec[j][i], eos_tensor)):
+                eos_ids[i] = j
+                break   
+    
+    cosine_sums = torch.empty(batch_size, device = device)
+    for i in range(batch_size):
+        # cur_cos.size() = (seq_len, token_vocab_size)
+        cur_cos = F.cosine_similarity(decoder_output[0 : eos_ids[i], i], upd_vec[0 : eos_ids[i], i])
+        cosine_sums[i] = torch.mean(cur_cos)
+        
+    return 1.0 - torch.mean(cosine_sums)
 
 def get_words_by_vectors(vectors, n = 1):
     seq_len = vectors.shape[0]
@@ -39,7 +61,7 @@ def topn_vectors(decoder_output, upd_vec, device, n = 1):
     
     for i in range(batch_size):
         for j in range(seq_len):
-            if truth[j, i, 0] == EOS_TOKEN:
+            if truth[j, i, 0] == eos_token:
                 break 
             
             total_samples += 1

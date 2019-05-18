@@ -108,12 +108,12 @@ class SequenceAlignment(object):
         assert len(prev_seqs) == len(upd_seqs)
         n_samples = len(prev_seqs)
         edit_vecs = []
-        prev_pad_vecs = []
-        upd_pad_vecs = []
+        prev_pad = []
+        upd_pad = []
         for sample_id in range(n_samples):
             alignment = self.get_alignment(prev_seqs[sample_id], upd_seqs[sample_id])
             edit, prev, upd = self.prepare_row(alignment, prev_seqs[sample_id], upd_seqs[sample_id]) 
             edit_vecs.append(edit)
-            prev_pad_vecs.append(prev)
-            upd_pad_vecs.append(upd)
-        return edit_vecs, prev_pad_vecs, upd_pad_vecs
+            prev_pad.append(prev)
+            upd_pad.append(upd)
+        return edit_vecs, prev_pad, upd_pad

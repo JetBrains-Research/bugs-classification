@@ -4,19 +4,21 @@ import os
 
 from token_dataset import TokenDataset
 from train_token2vec import TokenVecTrain
-from convert_token2vec import Token2VecConverter
+from convert_token2id import Token2IdConverter
 from divide_set import divide_set
 
-all_dir = 'data/tokens/all'
+tokens_dir = 'data/tokens'
+
+all_dir = os.path.join(tokens_dir, 'all')
 if not os.path.exists(all_dir):
     os.makedirs(all_dir)
-train_dir = 'data/tokens/train'
+train_dir = os.path.join(tokens_dir, 'train')
 if not os.path.exists(train_dir):
     os.makedirs(train_dir)
-valid_dir = 'data/tokens/valid'
+valid_dir = os.path.join(tokens_dir, 'valid')
 if not os.path.exists(valid_dir):
     os.makedirs(valid_dir)
-test_dir = 'data/tokens/test'
+test_dir = os.path.join(tokens_dir, 'test')
 if not os.path.exists(test_dir):
     os.makedirs(test_dir)
 
@@ -26,11 +28,11 @@ upd_name = 'updates.pickle'
 
 src_data_path = 'data/github_commits.dataset.jsonl'
 
-prev_tokens_path = 'data/tokens/prev_tokens.pickle'
-upd_tokens_path = 'data/tokens/upd_tokens.pickle'
+prev_tokens_path = os.path.join(tokens_dir, 'prev_tokens.pickle')
+upd_tokens_path = os.path.join(tokens_dir, 'upd_tokens.pickle')
 
-w2v_path = 'data/tokens/word2vec'
-w2v_vecs_path = 'data/tokens/word2vec_keyed_vectors'
+w2v_path = os.path.join(tokens_dir, 'word2vec')
+w2v_vecs_path = os.path.join(tokens_dir, 'word2vec_keyed_vectors')
 
 dataset_parts = [0.8, 0.15]
 
@@ -67,9 +69,9 @@ def train_word2vec():
 '''
 convert tokens from prev_tokens_path and upd_tokens_path to vectors according word2vec model
 '''
-def convert_tokens_to_vectors():
+def convert_tokens_to_ids():
     print('Convert tokens to vectors')
-    converter = Token2VecConverter(w2v_vecs_path)    
+    converter = Token2IdConverter(tokens_dir, prev_tokens_path, upd_tokens_path)    
     converter.convert(prev_tokens_path, os.path.join(all_dir, prev_name))
     converter.convert(upd_tokens_path, os.path.join(all_dir, upd_name))
 
@@ -92,5 +94,5 @@ def divide_dataset():
 if __name__ == "__main__":      
     create_token_datasets()
     train_word2vec()
-    convert_tokens_to_vectors()
+    convert_tokens_to_ids()
     divide_dataset()

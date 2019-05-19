@@ -26,7 +26,7 @@ edit_name = 'edits.pickle'
 prev_name = 'prevs.pickle'
 upd_name = 'updates.pickle'
 
-src_data_path = 'data/github_commits.dataset.jsonl'
+src_data_path = 'data/stepic_commits.dataset.jsonl'
 
 prev_tokens_path = os.path.join(tokens_dir, 'prev_tokens.pickle')
 upd_tokens_path = os.path.join(tokens_dir, 'upd_tokens.pickle')
@@ -56,7 +56,7 @@ load tokens from prev_tokens_path and upd_tokens_path and train gensim.Word2Vec 
 def train_word2vec():
     print('Create and train token2vec')
     vocab = TokenVecTrain(
-        dim = 300
+        dim = 50
         , min_count = 1
         , model_save_path = w2v_path
         , vectors_save_path = w2v_vecs_path

@@ -23,6 +23,8 @@ class Token2IdConverter(object):
             
         self.token2id[AFTER_EOS] = 0
         self.id2token[0] = AFTER_EOS
+        
+        print('Vocab has %i tokens' % len(self.id2token))
                 
         token2id_path = os.path.join(save_dir, 'token2id.pickle')
         with open(token2id_path, 'wb') as token2id_file:

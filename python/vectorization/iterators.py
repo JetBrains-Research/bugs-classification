@@ -110,3 +110,57 @@ class BatchVecIterator(BatchTokenIterator):
     def get_all_samples(self):
         edit_ids, prev_ids, upd_ids = BatchTokenIterator.get_all_samples(self)
         return self.get_vectors(edit_ids, prev_ids, upd_ids)
+ 
+    
+    
+class BatchMarkedVecIterator(BatchVecIterator):   
+    def __init__(self, dir_path, label_path, batch_size = 1):
+        BatchVecIterator.__init__(self, dir_path, batch_size)
+           
+        with open(label_path, 'rb') as label_file:
+            self.labels = []
+            all_labels = pickle.load(label_file)
+            for i in range(len(all_labels)):
+                self.labels.append(all_labels[i][0])
+       
+    def get_sample_by_id(self, ind):
+        vectors = BatchVecIterator.get_sample_by_id(ind)
+        return vectors, self.labels[ind]        
+        
+    def get_all_samples(self):
+        all_vectors = BatchVecIterator.get_all_samples()
+        return all_vectors, self.labels
+    
+    def __iter__(self):
+        with open(os.path.join(self.dir_path, edit_name), 'rb') as edit_file:
+            with open(os.path.join(self.dir_path, prev_name), 'rb') as prev_file:
+                with open(os.path.join(self.dir_path, upd_name), 'rb') as upd_file:
+                    edit_tokens = pickle.load(edit_file)
+                    prev_tokens = pickle.load(prev_file)
+                    upd_tokens = pickle.load(upd_file)
+                    
+                    n_samples = len(edit_tokens)
+                    self.n_batches = n_samples // self.batch_size
+                    edit_dim = len(edit_tokens[0][0])
+        
+                    indices = np.arange(n_samples)
+                    np.random.shuffle(indices)
+                    
+                    for start in range(0, n_samples, self.batch_size):
+                        end = min(start + self.batch_size, n_samples)
+                        
+                        batch_indices = indices[start:end]
+                        
+                        max_len = max(len(edit_tokens[ind]) for ind in batch_indices)
+                        edit_batch = np.zeros((max_len, len(batch_indices), edit_dim), dtype = np.int64)
+                        prev_batch = np.zeros((max_len, len(batch_indices)), dtype = np.int64)
+                        upd_batch = np.zeros((max_len, len(batch_indices)), dtype = np.int64)
+                        labels_batch = np.zeros((len(batch_indices)))
+                        
+                        for batch_ind, sample_ind in enumerate(batch_indices):
+                            edit_batch[:len(edit_tokens[sample_ind]), batch_ind, :] = edit_tokens[sample_ind]
+                            prev_batch[:len(prev_tokens[sample_ind]), batch_ind] = prev_tokens[sample_ind]
+                            upd_batch[:len(upd_tokens[sample_ind]), batch_ind] = upd_tokens[sample_ind]
+                            labels_batch[batch_ind] = self.labels[sample_ind]
+                         
+                        yield self.get_vectors(edit_batch, prev_batch, upd_batch), labels_batch

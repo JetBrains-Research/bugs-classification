@@ -7,28 +7,6 @@ from nltk.translate.bleu_score import sentence_bleu
 
 from helper import eos_vec, w2v_model, eos_token
 
-def loss_with_eos(decoder_output, upd_vec, device):
-    # shape = (seq_len, batch size, token_vocab_size)
-    seq_len, batch_size, token_vocab_size = upd_vec.size()
-    
-    eos_tensor= torch.from_numpy(eos_vec).to(device).squeeze(0)
-    
-    eos_id = torch.tensor(seq_len, device = device)
-    eos_ids = eos_id.repeat(batch_size)
-    for i in range(batch_size):
-        for j in range(seq_len):
-            if (torch.allclose(upd_vec[j][i], eos_tensor)):
-                eos_ids[i] = j
-                break   
-    
-    cosine_sums = torch.empty(batch_size, device = device)
-    for i in range(batch_size):
-        # cur_cos.size() = (seq_len, token_vocab_size)
-        cur_cos = F.cosine_similarity(decoder_output[0 : eos_ids[i], i], upd_vec[0 : eos_ids[i], i])
-        cosine_sums[i] = torch.mean(cur_cos)
-        
-    return 1.0 - torch.mean(cosine_sums)
-
 def get_words_by_vectors(vectors, n = 1):
     seq_len = vectors.shape[0]
     batch_size = vectors.shape[1]
@@ -120,3 +98,16 @@ def bleu(decoder_output, upd_vec, device, n_gram = 3):
         )
         
     return float(bleu) / batch_size, bleu, batch_size
+        
+if __name__ == '__main__':      
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    
+    out = torch.from_numpy(np.ones(shape = (3, 2, 300), dtype = np.float32)).to(device)
+    upd = torch.from_numpy(np.ones(shape = (3, 2, 300), dtype = np.float32)).to(device)
+    upd[1, 0] = torch.from_numpy(eos_vec).to(device)
+    upd[2, 0] = torch.zeros(300)
+    loss = loss_with_eos(out, upd, device)
+    accuracy = top1(out, upd)
+    print('accuracy top n', accuracy)
+    accuracy = bleu(out, upd, 2)
+    print('accuracy bleu 2', accuracy)

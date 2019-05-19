@@ -40,3 +40,11 @@ class Token2IdConverter(object):
                 tokens = pickle.load(token_file)
                 ids = [[self.token2id.get(token, 0) for token in sample] for sample in tokens]
                 pickle.dump(ids, id_file)
+ 
+ 
+def convert_from_exists(token2id, token_path, id_path):
+    with open(token_path, 'rb') as token_file:
+        with open(id_path, 'wb') as id_file:
+            tokens = pickle.load(token_file)
+            ids = [[token2id.get(token, 0) for token in sample] for sample in tokens]
+            pickle.dump(ids, id_file)           

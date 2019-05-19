@@ -8,7 +8,7 @@ import pickle
 
 from helper import id2token_path, token_dir, model_save_path,\
     train_folder, valid_folder, test_folder
-from batch_token_iterator import BatchTokenIterator
+from iterators import BatchTokenIterator
 
 def write_all_tokens():
     with open(id2token_path, 'rb') as id2token_file:
@@ -69,8 +69,8 @@ class Predictor(object):
         probs = self.model(edit_gpu, prev_gpu, updated_gpu)
         _, indices = torch.max(probs, 2)
         
-        prev_tokens = [self.id2token[seq_id] for seq_id in prev.numpy()[:, 0]]
-        updated_tokens = [self.id2token[seq_id] for seq_id in updated.numpy()[:, 0]]
+        prev_tokens = [self.id2token[seq_id] for seq_id in prev[:, 0]]
+        updated_tokens = [self.id2token[seq_id] for seq_id in updated[:, 0]]
         predicted_tokens = [self.id2token[seq_id] for seq_id in indices.numpy()[:, 0]]
         
         prev_code = ' '.join(prev_tokens)

@@ -5,7 +5,7 @@ import torch
 import pickle
 import numpy as np
 
-from helper import edit_name, prev_name, upd_name
+from helper import edit_name, prev_name, upd_name, model_save_path, id2token_path
 
 class BatchTokenIterator(object):
     def __init__(self, dir_path, batch_size = 1):
@@ -35,9 +35,7 @@ class BatchTokenIterator(object):
         prev = np.array(self.prev_tokens[ind], dtype = np.int64).reshape((seq_len, 1))
         upd = np.array(self.upd_tokens[ind], dtype = np.int64).reshape((seq_len, 1))
                 
-        return torch.from_numpy(edit), \
-            torch.from_numpy(prev), \
-            torch.from_numpy(upd)
+        return edit, prev, upd
     
     def get_n_samples(self):
         if self.edit_tokens is None:
@@ -76,6 +74,39 @@ class BatchTokenIterator(object):
                             prev_batch[:len(prev_tokens[sample_ind]), batch_ind] = prev_tokens[sample_ind]
                             upd_batch[:len(upd_tokens[sample_ind]), batch_ind] = upd_tokens[sample_ind]
                          
-                        yield torch.from_numpy(edit_batch) \
-                            , torch.from_numpy(prev_batch) \
-                            , torch.from_numpy(upd_batch)
+                        yield edit_batch, prev_batch, upd_batch
+                        
+    def get_all_samples(self):
+        n_samples = self.get_n_samples()
+        orig_batch_size = self.batch_size
+        self.batch_size = n_samples
+        edits, prevs, upds = next(BatchTokenIterator.__iter__(self))
+        self.batch_size = orig_batch_size
+        return edits, prevs, upds
+        
+    
+class BatchVecIterator(BatchTokenIterator):   
+    def __init__(self, dir_path, batch_size = 1):
+        BatchTokenIterator.__init__(self, dir_path, batch_size)
+        
+        with open(model_save_path, 'rb') as model_file:
+            self.seq2seq_model = pickle.load(model_file)
+            self.seq2seq_model.eval()
+            
+        with open(id2token_path, 'rb') as id2token_file:
+            self.id2token = pickle.load(id2token_file)
+            
+    def get_vectors(self, edit_ids, prev_ids, upd_ids):
+        # ids.shape = (seq_len, batch_size)
+        vec_batch, _ = self.seq2seq_model.encoder(torch.from_numpy(edit_ids), 
+                                               torch.from_numpy(prev_ids), 
+                                               torch.from_numpy(upd_ids))
+        return vec_batch
+       
+    def get_sample_by_id(self, ind):
+        edit_ids, prev_ids, upd_ids = BatchTokenIterator.get_sample_by_id(self, ind)
+        return self.get_vectors(edit_ids, prev_ids, upd_ids)          
+        
+    def get_all_samples(self):
+        edit_ids, prev_ids, upd_ids = BatchTokenIterator.get_all_samples(self)
+        return self.get_vectors(edit_ids, prev_ids, upd_ids)

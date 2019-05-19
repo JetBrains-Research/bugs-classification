@@ -31,14 +31,15 @@ class Encoder(nn.Module):
         
         # edits.shape = (seq_len, batch_size, input_dim = 4)
         input = torch.cat((edits.type(torch.FloatTensor), prevs, upds), -1)
-        input = input.unsqueeze(0)
+        if len(input.size()) < 3:
+            input = input.unsqueeze(0)
         
-        # input.shape = (seq_len = 1, batch_size, input_dim = 4 + 2 * token_emb_dim)
+        # input.shape = (seq_len, batch_size, input_dim = 4 + 2 * token_emb_dim)
         lstm_out, (hidden, cell) = self.lstm(input) if  \
             hidden is None or cell is None else     \
             self.lstm(input, (hidden, cell))
         
-        # lstm_out.shape = (seq_len = 1, batch_size, 2 * hidden_size)
+        # lstm_out.shape = (seq_len, batch_size, 2 * hidden_size)
         # hidden_state.shape = (lstm_layers * 2, batch_size, hidden_size)
         # cell_state.shape = (lstm_layers * 2, batch_size, hidden_size)
         return lstm_out, (hidden, cell)

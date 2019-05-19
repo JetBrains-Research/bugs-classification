@@ -20,7 +20,6 @@ class Seq2Seq(nn.Module):
         return torch.cat((encoder_out.squeeze(0).float(), prev_vec), 1)     
         
     def forward(self, edits, prevs, upds):
-        
         # prevs.shape = (seq_len, batch size)
         # edits.shape = (seq_len, batch size, edit_dim = 4)
         

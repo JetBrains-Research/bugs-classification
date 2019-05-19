@@ -21,6 +21,7 @@ upd_name = 'updates.pickle'
 save_dir = 'models'
 model_save_path = os.path.join(save_dir, 'token_seq_model.pt')
 
+all_folder = 'datasets/data/tokens/all'
 train_folder = 'datasets/data/tokens/train'
 valid_folder = 'datasets/data/tokens/valid'
 test_folder = 'datasets/data/tokens/test'

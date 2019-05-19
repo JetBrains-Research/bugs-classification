@@ -14,7 +14,7 @@ from encoder import Encoder
 from decoder import Decoder
 from seq2seq import Seq2Seq
 
-from batch_token_iterator import BatchTokenIterator
+from iterators import BatchTokenIterator
 from metrics import top1, bleu
 from helper import w2v_model, token2id_path, save_dir, model_save_path, \
     train_folder, valid_folder, test_folder
@@ -101,9 +101,9 @@ def train(model, device, optimizer, lr_scheduler,
         total_samples = 0
         for i_step, (edit, prev, updated) in enumerate(train_iterator):
     
-            edit_gpu = edit.to(device)
-            prev_gpu = prev.to(device)
-            updated_gpu = updated.to(device).contiguous()
+            edit_gpu = torch.from_numpy(edit).to(device)
+            prev_gpu = torch.from_numpy(prev).to(device)
+            updated_gpu = torch.from_numpy(updated).to(device).contiguous()
     
             probs = model(edit_gpu, prev_gpu, updated_gpu)
     
@@ -159,9 +159,9 @@ def compute_accuracy(model, valid_iterator, accuracy):
             
         for i_step, (edit, prev, updated) in enumerate(valid_iterator):
             
-            edit_gpu = edit.to(device)
-            prev_gpu = prev.to(device)
-            updated_gpu = updated.to(device).contiguous()
+            edit_gpu = torch.from_numpy(edit).to(device)
+            prev_gpu = torch.from_numpy(prev).to(device)
+            updated_gpu = torch.from_numpy(updated).to(device).contiguous()
     
             probs = model(edit_gpu, prev_gpu, updated_gpu)
             _, indices = torch.max(probs, 2)

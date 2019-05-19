@@ -55,14 +55,16 @@ class Predictor(object):
         return self.iterator.get_n_samples()
     
     def predict_from_data(self, ind):
+        self.model.eval()
+        
         # prev.shape = updated.shape = (seq_len, 1)
         # edit.shape = (seq_olen, 1, edit_dim)
         edit, prev, updated = self.iterator.get_sample_by_id(ind)
         device = self.model.device
         
-        edit_gpu = edit.to(device)
-        prev_gpu = prev.to(device)
-        updated_gpu = updated.to(device).contiguous()
+        edit_gpu = torch.from_numpy(edit).to(device)
+        prev_gpu = torch.from_numpy(prev).to(device)
+        updated_gpu = torch.from_numpy(updated).to(device).contiguous()
     
         probs = self.model(edit_gpu, prev_gpu, updated_gpu)
         _, indices = torch.max(probs, 2)

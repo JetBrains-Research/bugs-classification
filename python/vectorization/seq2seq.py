@@ -15,7 +15,7 @@ class Seq2Seq(nn.Module):
             "Encoder and decoder must have equal number of layers!"
      
     def prepare_decoder_input(self, prev_vec, encoder_out):
-        # prev_vec.shape = (batch size, vec_dim = 300)
+        # prev_vec.shape = (batch size, vec_dim)
         # encoder_out.shape = (seq_len, batch_size, 2 * hidden_size)
         return torch.cat((encoder_out.squeeze(0).float(), prev_vec), 1)     
         

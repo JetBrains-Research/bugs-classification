@@ -19,16 +19,16 @@ from metrics import top1, bleu
 from helper import w2v_model, token2id_path, save_dir, model_save_path, \
     train_folder, valid_folder, test_folder
 
-HIDDEN_SIZE = 64
+HIDDEN_SIZE = 16
 N_LAYERS = 2
-ENC_DROPOUT = 0.1
-DEC_DROPOUT = 0.1
+ENC_DROPOUT = 0.15
+DEC_DROPOUT = 0.15
 EDIT_DIM = 4
 
-N_EPOCHS = 20
+N_EPOCHS = 10
 CLIP = 1
 
-BATCH_SIZE = 70
+BATCH_SIZE = 100
 
 if not os.path.isdir(save_dir):
     os.makedirs(save_dir)
@@ -199,7 +199,7 @@ if __name__ == '__main__':
                 embeddings[ind] = w2v_model.get_vector(token)
                 
     model = create_model(embeddings)
-    optimizer = optim.Adagrad(model.parameters(), lr = 0.09)
+    optimizer = optim.Adagrad(model.parameters(), lr = 0.1)
     lr_scheduler = ReduceLROnPlateau(optimizer, mode = 'max', factor = 0.4
                                      , patience = 3, verbose = True, min_lr = 1e-6)
     

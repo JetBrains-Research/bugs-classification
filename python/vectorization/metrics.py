@@ -98,16 +98,3 @@ def bleu(decoder_output, upd_vec, device, n_gram = 3):
         )
         
     return float(bleu) / batch_size, bleu, batch_size
-        
-if __name__ == '__main__':      
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    
-    out = torch.from_numpy(np.ones(shape = (3, 2, 300), dtype = np.float32)).to(device)
-    upd = torch.from_numpy(np.ones(shape = (3, 2, 300), dtype = np.float32)).to(device)
-    upd[1, 0] = torch.from_numpy(eos_vec).to(device)
-    upd[2, 0] = torch.zeros(300)
-    loss = loss_with_eos(out, upd, device)
-    accuracy = top1(out, upd)
-    print('accuracy top n', accuracy)
-    accuracy = bleu(out, upd, 2)
-    print('accuracy bleu 2', accuracy)

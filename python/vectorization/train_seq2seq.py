@@ -13,17 +13,17 @@ from decoder import Decoder
 from seq2seq import Seq2Seq
 
 from iterators import BatchTokenIterator
-from metrics import top1, bleu
+from metrics import top1
 from helper import w2v_model, token2id_path, save_dir, model_save_path, \
     train_folder, valid_folder, test_folder, device, train, draw_plots
 
 HIDDEN_SIZE = 8
 N_LAYERS = 2
-ENC_DROPOUT = 0.15
-DEC_DROPOUT = 0.15
+ENC_DROPOUT = 0.05
+DEC_DROPOUT = 0.05
 EDIT_DIM = 4
 
-N_EPOCHS = 25
+N_EPOCHS = 10
 
 BATCH_SIZE = 100
 

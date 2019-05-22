@@ -17,6 +17,7 @@ eos_vec = np.array(w2v_model[eos_token], dtype = np.float32)
 edit_name = 'edits.pickle'
 prev_name = 'prevs.pickle'
 upd_name = 'updates.pickle'
+mark_name = 'marks.pickle'
 
 save_dir = 'models'
 model_save_path = os.path.join(save_dir, 'token_seq_model.pt')
@@ -91,7 +92,7 @@ def train(model, device, optimizer, lr_scheduler,
             
         if best_valid > valid_acc:
             best_valid = valid_acc
-            with open(model_save_path, 'wb') as model_file:
+            with open(classifier_save_path, 'wb') as model_file:
                 pickle.dump(model, model_file)
             
         print("Epoch: %i, Train loss: %f, Train acc: %f, Valid accuracy: %f" % (epoch + 1, ave_loss, train_acc, valid_acc))

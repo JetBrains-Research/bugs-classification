@@ -7,6 +7,30 @@ from nltk.translate.bleu_score import sentence_bleu
 
 from helper import eos_vec, w2v_model, eos_token
 
+
+def check_data(prediction, ground_truth):
+    if np.size(ground_truth) == 0:
+        raise ValueError('No data in ground_truth')
+        
+    if np.size(ground_truth) != np.size(prediction):
+        raise ValueError('Lengths of ground_truth and precision are not equal')
+        
+def multiclass_accuracy(prediction, ground_truth):
+    '''
+    Computes metrics for multiclass classification
+
+    Arguments:
+    prediction, np array of int (num_samples) - model predictions
+    ground_truth, np array of int (num_samples) - true labels
+
+    Returns:
+    accuracy - ratio of accurate predictions to total samples
+    '''
+    check_data(prediction, ground_truth)
+    acc_predictions = sum(1 for pred, truth in zip(prediction, ground_truth) if pred == truth)
+    return acc_predictions / np.size(ground_truth)
+
+
 def top1(device, predicts, labels):
     seq_len, batch_size = labels.size()  
     

@@ -5,7 +5,7 @@ import torch
 import pickle
 import numpy as np
 
-from helper import edit_name, prev_name, upd_name, mark_name, model_save_path, id2token_path, max_seq_len
+from helper import edit_name, prev_name, upd_name, mark_name, id2token_path, max_seq_len
 
 class BatchTokenIterator(object):
     def __init__(self, dir_path, batch_size = 1):
@@ -89,7 +89,7 @@ class BatchVecIterator(BatchTokenIterator):
     def __init__(self, dir_path, batch_size = 1):
         BatchTokenIterator.__init__(self, dir_path, batch_size)
         
-        with open(model_save_path, 'rb') as model_file:
+        with open('models_to_check/token_seq_model.pt', 'rb') as model_file:
             self.seq2seq_model = pickle.load(model_file)
             self.seq2seq_model.eval()
             
@@ -102,7 +102,7 @@ class BatchVecIterator(BatchTokenIterator):
         vec_batch, _ = self.seq2seq_model.encoder(torch.from_numpy(edit_ids), 
                                                torch.from_numpy(prev_ids), 
                                                torch.from_numpy(upd_ids))
-        return vec_batch.permute(1, 0, 2).contiguous().view(batch_size, -1)
+        return vec_batch.permute(1, 0, 2).detach().numpy().reshape((batch_size, -1))
        
     def get_sample_by_id(self, ind):
         edit_ids, prev_ids, upd_ids = BatchTokenIterator.get_sample_by_id(self, ind)
@@ -123,15 +123,19 @@ class BatchMarkedVecIterator(BatchVecIterator):
             self.marks = []
             for mark_list in marks_list:
                 self.marks.append(mark_list)
-        
+            self.marks = np.array([mark[0] for mark in self.marks], dtype = np.int32)        
        
     def get_sample_by_id(self, ind):
         vectors = BatchVecIterator.get_sample_by_id(ind)
         return vectors, self.marks[ind]        
         
     def get_all_samples(self):
-        all_vectors = BatchVecIterator.get_all_samples(self)
-        return all_vectors, self.marks
+        n_samples = self.get_n_samples()
+        orig_batch_size = self.batch_size
+        self.batch_size = n_samples
+        x_batch, y_batch = next(BatchMarkedVecIterator.__iter__(self))
+        self.batch_size = orig_batch_size    
+        return x_batch, y_batch 
     
     def __iter__(self):
         with open(os.path.join(self.dir_path, edit_name), 'rb') as edit_file:

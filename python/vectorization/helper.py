@@ -27,6 +27,7 @@ train_folder = 'datasets/data/tokens/train'
 valid_folder = 'datasets/data/tokens/valid'
 test_folder = 'datasets/data/tokens/test'
 
+max_seq_len = 500
 
 import torch
 import pickle
@@ -92,7 +93,7 @@ def train(model, device, optimizer, lr_scheduler,
             
         if best_valid > valid_acc:
             best_valid = valid_acc
-            with open(classifier_save_path, 'wb') as model_file:
+            with open(model_save_path, 'wb') as model_file:
                 pickle.dump(model, model_file)
             
         print("Epoch: %i, Train loss: %f, Train acc: %f, Valid accuracy: %f" % (epoch + 1, ave_loss, train_acc, valid_acc))

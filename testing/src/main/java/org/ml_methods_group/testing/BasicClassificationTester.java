@@ -6,6 +6,7 @@ import org.ml_methods_group.testing.validation.Validator;
 
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.NoSuchElementException;
 
 public class BasicClassificationTester<V, M> implements ClassificationTester<V, M> {
     private final List<V> tests;
@@ -20,8 +21,12 @@ public class BasicClassificationTester<V, M> implements ClassificationTester<V, 
     public ClassificationTestingResult test(Classifier<V, M> classifier) {
         final ClassificationTestingResult results = new ClassificationTestingResult();
         for (V value : tests) {
-            final Entry<M, Double> prediction = classifier.mostProbable(value);
-            results.addTestResult(prediction.getValue(), validator.isValid(value, prediction.getKey()));
+            try {
+                final Entry<M, Double> prediction = classifier.mostProbable(value);
+                results.addTestResult(prediction.getValue(), validator.isValid(value, prediction.getKey()));
+            } catch (NoSuchElementException e) {
+                results.addTestResult(0, false);
+            }
         }
         return results;
     }

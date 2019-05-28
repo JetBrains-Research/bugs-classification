@@ -17,6 +17,7 @@ import org.ml_methods_group.evaluation.vectorization.SerializationUtils;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -28,47 +29,53 @@ import static org.ml_methods_group.common.embedding.ListEmbeddingExtractor.Reduc
 public class VectorizationApproach {
 
     public static Approach<List<double[]>> getDefaultApproach(Dataset train,
-                                                              FeaturesExtractor<Solution, Changes> generator)
-            throws FileNotFoundException {
-        final Map<String, Integer> wordsDict = SerializationUtils.readMap(".cache/dicts/words_dict.txt");
-        final Map<String, Integer> javaTypesDict = SerializationUtils.readMap(".cache/dicts/java_types_dict.txt");
-        final EmbeddingExtractor<CodeChange> extractor = createCodeChangeExtractor(
-                ".cache/embeddings/", wordsDict, javaTypesDict);
-        final List<CodeChange> changes = train.getValues(x -> x.getVerdict() == FAIL)
-                .stream()
-                .map(generator::process)
-                .map(Changes::getChanges)
-                .flatMap(List::stream)
-                .collect(Collectors.toList());
-        final NormalizedVectorExtractor<CodeChange> normalizedExtractor = NormalizedVectorExtractor.normalization(
-                changes, extractor);
-        return new Approach<>(generator.compose(Changes::getChanges)
-                .compose(new PointwiseExtractor<>(normalizedExtractor)),
-                new FuzzyJaccardDistanceFunction<>(FunctionsUtils::cosineSimilarity), "def_vec");
+                                                              FeaturesExtractor<Solution, Changes> generator) {
+        try {
+            final Map<String, Integer> wordsDict = SerializationUtils.readMap(".cache/dicts/words_dict.txt");
+            final Map<String, Integer> javaTypesDict = SerializationUtils.readMap(".cache/dicts/java_types_dict.txt");
+            final EmbeddingExtractor<CodeChange> extractor = createCodeChangeExtractor(
+                    ".cache/embeddings/", wordsDict, javaTypesDict);
+            final List<CodeChange> changes = train.getValues(x -> x.getVerdict() == FAIL)
+                    .stream()
+                    .map(generator::process)
+                    .map(Changes::getChanges)
+                    .flatMap(List::stream)
+                    .collect(Collectors.toList());
+            final NormalizedVectorExtractor<CodeChange> normalizedExtractor = NormalizedVectorExtractor.normalization(
+                    changes, extractor);
+            return new Approach<>(generator.compose(Changes::getChanges)
+                    .compose(new PointwiseExtractor<>(normalizedExtractor)),
+                    new FuzzyJaccardDistanceFunction<>(FunctionsUtils::cosineSimilarity), "def_vec");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static Approach<double[]> getSumApproach(Dataset train,
-                                                    FeaturesExtractor<Solution, Changes> generator)
-            throws FileNotFoundException {
-        final Map<String, Integer> wordsDict = SerializationUtils.readMap(".cache/dicts/words_dict.txt");
-        final Map<String, Integer> javaTypesDict = SerializationUtils.readMap(".cache/dicts/java_types_dict.txt");
-        final EmbeddingExtractor<CodeChange> extractor = createCodeChangeExtractor(
-                ".cache/embeddings/", wordsDict, javaTypesDict);
-        final List<CodeChange> changes = train.getValues(x -> x.getVerdict() == FAIL)
-                .stream()
-                .map(generator::process)
-                .map(Changes::getChanges)
-                .flatMap(List::stream)
-                .collect(Collectors.toList());
-        final NormalizedVectorExtractor<CodeChange> normalizedExtractor = NormalizedVectorExtractor.normalization(
-                changes, extractor);
-        return new Approach<>(generator.compose(Changes::getChanges)
-                .compose(new ListEmbeddingExtractor<>(normalizedExtractor, SUM)),
-                FunctionsUtils::cosineDistance, "sum_vec");
+                                                    FeaturesExtractor<Solution, Changes> generator) {
+        try {
+            final Map<String, Integer> wordsDict = SerializationUtils.readMap(".cache/dicts/words_dict.txt");
+            final Map<String, Integer> javaTypesDict = SerializationUtils.readMap(".cache/dicts/java_types_dict.txt");
+            final EmbeddingExtractor<CodeChange> extractor = createCodeChangeExtractor(
+                    ".cache/embeddings/", wordsDict, javaTypesDict);
+            final List<CodeChange> changes = train.getValues(x -> x.getVerdict() == FAIL)
+                    .stream()
+                    .map(generator::process)
+                    .map(Changes::getChanges)
+                    .flatMap(List::stream)
+                    .collect(Collectors.toList());
+            final NormalizedVectorExtractor<CodeChange> normalizedExtractor = NormalizedVectorExtractor.normalization(
+                    changes, extractor);
+            return new Approach<>(generator.compose(Changes::getChanges)
+                    .compose(new ListEmbeddingExtractor<>(normalizedExtractor, SUM)),
+                    FunctionsUtils::cosineDistance, "sum_vec");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static Approach<double[]> getMeanApproach(Dataset train,
-                                                    FeaturesExtractor<Solution, Changes> generator)
+                                                     FeaturesExtractor<Solution, Changes> generator)
             throws FileNotFoundException {
         final Map<String, Integer> wordsDict = SerializationUtils.readMap(".cache/dicts/words_dict.txt");
         final Map<String, Integer> javaTypesDict = SerializationUtils.readMap(".cache/dicts/java_types_dict.txt");

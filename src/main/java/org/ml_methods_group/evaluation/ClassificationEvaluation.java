@@ -34,8 +34,12 @@ import static org.ml_methods_group.common.serialization.ProtobufSerializationUti
 public class ClassificationEvaluation {
 
     public static int[] numClustersToMark = {5, 10, 20, 30, 40};
-    public static String[] clusteringApproachesNames = {"def_jac", "ext_jac", "ful_jac", "fuz_jac", "BOW20000"};
+    public static String[] clusteringApproachesNames = {"def_jac", "ext_jac", "ful_jac", "fuz_jac", "BOW20000",
+            "def_vec"};
     public static double[] clusteringHacThresholds = {0.1, 0.2, 0.3, 0.4, 0.5};
+    public static double[] classificationThresholds =
+            {0.05, 0.1, 0.15, 0.2, 0.25, 0.3, 0.35, 0.4, 0.45, 0.5,
+                    0.55, 0.6, 0.65, 0.7, 0.75, 0.8, 0.85, 0.9, 0.95};
 
     public static ClassificationApproachTemplate[] approaches = {
             new ClassificationApproachTemplate((dataset, extractor) ->
@@ -48,6 +52,10 @@ public class ClassificationEvaluation {
                     FuzzyJaccardApproach.getDefaultApproach(extractor)),
             new ClassificationApproachTemplate((dataset, extractor) ->
                     BOWApproach.getDefaultApproach(20000, dataset, extractor)),
+            new ClassificationApproachTemplate((dataset, extractor) ->
+                    VectorizationApproach.getDefaultApproach(dataset, extractor)),
+            new ClassificationApproachTemplate((dataset, extractor) ->
+                    VectorizationApproach.getSumApproach(dataset, extractor)),
     };
 
     public static String[] classifiers = {"closest-cluster", "k-nearest-3",
@@ -55,9 +63,10 @@ public class ClassificationEvaluation {
     };
 
     public static String[] problems = {
-//            "loggers",
+            "loggers",
             "deserialization",
-//            "reflection", "factorial"
+            "reflection",
+            "factorial"
     };
 
     public static void main(String[] args) throws Exception {
@@ -75,7 +84,7 @@ public class ClassificationEvaluation {
                 final Path problemData = EvaluationInfo.PATH_TO_DATASET.resolve(problem);
                 final Path validation = problemData.resolve("validation");
                 final SolutionMarksHolder holder = loadSolutionMarksHolder(problemData.resolve("train_marks.tmp"));
-                final Map<String, List<Double>> results = new HashMap<>();
+                final Map<String, double[]> results = new HashMap<>();
                 for (int k = 0; k < 10; k++) {
                     System.out.println("Step " + k);
                     final Dataset train = loadDataset(validation.resolve("step_" + k).resolve("train.tmp"));
@@ -102,14 +111,17 @@ public class ClassificationEvaluation {
                                     for (String classifierName : classifiers) {
                                         final var classifier = approach.getClassifier(classifierName);
                                         classifier.train(data);
-                                        final var result = tester.test(classifier);
-                                        final double auc = getAUC(result);
+                                        final var result = getResults(tester.test(classifier));
                                         final String key = clusteringApproach + ',' +
                                                 hacThreshold + ',' +
                                                 numClusters + ',' +
                                                 approach.getName() + ',' +
                                                 classifierName;
-                                        results.computeIfAbsent(key, x -> new ArrayList<>()).add(auc);
+                                        final double[] accumulator = results.computeIfAbsent(key,
+                                                x -> new double[2 * classificationThresholds.length + 1]);
+                                        for (int i = 0; i < accumulator.length; i++) {
+                                            accumulator[i] += result[i] / 10;
+                                        }
                                     }
                                 }
                             }
@@ -120,18 +132,28 @@ public class ClassificationEvaluation {
                     for (var entry : results.entrySet()) {
                         out.print(entry.getKey());
                         out.print(",");
-                        entry.getValue().forEach(x -> out.print(x + ","));
-                        out.println(entry.getValue().stream().mapToDouble(x -> x).summaryStatistics().getAverage());
+                        Arrays.stream(entry.getValue()).forEach(x -> out.print(x + ","));
+                        out.println(getAUC(entry.getValue()));
                     }
                 }
             }
         }
     }
 
-    private static double getAUC(ClassificationTestingResult results) {
+    private static double[] getResults(ClassificationTestingResult results) {
+        final double[] buffer = new double[classificationThresholds.length * 2 + 1];
+        for (int i = 0; i < classificationThresholds.length; i++) {
+            buffer[2 * i] = results.getPrecision(classificationThresholds[i]);
+            buffer[2 * i + 1] = results.getCoverage(classificationThresholds[i]);
+        }
+        buffer[buffer.length - 1] = results.getAccuracy();
+        return buffer;
+    }
+
+    private static double getAUC(double[] data) {
         final List<Point> points = new ArrayList<>();
-        for (double t = 0.05; t < 1; t += 0.05) {
-            points.add(new Point(results.getPrecision(t), results.getCoverage(t)));
+        for (int i = 0; i < classificationThresholds.length; i++) {
+            points.add(new Point(data[2 * i], data[2 * i + 1]));
         }
         Collections.sort(points);
         double auc = 0;

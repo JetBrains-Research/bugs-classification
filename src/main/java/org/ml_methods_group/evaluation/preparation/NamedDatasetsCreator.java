@@ -23,6 +23,7 @@ public class NamedDatasetsCreator {
         extract(57792, "pair", train, test);
         extract(47347, "merge", train, test);
         extract(55673, "read_as_string", train, test);
+        extract(55689, "double_sum", train, test);
     }
 
 

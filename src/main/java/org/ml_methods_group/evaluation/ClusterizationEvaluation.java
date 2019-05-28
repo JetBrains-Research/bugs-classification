@@ -36,13 +36,9 @@ import static org.ml_methods_group.common.serialization.ProtobufSerializationUti
 
 public class ClusterizationEvaluation {
 
-    public static int[] numClustersToMark = {5
-            , 10, 20, 30, 40
-    };
+    public static int[] numClustersToMark = {5, 10, 20, 30, 40};
 
-    public static double[] hacThresholds = {0.1
-            , 0.2, 0.3, 0.4, 0.5
-    };
+    public static double[] hacThresholds = {0.1, 0.2, 0.3, 0.4, 0.5};
 
     public static ClusteringApproachTemplate[] approaches = {
             new ClusteringApproachTemplate((dataset, extractor) ->
@@ -55,12 +51,15 @@ public class ClusterizationEvaluation {
                     FuzzyJaccardApproach.getDefaultApproach(extractor)),
             new ClusteringApproachTemplate((dataset, extractor) ->
                     BOWApproach.getDefaultApproach(20000, dataset, extractor)),
+            new ClusteringApproachTemplate((dataset, extractor) ->
+                    VectorizationApproach.getDefaultApproach(dataset, extractor)),
     };
 
     public static String[] problems = {
             "loggers",
-//            "deserialization",
-//            "reflection", "factorial"
+            "deserialization",
+            "reflection",
+            "factorial",
     };
 
 
@@ -148,86 +147,4 @@ public class ClusterizationEvaluation {
         }
         return result;
     }
-
-//    public static FeaturesExtractor<Solution, Changes> createChangesExtractor(Dataset dataset,
-//                                                                              Database database)
-//            throws Exception {
-//        final ASTGenerator generator = new CachedASTGenerator(new NamesASTNormalizer());
-//        final ChangeGenerator changesGenerator = new BasicChangeGenerator(generator);
-//        final Unifier<Solution> unifier =
-//                new BasicUnifier<>(
-//                        CommonUtils.compose(generator::buildTree, ITree::getHash)::apply,
-//                        CommonUtils.checkEquals(generator::buildTree, ASTUtils::deepEquals),
-//                        new MinValuePicker<>(Comparator.comparingInt(Solution::getSolutionId)));
-//        final DistanceFunction<Solution> metric =
-//                new HeuristicChangesBasedDistanceFunction(changesGenerator);
-//        final List<Solution> correct = dataset.getValues(s -> s.getVerdict() == OK);
-//        final OptionSelector<Solution, Solution> selector = new CacheOptionSelector<>(
-//                new ClosestPairSelector<>(unifier.unify(correct), metric),
-//                database,
-//                Solution::getSolutionId,
-//                Solution::getSolutionId);
-//        return new ChangesExtractor(changesGenerator, selector);
-//    }
-//
-//    public static <F> void evaluate(Approach<F> approach, Dataset train, Database database,
-//                                    double hacThreshold, int[] numClusters, Path dir) throws Exception {
-//        final Clusterer<Solution> clusterer = new CompositeClusterer<>(
-//                approach.extractor,
-//                new HAC<Wrapper<F, Solution>>(hacThreshold, 10,
-//                        CommonUtils.metricFor(approach.metric, Wrapper::getFeatures)));
-//        final List<Solution> incorrect = train.getValues(x -> x.getVerdict() == FAIL);
-//        final Clusters<Solution> clusters = clusterer.buildClusters(incorrect);
-//
-//        System.out.println(clusters.getClusters().stream().mapToInt(Cluster::size).filter(x -> x >= minBound).count());
-//        System.out.println(clusters.getClusters().size());
-//
-//
-//        final Marker<Cluster<Solution>, String> clusterMarker =
-//                new CachedExtrapolationMarker<>(
-//                        new CacheMarker<>(Solution::getSolutionId,
-//                                String.class,
-//                                Marker.constMarker(null),
-//                                database),
-//                        5,
-//                        new ManualClusterMarker(10));
-//
-//        final List<Map<Cluster<Solution>, String>> marks = new ArrayList<>();
-//        IntStream.range(0, sizeBounds.length).forEach(x -> marks.add(new HashMap<>()));
-//        for (Cluster<Solution> cluster : clusters.getClusters()) {
-//            if (cluster.size() < minBound) {
-//                continue;
-//            }
-//            final String mark = clusterMarker.mark(cluster);
-//            if (mark == null) {
-//                continue;
-//            }
-//            for (int i = 0; i < sizeBounds.length; i++) {
-//                if (cluster.size() >= sizeBounds[i]) {
-//                    marks.get(i).put(cluster, mark);
-//                }
-//            }
-//        }
-//        for (int i = 0; i < sizeBounds.length; i++) {
-//            printReport(incorrect, clusters.getClusters(), sizeBounds[i], marks.get(i));
-//            final MarkedSolutionsClusters result = new MarkedSolutionsClusters(marks.get(i));
-//            final Path path = dir.resolve(hacThreshold + "_" + sizeBounds[i] + ".mc");
-//            result.store(path);
-//        }
-//    }
-//
-//    private static void printReport(List<Solution> solutions, List<Cluster<Solution>> clusters,
-//                                    int limit, Map<Cluster<Solution>, String> marks) {
-//        System.out.println("Report for bound: " + limit);
-//        System.out.println("    Elements count: " + solutions.size());
-//        System.out.println("    Clusters count: " + clusters.size());
-//        System.out.println("    Big clusters count: " + clusters.stream()
-//                .mapToInt(Cluster::size)
-//                .filter(x -> x >= limit)
-//                .count());
-//        System.out.println("    Good clusters count: " + marks.size());
-//        System.out.println("    Error types count: " + new HashSet<>(marks.values()).size());
-//        System.out.println("    Coverage: " + marks.keySet().stream().mapToInt(Cluster::size).sum());
-//        System.out.println();
-//    }
 }

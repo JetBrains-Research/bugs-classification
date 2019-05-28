@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.nio.file.Path;
 import java.util.Map;
+import java.util.Optional;
 
 public class SolutionClassifier implements Classifier<Solution, String>, Serializable {
 
@@ -23,7 +24,7 @@ public class SolutionClassifier implements Classifier<Solution, String>, Seriali
     }
 
     @Override
-    public String classify(Solution value) {
+    public Optional<String> classify(Solution value) {
         return classifier.classify(value);
     }
 
@@ -38,10 +39,10 @@ public class SolutionClassifier implements Classifier<Solution, String>, Seriali
     }
 
     public void store(Path path) throws IOException {
-        SerializationUtils.storeObject(this, path);
+        JavaSerializationUtils.storeObject(this, path);
     }
 
     public static SolutionClassifier load(Path path) throws IOException {
-        return SerializationUtils.loadObject(SolutionClassifier.class, path);
+        return JavaSerializationUtils.loadObject(SolutionClassifier.class, path);
     }
 }

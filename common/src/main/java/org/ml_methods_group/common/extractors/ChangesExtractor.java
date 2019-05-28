@@ -3,8 +3,8 @@ package org.ml_methods_group.common.extractors;
 import org.ml_methods_group.common.BiFeaturesExtractor;
 import org.ml_methods_group.common.FeaturesExtractor;
 import org.ml_methods_group.common.OptionSelector;
-import org.ml_methods_group.common.changes.generation.ChangeGenerator;
-import org.ml_methods_group.common.changes.generation.Changes;
+import org.ml_methods_group.common.ast.changes.ChangeGenerator;
+import org.ml_methods_group.common.ast.changes.Changes;
 import org.ml_methods_group.common.Solution;
 
 import java.util.NoSuchElementException;

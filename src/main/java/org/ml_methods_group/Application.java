@@ -1,72 +1,144 @@
 package org.ml_methods_group;
 
-import org.ml_methods_group.classification.ClassificationUtils;
-import org.ml_methods_group.clustering.ClusterizationUtils;
-import org.ml_methods_group.common.Solution;
-import org.ml_methods_group.common.serialization.MarkedSolutionsClusters;
-import org.ml_methods_group.common.serialization.SolutionClassifier;
-import org.ml_methods_group.common.serialization.SolutionsClusters;
-import org.ml_methods_group.common.serialization.SolutionsDataset;
-import org.ml_methods_group.marking.MarkingUtils;
+import com.github.gumtreediff.tree.ITree;
+import org.ml_methods_group.classification.classifiers.CompositeClassifier;
+import org.ml_methods_group.classification.classifiers.KNearestNeighbors;
+import org.ml_methods_group.clustering.clusterers.CompositeClusterer;
+import org.ml_methods_group.clustering.clusterers.HAC;
+import org.ml_methods_group.common.*;
+import org.ml_methods_group.common.ast.ASTUtils;
+import org.ml_methods_group.common.ast.changes.BasicChangeGenerator;
+import org.ml_methods_group.common.ast.changes.ChangeGenerator;
+import org.ml_methods_group.common.ast.changes.Changes;
+import org.ml_methods_group.common.ast.generation.ASTGenerator;
+import org.ml_methods_group.common.ast.generation.CachedASTGenerator;
+import org.ml_methods_group.common.ast.normalization.NamesASTNormalizer;
+import org.ml_methods_group.common.extractors.ChangesExtractor;
+import org.ml_methods_group.common.metrics.functions.HeuristicChangesBasedDistanceFunction;
+import org.ml_methods_group.common.metrics.selectors.ClosestPairSelector;
+import org.ml_methods_group.common.metrics.selectors.FixedIdOptionSelector;
+import org.ml_methods_group.common.preparation.Unifier;
+import org.ml_methods_group.common.preparation.basic.BasicUnifier;
+import org.ml_methods_group.common.preparation.basic.MinValuePicker;
+import org.ml_methods_group.common.serialization.ProtobufSerializationUtils;
+import org.ml_methods_group.evaluation.approaches.BOWApproach;
+import org.ml_methods_group.evaluation.approaches.FuzzyJaccardApproach;
+import org.ml_methods_group.parsing.JavaCodeValidator;
 import org.ml_methods_group.parsing.ParsingUtils;
 
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.*;
 import java.util.stream.Collectors;
+
+import static org.ml_methods_group.common.Solution.Verdict.FAIL;
+import static org.ml_methods_group.common.Solution.Verdict.OK;
 
 public class Application {
     public static void main(String[] args) throws IOException {
-        final String command = args[0];
-        switch (command) {
+        switch (args[0]) {
             case "parse":
-                parseDataset(Integer.parseInt(args[1]), args[2], args[3]);
+                parse(Paths.get(args[1]), Paths.get(args[2]));
                 break;
             case "cluster":
-                buildClusters(args[1], args[2]);
+                cluster(Paths.get(args[1]), Paths.get(args[2]));
                 break;
             case "mark":
-                markClusters(args[1], args[2]);
-                break;
-            case "train":
-                trainClassifier(args[1], args[2], args[3]);
+                mark(Paths.get(args[1]), Paths.get(args[2]), Integer.parseInt(args[3]), Integer.parseInt(args[4]));
                 break;
             case "classify":
-                classify(args[1], args[2]);
+                classify(Paths.get(args[1]), Paths.get(args[2]), Paths.get(args[3]));
                 break;
-        }
-
-    }
-
-    private static void parseDataset(int problemId, String inputPath, String outputPath) throws IOException {
-        final Path output = Paths.get(outputPath);
-        try (FileInputStream fis = new FileInputStream(inputPath)) {
-            ParsingUtils.parseJavaSolutions(fis, problemId).store(output);
+            default:
+                System.out.println("Undefined command!");
         }
     }
 
-    private static void buildClusters(String inputPath, String outputPath) throws IOException {
-        final SolutionsDataset dataset = SolutionsDataset.load(Paths.get(inputPath));
-        ClusterizationUtils.buildClusters(dataset).store(Paths.get(outputPath));
+    public static void parse(Path data, Path storage) throws IOException {
+        try (InputStream input = new FileInputStream(data.toFile())) {
+            final Dataset dataset = ParsingUtils.parse(input, new JavaCodeValidator(), x -> true);
+            ProtobufSerializationUtils.storeDataset(dataset, storage);
+        }
     }
 
-    private static void markClusters(String inputPath, String outputPath) throws IOException {
-        final SolutionsClusters clusters = SolutionsClusters.load(Paths.get(inputPath));
-        MarkingUtils.markClusters(clusters).store(Paths.get(outputPath));
+    public static void cluster(Path data, Path storage) throws IOException {
+        final Dataset dataset = ProtobufSerializationUtils.loadDataset(data);
+        final var selector = new FixedIdOptionSelector<>(
+                dataset.getValues(x -> x.getVerdict() == OK),
+                Solution::getSessionId,
+                Solution::getSessionId);
+        final var normalizer = new NamesASTNormalizer();
+        final var treeGenerator = new CachedASTGenerator(normalizer);
+        final var changeGenerator = new BasicChangeGenerator(treeGenerator);
+        final var extractor = new ChangesExtractor(changeGenerator, selector);
+        final var approach = BOWApproach.getDefaultApproach(20000, dataset, extractor);
+        final var clusterer = new CompositeClusterer<>(approach.extractor, new HAC<>(
+                0.3,
+                1,
+                CommonUtils.metricFor(approach.metric, Wrapper::getFeatures)));
+        final var clusters = clusterer.buildClusters(dataset.getValues(x -> x.getVerdict() == FAIL));
+        ProtobufSerializationUtils.storeSolutionClusters(clusters, storage);
     }
 
-    private static void trainClassifier(String datasetPath, String marksPath, String outputPath) throws IOException {
-        final SolutionsDataset dataset = SolutionsDataset.load(Paths.get(datasetPath));
-        final MarkedSolutionsClusters clusters = MarkedSolutionsClusters.load(Paths.get(marksPath));
-        ClassificationUtils.trainClassifier(clusters, dataset).store(Paths.get(outputPath));
+    public static void mark(Path data, Path dst, int numExamples, int numClusters) throws IOException {
+        final var clusters = ProtobufSerializationUtils.loadSolutionClusters(data)
+                .getClusters().stream()
+                .sorted(Comparator.<Cluster<Solution>>comparingInt(Cluster::size).reversed())
+                .collect(Collectors.toList());
+        final Map<Cluster<Solution>, String> marks = new HashMap<>();
+        try (Scanner scanner = new Scanner(System.in)) {
+            for (var cluster : clusters.subList(0, Math.min(clusters.size(), numClusters))) {
+                System.out.println("Next cluster (size=" + cluster.size() + "):");
+                final var solutions = cluster.elementsCopy();
+                Collections.shuffle(solutions);
+                for (int i = 0; i < Math.min(numExamples, solutions.size()); i++) {
+                    final var solution = solutions.get(i);
+                    System.out.println("    Example #" + i);
+                    System.out.println("    Session id: " + solution.getSessionId());
+                    System.out.println(solution.getCode());
+                    System.out.println();
+                }
+                System.out.println("-------------------------------------------------");
+                System.out.println("Your mark:");
+                final String mark = scanner.next();
+                if (!mark.equals("-")) {
+                    marks.put(cluster, mark);
+                }
+            }
+        }
+        final MarkedClusters<Solution, String> marked = new MarkedClusters<>(marks);
+        ProtobufSerializationUtils.storeMarkedClusters(marked, dst);
     }
 
-    private static void classify(String classifier, String input) throws IOException {
-        final String code = Files.lines(Paths.get(input)).collect(Collectors.joining(System.lineSeparator()));
-        final Solution fake = new Solution(code, -1, -1, -1, Solution.Verdict.FAIL);
-        final String mark = SolutionClassifier.load(Paths.get(classifier)).classify(fake);
-        System.out.println(mark);
+    public static void classify(Path data, Path marks, Path element) throws IOException {
+        final MarkedClusters<Solution, String> clusters = ProtobufSerializationUtils.loadMarkedClusters(marks);
+        final var dataset = ProtobufSerializationUtils.loadDataset(data);
+        final ASTGenerator astGenerator = new CachedASTGenerator(new NamesASTNormalizer());
+        final ChangeGenerator changeGenerator = new BasicChangeGenerator(astGenerator);
+        final Unifier<Solution> unifier = new BasicUnifier<>(
+                CommonUtils.compose(astGenerator::buildTree, ITree::getHash)::apply,
+                CommonUtils.checkEquals(astGenerator::buildTree, ASTUtils::deepEquals),
+                new MinValuePicker<>(Comparator.comparingInt(Solution::getSolutionId)));
+        final DistanceFunction<Solution> metric =
+                new HeuristicChangesBasedDistanceFunction(changeGenerator);
+        final OptionSelector<Solution, Solution> selector = new ClosestPairSelector<>(
+                unifier.unify(dataset.getValues(x -> x.getVerdict() == OK)), metric);
+        final var extractor = new ChangesExtractor(changeGenerator, selector);
+        final var approach = FuzzyJaccardApproach.getDefaultApproach(extractor);
+        final var distanceFunction = CommonUtils.metricFor(approach.metric, Wrapper<Changes, Solution>::getFeatures);
+        final Classifier<Solution, String> classifier = new CompositeClassifier<>(
+                approach.extractor,
+                new KNearestNeighbors<>(15, distanceFunction));
+        classifier.train(clusters);
+        final var code = new String(Files.readAllBytes(element));
+        final var solution = new Solution(code, -1, -1, -1, FAIL);
+        final var result = classifier.mostProbable(solution);
+        System.out.println("Solution:");
+        System.out.println(code);
+        System.out.println("Result: " + result.getKey() + " (" + result.getValue() + ")");
     }
 }

@@ -1,37 +1,47 @@
 # bugs-classification
 
-# Сборка
+## Сборка
 
 git clone https://github.com/ml-in-programming/bugs-classification.git
 
 cd bugs-classification
 
-gradle jar
+gradle build
 
 Получившийся jar-ник: build\libs\bugs-classification-v1.jar
 
-# Запуск
+## Запуск
 
 java -jar bugs-classification-v1.jar [команда]
 
-# Команды
 
-## Парсинг csv-файла
+1. parse [csv-файл] [куда сохранить датасет]   --  преобразует csv файл в используемый в проекте формат
 
-parse [id задачи] [путь к csv-файлу с посылками] [путь, куда следует записать результат]
+Пример: `java -jar bugs-classification-v1.jar parse data.csv data.tmp`
 
-## Кластеризация
+2. cluster [файл с данными] [куда сохранить кластеры]   --   кластеризует неправильные решения  
 
-cluster [файл, получившийся на предыдущем шаге] [путь, куда следует записать результат]
+Пример: `java -jar bugs-classification-v1.jar cluster data.tmp clusters.tmp
 
-## Разметка
+3. mark [файд с кластерами] [файл, куда записать результат] [сколько примеров показывать из кластера] [сколько кластеров показать]    --   позволяет разметить кластеры
 
-mark [файл, получившийся на предыдущем шаге] [путь, куда следует записать результат]
+Пример: `java -jar bugs-classification-v1.jar show clusters.tmp marks.tmp 5 40`
 
-## Обучение
+4. classify [файл с датасетом] [файл с размеченными кластерами] [файл решением]    --   классифицирует новое решение
 
-train [путь к файлу, получившемуся после первого шага] [путь к файлу, получившемуся после предыдущего шага] [путь, куда следует записать результат]
 
-## Классификация
 
-classify [путь к файлу, получившемуся на предыдущем шаге] [путь к файлу с кодом для классификации]
+Формат исходного csv файла ожидается такой:
+```csv
+step_id,user_id,submission_code,is_passed,timestamp
+239,566,"public class HelloWorld {
+	public static void main(String[] args) {
+		System.out.println(""Hello, World!"");
+	}
+}",False,1442181616
+239,566,"class HelloWorld {
+  public static void main(String[] args) {
+    System.out.println(""Hello, World!"");
+  }
+}",False,1442182020
+```

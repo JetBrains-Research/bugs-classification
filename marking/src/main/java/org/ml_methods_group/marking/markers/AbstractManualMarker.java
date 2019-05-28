@@ -9,7 +9,7 @@ public abstract class AbstractManualMarker<V, M> implements Marker<V, M> {
     private final Scanner input;
     private final PrintStream output;
 
-    protected AbstractManualMarker(InputStream input, OutputStream output) {
+    AbstractManualMarker(InputStream input, OutputStream output) {
         this.input = new Scanner(input);
         this.output = new PrintStream(output);
     }

@@ -3,8 +3,8 @@ package org.ml_methods_group.common.metrics.functions;
 import com.github.gumtreediff.tree.ITree;
 import org.ml_methods_group.common.DistanceFunction;
 import org.ml_methods_group.common.Solution;
-import org.ml_methods_group.common.changes.NodeType;
-import org.ml_methods_group.common.changes.generation.ChangeGenerator;
+import org.ml_methods_group.common.ast.NodeType;
+import org.ml_methods_group.common.ast.changes.ChangeGenerator;
 
 import java.lang.ref.SoftReference;
 import java.util.Map;
@@ -46,7 +46,7 @@ public class HeuristicChangesBasedDistanceFunction implements DistanceFunction<S
                 return cached;
             }
             final int[] result = new int[NodeType.values().length];
-            final ITree tree = generator.getTree(solution);
+            final ITree tree = generator.getGenerator().buildTree(solution);
             tree.getTrees()
                     .stream()
                     .mapToInt(ITree::getType)

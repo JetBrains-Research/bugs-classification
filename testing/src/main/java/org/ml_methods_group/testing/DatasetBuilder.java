@@ -1,16 +1,14 @@
 package org.ml_methods_group.testing;
 
 import org.ml_methods_group.common.CommonUtils;
+import org.ml_methods_group.common.Dataset;
 import org.ml_methods_group.common.Solution;
-import org.ml_methods_group.common.Solution.Verdict;
-import org.ml_methods_group.common.serialization.SolutionsDataset;
-import org.ml_methods_group.testing.database.ConditionSupplier;
-import org.ml_methods_group.testing.database.Repository;
 
 import java.util.*;
 import java.util.stream.Collectors;
 
-import static org.ml_methods_group.common.Solution.Verdict.*;
+import static org.ml_methods_group.common.Solution.Verdict.FAIL;
+import static org.ml_methods_group.common.Solution.Verdict.OK;
 
 public class DatasetBuilder {
 
@@ -18,7 +16,7 @@ public class DatasetBuilder {
     private final List<Solution> correct;
     private final List<Solution> incorrect;
 
-    public DatasetBuilder(long seed, SolutionsDataset dataset) {
+    public DatasetBuilder(long seed, Dataset dataset) {
         this.seed = seed;
         correct = dataset.getValues(CommonUtils.check(Solution::getVerdict, OK::equals));
         incorrect = dataset.getValues(CommonUtils.check(Solution::getVerdict, FAIL::equals));
@@ -47,14 +45,6 @@ public class DatasetBuilder {
                 .filter(CommonUtils.checkNot(Solution::getSessionId, testSessions::contains))
                 .collect(Collectors.toList());
         return new TrainTestSplit(trainCorrect, trainIncorrect, testIncorrect);
-    }
-
-    private static List<Solution> loadSolutions(Repository<Solution> repository, int problemId, Verdict verdict) {
-        final ConditionSupplier conditions = repository.conditionSupplier();
-        final List<Solution> result = new ArrayList<>();
-        repository.get(conditions.is("problemid", problemId), conditions.is("verdict", verdict))
-                .forEachRemaining(result::add);
-        return result;
     }
 
     private static void validate(List<Solution> correct, List<Solution> incorrect, long seed) {

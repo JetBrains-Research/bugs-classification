@@ -1,8 +1,9 @@
 package org.ml_methods_group.common;
 
+import java.io.Serializable;
 import java.util.function.Function;
 
-public class Wrapper<F, M> {
+public class Wrapper<F, M> implements Serializable {
     private final F features;
     private final M meta;
 

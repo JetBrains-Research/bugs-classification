@@ -27,4 +27,6 @@ build/
 out/
 .gradle/
 *.csv
+.cache/
+
 src/main/java/org/ml_methods_group/tmp/*

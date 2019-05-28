@@ -23,6 +23,10 @@ public class CommonUtils {
         return (Serializable & Predicate<F>) x -> !predicate.test(function.apply(x));
     }
 
+    public static <F> Predicate<F> not(Predicate<F> predicate) {
+        return (Serializable & Predicate<F>) x -> !predicate.test(x);
+    }
+
     public static <V, F> Predicate<V> checkEquals(Function<V, F> first, Function<V, F> second) {
         return (Serializable & Predicate<V>) x -> Objects.equals(first.apply(x), second.apply(x));
     }
@@ -56,18 +60,13 @@ public class CommonUtils {
     public static <V, F> DistanceFunction<V> metricFor(DistanceFunction<F> metric, Function<V, F> extractor) {
         return new DistanceFunction<V>() {
             @Override
-            public double distance(V first, V second) {
-                return metric.distance(extractor.apply(first), extractor.apply(second));
-            }
-
-            @Override
             public double distance(V first, V second, double upperBound) {
                 return metric.distance(extractor.apply(first), extractor.apply(second), upperBound);
             }
 
             @Override
-            public double upperBound() {
-                return metric.upperBound();
+            public double distance(V first, V second) {
+                return metric.distance(extractor.apply(first), extractor.apply(second));
             }
         };
     }

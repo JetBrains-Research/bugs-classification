@@ -3,7 +3,7 @@ version 'v1'
 
 apply plugin: 'java'
 
-sourceCompatibility = 1.8
+sourceCompatibility = 1.11
 
 repositories {
     mavenCentral()
@@ -11,5 +11,9 @@ repositories {
 
 dependencies {
     testCompile group: 'junit', name: 'junit', version: '4.12'
+
+    // https://mvnrepository.com/artifact/nz.ac.waikato.cms.weka/weka-stable
+    compile group: 'nz.ac.waikato.cms.weka', name: 'weka-stable', version: '3.6.6'
+
     compile project(':common')
 }

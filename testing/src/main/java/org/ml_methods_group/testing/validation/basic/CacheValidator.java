@@ -1,10 +1,11 @@
 package org.ml_methods_group.testing.validation.basic;
 
-import org.ml_methods_group.testing.database.ConditionSupplier;
-import org.ml_methods_group.testing.database.Database;
-import org.ml_methods_group.testing.database.Repository;
+import org.ml_methods_group.common.Repository;
+import org.ml_methods_group.common.Database;
 import org.ml_methods_group.testing.validation.Validator;
 
+import java.io.*;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.ToIntFunction;
@@ -13,14 +14,14 @@ public class CacheValidator<V, M> implements Validator<V, M> {
 
     private final Function<M, String> encoder;
     private final ToIntFunction<V> idExtractor;
-    private final Repository<CachedValidation> repository;
+    private final Repository<ValidationData, Boolean> repository;
     private final Validator<V, M> oracle;
 
     public CacheValidator(Function<M, String> encoder, ToIntFunction<V> idExtractor,
-                          Validator<V, M> oracle, Database database) {
+                          Validator<V, M> oracle, Database database) throws Exception {
         this.encoder = encoder;
         this.idExtractor = idExtractor;
-        this.repository = database.getRepository(CachedValidation.class);
+        this.repository = database.repositoryForName("validation", ValidationData.class, Boolean.class);
         this.oracle = oracle;
     }
 
@@ -28,42 +29,53 @@ public class CacheValidator<V, M> implements Validator<V, M> {
     public boolean isValid(V value, M mark) {
         final int valueId = idExtractor.applyAsInt(value);
         final String markCode = encoder.apply(mark);
-        final Optional<Boolean> cache = loadCached(valueId, markCode);
+        final ValidationData validationData = new ValidationData(valueId, markCode);
+        final Optional<Boolean> cache = repository.loadValue(validationData);
         if (cache.isPresent()) {
             return cache.get();
         }
         final boolean result = oracle.isValid(value, mark);
-        storeCached(valueId, markCode, result);
+        repository.storeValue(validationData, result);
         return result;
     }
 
-    private Optional<Boolean> loadCached(int valueId, String mark) {
-        final ConditionSupplier supplier = repository.conditionSupplier();
-        return repository.find(supplier.is("valueId", valueId), supplier.is("mark", mark))
-                .map(CachedValidation::isAcceptable);
-    }
+    public static class ValidationData implements Externalizable {
+        private int valueId;
+        private String mark;
 
-    private void storeCached(int id, String mark, boolean isAcceptable) {
-        repository.insert(new CachedValidation(id, mark, isAcceptable));
-    }
-
-    public static class CachedValidation {
-        private final int valueId;
-        private final String mark;
-        private final boolean isAcceptable;
-
-        private CachedValidation(int valueId, String mark, boolean isAcceptable) {
+        private ValidationData(int valueId, String mark) {
             this.valueId = valueId;
             this.mark = mark;
-            this.isAcceptable = isAcceptable;
         }
 
-        public CachedValidation() {
-            this(0, "", false);
+        @Override
+        public void writeExternal(ObjectOutput out) throws IOException {
+            out.write(valueId);
+            out.writeUTF(mark);
         }
 
-        private boolean isAcceptable() {
-            return isAcceptable;
+        @Override
+        public void readExternal(ObjectInput in) throws IOException {
+            valueId = in.readInt();
+            mark = in.readUTF();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            ValidationData that = (ValidationData) o;
+
+            if (valueId != that.valueId) return false;
+            return Objects.equals(mark, that.mark);
+        }
+
+        @Override
+        public int hashCode() {
+            int result = valueId;
+            result = 31 * result + (mark != null ? mark.hashCode() : 0);
+            return result;
         }
     }
 }

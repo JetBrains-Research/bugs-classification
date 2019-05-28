@@ -18,10 +18,10 @@ public class SolutionsClusters extends Clusters<Solution> {
     }
 
     public static SolutionsClusters load(Path path) throws IOException {
-        return SerializationUtils.loadObject(SolutionsClusters.class, path);
+        return JavaSerializationUtils.loadObject(SolutionsClusters.class, path);
     }
 
     public void store(Path path) throws IOException {
-        SerializationUtils.storeObject(this, path);
+        JavaSerializationUtils.storeObject(this, path);
     }
 }

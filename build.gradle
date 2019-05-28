@@ -3,7 +3,7 @@ version 'v1'
 
 apply plugin: 'java'
 
-sourceCompatibility = 1.8
+sourceCompatibility = 1.11
 
 repositories {
     mavenCentral()
@@ -28,8 +28,8 @@ dependencies {
     compile project(':common')
     compile project(':marking')
     compile project(':parsing')
-    compile project(':database')
+    compile project(':testing')
     compile project(':clustering')
     compile project(':classification')
-    compile project(':testing')
+    compile project(':cache')
 }

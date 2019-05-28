@@ -46,7 +46,6 @@ public class BOWExtractor<T> implements FeaturesExtractor<List<T>, BOWExtractor.
                 .limit(n)
                 .map(Map.Entry::getKey)
                 .forEachOrdered(hash -> indexes.put(hash, indexes.size()));
-        System.out.println(counters.size());
         return indexes;
     }
 

@@ -144,112 +144,54 @@ public class SerializationTest {
     }
 
     @Test
-    public void testVectorFeaturesTransformation() throws Exception {
-        final double[] values = {Double.NaN, Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY, 1, 0.44, 1E-100};
-        final double[] parsedValues = SerializationTest.writeAndRead(values,
-                EntityToProtoUtils::transformVectorFeatures,
+    public void testMarkedChangesClusters() throws Exception {
+        final Solution before = new Solution("some code", 1, 1, 1, FAIL);
+        final Solution after = new Solution("some another code", 1, 1, 2, OK);
+        final Changes changes = new Changes(before, after, Collections.singletonList(CODE_CHANGE_EXAMPLE));
+        final Cluster<Changes> cluster = new Cluster<>(Collections.singletonList(changes));
+        final MarkedClusters<Changes, String> data = new MarkedClusters<>(Collections.singletonMap(cluster, "mark"));
+        final MarkedClusters<Changes, String> parsedData =
+                SerializationTest.writeAndRead(data,
+                        EntityToProtoUtils::transformMarkedChangesClusters,
+                        ProtoToEntityUtils::transform,
+                        ProtoMarkedChangesClusters::writeTo,
+                        ProtoMarkedChangesClusters::parseFrom);
+        assertEquals(data.getFlatMarks().size(), parsedData.getFlatMarks().size());
+        assertEquals(data.getFlatMarks().values().iterator().next(),
+                parsedData.getFlatMarks().values().iterator().next());
+        assertEquals(data.getFlatMarks().keySet().iterator().next().getChanges().size(),
+                parsedData.getFlatMarks().keySet().iterator().next().getChanges().size());
+        assertEquals(data.getFlatMarks().keySet().iterator().next().getChanges().get(0),
+                parsedData.getFlatMarks().keySet().iterator().next().getChanges().get(0));
+        assertEquals(data.getFlatMarks().keySet().iterator().next().getOrigin(),
+                parsedData.getFlatMarks().keySet().iterator().next().getOrigin());
+        assertEquals(data.getFlatMarks().keySet().iterator().next().getTarget(),
+                parsedData.getFlatMarks().keySet().iterator().next().getTarget());
+    }
+
+    @Test
+    public void testChangesClusters() throws Exception {
+        final Solution before = new Solution("some code", 1, 1, 1, FAIL);
+        final Solution after = new Solution("some another code", 1, 1, 2, OK);
+        final Changes changes = new Changes(before, after, Collections.singletonList(CODE_CHANGE_EXAMPLE));
+        final Cluster<Changes> cluster = new Cluster<>(Collections.singletonList(changes));
+        final Clusters<Changes> data = new Clusters<>(Collections.singletonList(cluster));
+        final Clusters<Changes> parsedData = writeAndRead(data,
+                EntityToProtoUtils::transformChangesClusters,
                 ProtoToEntityUtils::transform,
-                ProtoVectorFeatures::writeTo,
-                ProtoVectorFeatures::parseFrom);
-        assertArrayEquals(values, parsedValues, 0);
-    }
-
-    @Test
-    public void testVectorsListFeaturesTransformation() throws Exception {
-        final List<double[]> values = Arrays.asList(
-                new double[]{Double.NaN, Double.POSITIVE_INFINITY, Double.NEGATIVE_INFINITY, 1, 0.44, 1E-100},
-                new double[]{-100, 0, 1E300, -0.5E30, 15, 42, 78},
-                new double[]{});
-        final List<double[]> parsedValues = SerializationTest.writeAndRead(values,
-                EntityToProtoUtils::transformVectorListFeatures,
-                ProtoToEntityUtils::transform,
-                ProtoVectorListFeatures::writeTo,
-                ProtoVectorListFeatures::parseFrom);
-        assertTrue(deepEquals(values.toArray(), parsedValues.toArray()));
-    }
-
-    @Test
-    public void testStringListFeaturesTransformation() throws Exception {
-        final List<String> values = Arrays.asList("feature1", "feature2", "feature3");
-        final List<String> parsedValues = SerializationTest.writeAndRead(values,
-                EntityToProtoUtils::transformStringListFeatures,
-                ProtoToEntityUtils::transform,
-                ProtoStringListFeatures::writeTo,
-                ProtoStringListFeatures::parseFrom);
-        assertArrayEquals(values.toArray(), parsedValues.toArray());
-    }
-
-    @Test
-    public void testChangeListFeaturesTransformation() throws Exception {
-        final List<CodeChange> changes = Collections.singletonList(CODE_CHANGE_EXAMPLE);
-        final List<CodeChange> parsedChanges = writeAndRead(changes,
-                EntityToProtoUtils::transformChangeListFeatures,
-                ProtoToEntityUtils::transform,
-                ProtoChangeListFeatures::writeTo,
-                ProtoChangeListFeatures::parseFrom);
-        assertArrayEquals(changes.toArray(), parsedChanges.toArray());
-    }
-
-    @Test
-    public void testVectorFeaturesWrapperTransformation() throws Exception {
-        final var wrapper = new Wrapper<>(new double[]{1, 2, 3, 4},
-                new Solution("text", 1, 1, 1, OK));
-        final var parsedWrapper = writeAndRead(wrapper,
-                EntityToProtoUtils::transform,
-                ProtoToEntityUtils::extractVectorFeatures,
-                ProtoFeaturesWrapper::writeTo,
-                ProtoFeaturesWrapper::parseFrom);
-
-        assertEquals(wrapper.getMeta(), parsedWrapper.getMeta());
-        assertArrayEquals(wrapper.getFeatures(), parsedWrapper.getFeatures(), 0);
-    }
-
-    @Test
-    public void testVectorListFeaturesWrapperTransformation() throws Exception {
-        final var wrapper = new Wrapper<>(
-                Arrays.asList(
-                        new double[]{1, 2, 3, 4},
-                        new double[]{-1, -2, -3, -4},
-                        new double[]{0.1, 0.2, 0.3, 0.4}),
-                new Solution("text", 1, 1, 1, OK));
-        final var parsedWrapper = writeAndRead(wrapper,
-                EntityToProtoUtils::transform,
-                ProtoToEntityUtils::extractVectorListFeatures,
-                ProtoFeaturesWrapper::writeTo,
-                ProtoFeaturesWrapper::parseFrom);
-
-        assertEquals(wrapper.getMeta(), parsedWrapper.getMeta());
-        assertTrue(deepEquals(wrapper.getFeatures().toArray(), parsedWrapper.getFeatures().toArray()));
-    }
-
-    @Test
-    public void testStringListFeaturesWrapperTransformation() throws Exception {
-        final var wrapper = new Wrapper<>(
-                Arrays.asList("feature1", "feature2", "feature3", "#$_()^6\\/?"),
-                new Solution("text", 1, 1, 1, OK));
-        final var parsedWrapper = writeAndRead(wrapper,
-                EntityToProtoUtils::transform,
-                ProtoToEntityUtils::extractStringListFeatures,
-                ProtoFeaturesWrapper::writeTo,
-                ProtoFeaturesWrapper::parseFrom);
-
-        assertEquals(wrapper.getMeta(), parsedWrapper.getMeta());
-        assertArrayEquals(wrapper.getFeatures().toArray(), parsedWrapper.getFeatures().toArray());
-    }
-
-    @Test
-    public void testChangeListFeaturesWrapperTransformation() throws Exception {
-        final var wrapper = new Wrapper<>(
-                Arrays.asList(CODE_CHANGE_EXAMPLE, CODE_CHANGE_EXAMPLE),
-                new Solution("text", 1, 1, 1, OK));
-        final var parsedWrapper = writeAndRead(wrapper,
-                EntityToProtoUtils::transform,
-                ProtoToEntityUtils::extractChangeListFeatures,
-                ProtoFeaturesWrapper::writeTo,
-                ProtoFeaturesWrapper::parseFrom);
-
-        assertEquals(wrapper.getMeta(), parsedWrapper.getMeta());
-        assertArrayEquals(wrapper.getFeatures().toArray(), parsedWrapper.getFeatures().toArray());
+                ProtoChangesClusters::writeTo,
+                ProtoChangesClusters::parseFrom);
+        assertEquals(data.getClusters().size(), parsedData.getClusters().size());
+        assertEquals(data.getClusters().iterator().next().size(),
+                parsedData.getClusters().iterator().next().size());
+        assertEquals(data.getClusters().iterator().next().getElements().get(0).getOrigin(),
+                parsedData.getClusters().iterator().next().getElements().get(0).getOrigin());
+        assertEquals(data.getClusters().iterator().next().getElements().get(0).getTarget(),
+                parsedData.getClusters().iterator().next().getElements().get(0).getTarget());
+        assertEquals(data.getClusters().iterator().next().getElements().get(0).getChanges().size(),
+                parsedData.getClusters().iterator().next().getElements().get(0).getChanges().size());
+        assertEquals(data.getClusters().iterator().next().getElements().get(0).getChanges().get(0),
+                parsedData.getClusters().iterator().next().getElements().get(0).getChanges().get(0));
     }
 
     @Test
@@ -260,111 +202,11 @@ public class SerializationTest {
                 new Solution("some another code", 1, 3, 6, OK)
         ));
         final var parsedCluster = SerializationTest.writeAndRead(cluster,
-                EntityToProtoUtils::transform,
-                proto -> ProtoToEntityUtils.transformCluster(proto, ProtoToEntityUtils::extractSolutions),
+                EntityToProtoUtils::transformSolutionsCluster,
+                ProtoToEntityUtils::transform,
                 ProtoCluster::writeTo,
                 ProtoCluster::parseFrom);
         assertArrayEquals(cluster.elementsCopy().toArray(), parsedCluster.elementsCopy().toArray());
-    }
-
-    @Test
-    public void testVectorFeaturesWrapperClusterTransformation() throws Exception {
-        final var cluster = new Cluster<>(Arrays.asList(
-                new Wrapper<>(new double[]{1, 2, 3},
-                        new Solution("some code1", 1, 1, 1, OK)),
-                new Wrapper<>(new double[]{4, 5, 6},
-                        new Solution("some code2", 1, 2, 4, OK)),
-                new Wrapper<>(new double[]{7, 8, 9},
-                        new Solution("some code3", 1, 3, 6, OK))));
-        final var parsedCluster = SerializationTest.writeAndRead(cluster,
-                EntityToProtoUtils::transform,
-                proto -> ProtoToEntityUtils.transformCluster(proto, ProtoToEntityUtils::extractVectorFeatures),
-                ProtoCluster::writeTo,
-                ProtoCluster::parseFrom);
-        assertEquals(cluster.size(), parsedCluster.size());
-        final var original = cluster.iterator();
-        final var parsed = parsedCluster.iterator();
-        while (original.hasNext()) {
-            final var originalElement = original.next();
-            final var parsedElement = parsed.next();
-            assertEquals(originalElement.getMeta(), parsedElement.getMeta());
-            assertArrayEquals(originalElement.getFeatures(), parsedElement.getFeatures(), 0);
-        }
-    }
-
-    @Test
-    public void testVectorListFeaturesWrapperClusterTransformation() throws Exception {
-        final var cluster = new Cluster<>(Arrays.asList(
-                new Wrapper<>(Collections.singletonList(new double[]{1, 2, 3}),
-                        new Solution("some code1", 1, 1, 1, OK)),
-                new Wrapper<>(Collections.singletonList(new double[]{4, 5, 6}),
-                        new Solution("some code2", 1, 2, 4, OK)),
-                new Wrapper<>(Collections.singletonList(new double[]{7, 8, 9}),
-                        new Solution("some code3", 1, 3, 6, OK))));
-        final var parsedCluster = SerializationTest.writeAndRead(cluster,
-                EntityToProtoUtils::transform,
-                proto -> ProtoToEntityUtils.transformCluster(proto, ProtoToEntityUtils::extractVectorListFeatures),
-                ProtoCluster::writeTo,
-                ProtoCluster::parseFrom);
-        assertEquals(cluster.size(), parsedCluster.size());
-        final var original = cluster.iterator();
-        final var parsed = parsedCluster.iterator();
-        while (original.hasNext()) {
-            final var originalElement = original.next();
-            final var parsedElement = parsed.next();
-            assertEquals(originalElement.getMeta(), parsedElement.getMeta());
-            assertTrue(deepEquals(originalElement.getFeatures().toArray(), parsedElement.getFeatures().toArray()));
-        }
-    }
-
-    @Test
-    public void testStringListFeaturesWrapperClusterTransformation() throws Exception {
-        final var cluster = new Cluster<>(Arrays.asList(
-                new Wrapper<>(Arrays.asList("1", "2", "3"),
-                        new Solution("some code1", 1, 1, 1, OK)),
-                new Wrapper<>(Arrays.asList("4", "5", "6"),
-                        new Solution("some code2", 1, 2, 4, OK)),
-                new Wrapper<>(Arrays.asList("7", "8", "9"),
-                        new Solution("some code3", 1, 3, 6, OK))));
-        final var parsedCluster = SerializationTest.writeAndRead(cluster,
-                EntityToProtoUtils::transform,
-                proto -> ProtoToEntityUtils.transformCluster(proto, ProtoToEntityUtils::extractStringListFeatures),
-                ProtoCluster::writeTo,
-                ProtoCluster::parseFrom);
-        assertEquals(cluster.size(), parsedCluster.size());
-        final var original = cluster.iterator();
-        final var parsed = parsedCluster.iterator();
-        while (original.hasNext()) {
-            final var originalElement = original.next();
-            final var parsedElement = parsed.next();
-            assertEquals(originalElement.getMeta(), parsedElement.getMeta());
-            assertArrayEquals(originalElement.getFeatures().toArray(), parsedElement.getFeatures().toArray());
-        }
-    }
-
-    @Test
-    public void testChangeListFeaturesWrapperClusterTransformation() throws Exception {
-        final var cluster = new Cluster<>(Arrays.asList(
-                new Wrapper<>(Collections.singletonList(CODE_CHANGE_EXAMPLE),
-                        new Solution("some code1", 1, 1, 1, OK)),
-                new Wrapper<>(Collections.singletonList(CODE_CHANGE_EXAMPLE),
-                        new Solution("some code2", 1, 2, 4, OK)),
-                new Wrapper<>(Collections.singletonList(CODE_CHANGE_EXAMPLE),
-                        new Solution("some code3", 1, 3, 6, OK))));
-        final var parsedCluster = SerializationTest.writeAndRead(cluster,
-                EntityToProtoUtils::transform,
-                proto -> ProtoToEntityUtils.transformCluster(proto, ProtoToEntityUtils::extractChangeListFeatures),
-                ProtoCluster::writeTo,
-                ProtoCluster::parseFrom);
-        assertEquals(cluster.size(), parsedCluster.size());
-        final var original = cluster.iterator();
-        final var parsed = parsedCluster.iterator();
-        while (original.hasNext()) {
-            final var originalElement = original.next();
-            final var parsedElement = parsed.next();
-            assertEquals(originalElement.getMeta(), parsedElement.getMeta());
-            assertArrayEquals(originalElement.getFeatures().toArray(), parsedElement.getFeatures().toArray());
-        }
     }
 
     @Test
@@ -380,7 +222,7 @@ public class SerializationTest {
                         new Solution("some code6", 2, 6, 12, OK)))));
         final var parsedClusters = SerializationTest.writeAndRead(clusters,
                 EntityToProtoUtils::transform,
-                proto -> ProtoToEntityUtils.transformClusters(proto, ProtoToEntityUtils::extractSolutions),
+                ProtoToEntityUtils::transform,
                 ProtoClusters::writeTo,
                 ProtoClusters::parseFrom);
         final var clustersElements = clusters.getClusters();

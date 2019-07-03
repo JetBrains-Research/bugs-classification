@@ -35,47 +35,17 @@ message ProtoAtomicChange {
     ProtoNodeContext destination_context = 2;
 }
 
-message ProtoChanges {
-    ProtoSolution src = 1;
-    ProtoSolution dst = 2;
-    repeated ProtoAtomicChange changes = 3;
-}
-
-message ProtoVectorFeatures {
-    repeated double features = 1;
-}
-
-message ProtoVectorListFeatures {
-    repeated ProtoVectorFeatures features = 1;
-}
-
-message ProtoStringListFeatures {
-    repeated string features = 1;
-}
-
-message ProtoChangeListFeatures {
-    repeated ProtoAtomicChange features = 1;
-}
-
-message ProtoFeaturesWrapper {
-    ProtoSolution solution = 1;
-    ProtoStringListFeatures string_list_features = 2;
-    ProtoChangeListFeatures change_list_features = 3;
-    ProtoVectorListFeatures vector_list_features = 4;
-    ProtoVectorFeatures vector_features = 5;
-}
-
 message ProtoCluster {
-    repeated ProtoFeaturesWrapper solutions = 1;
+    repeated ProtoSolution solutions = 1;
+}
+
+message ProtoClusters {
+    repeated ProtoCluster clusters = 1;
 }
 
 message ProtoMarkedCluster {
     repeated  ProtoSolution solutions = 1;
     string mark = 2;
-}
-
-message ProtoClusters {
-    repeated ProtoCluster clusters = 1;
 }
 
 message ProtoMarkedClusters {
@@ -89,6 +59,29 @@ message ProtoSolutionsMarks {
 
 message ProtoSolutionMarksHolder {
     repeated ProtoSolutionsMarks map = 1;
+}
+
+message ProtoChanges {
+    ProtoSolution src = 1;
+    ProtoSolution dst = 2;
+    repeated ProtoAtomicChange changes = 3;
+}
+
+message ProtoChangesCluster {
+    repeated ProtoChanges solutions = 1;
+}
+
+message ProtoChangesClusters {
+    repeated ProtoChangesCluster clusters = 1;
+}
+
+message ProtoMarkedChangesCluster {
+    repeated ProtoChanges solutions = 1;
+    string mark = 2;
+}
+
+message ProtoMarkedChangesClusters {
+    repeated ProtoMarkedChangesCluster clusters = 1;
 }
 
 message ProtoDataset {

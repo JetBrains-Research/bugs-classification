@@ -9,4 +9,5 @@ include 'classification'
 include 'testing'
 include 'parsing'
 include 'cache'
+include 'server'
 

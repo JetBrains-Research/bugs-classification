@@ -32,4 +32,5 @@ dependencies {
     compile project(':clustering')
     compile project(':classification')
     compile project(':cache')
+    compile project(':server')
 }

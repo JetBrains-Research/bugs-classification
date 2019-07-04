@@ -52,7 +52,9 @@ public class HeuristicChangesBasedDistanceFunction implements DistanceFunction<S
                     .mapToInt(ITree::getType)
                     .map(type -> indexes.computeIfAbsent(type, x -> indexGenerator++))
                     .forEach(index -> result[index]++);
-            counters.put(solution.getSolutionId(), new SoftReference<>(result));
+            if (solution.getSolutionId() != -1) {
+                counters.put(solution.getSolutionId(), new SoftReference<>(result));
+            }
             return result;
         }
     }

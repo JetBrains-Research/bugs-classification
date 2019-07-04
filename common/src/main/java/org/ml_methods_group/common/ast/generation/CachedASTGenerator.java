@@ -21,6 +21,9 @@ public class CachedASTGenerator extends BasicASTGenerator {
 
     @Override
     public ITree buildTree(Solution solution) {
+        if (solution.getSolutionId() == -1) {
+            return super.buildTree(solution);
+        }
         final SoftReference<ITree> reference = cache.get(solution);
         final ITree cached = reference == null ? null : reference.get();
         if (cached != null) {

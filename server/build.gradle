@@ -15,6 +15,7 @@ repositories {
 dependencies {
     compile project(':common')
     compile project(':classification')
+    compile project(':parsing')
     testCompile group: 'junit', name: 'junit', version: '4.12'
     compile 'javax.ws.rs:javax.ws.rs-api:2.0.1'
     compile 'org.glassfish.jersey.containers:jersey-container-servlet:2.27'
@@ -23,8 +24,10 @@ dependencies {
     compile "org.glassfish.jersey.containers:jersey-container-servlet-core:2.27"
     compile 'org.glassfish.jersey.core:jersey-common:2.27'
     compile 'org.glassfish.jersey.inject:jersey-hk2:2.27'
+    compile group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.0.1'
     implementation "javax.xml.bind:jaxb-api:2.2.11"
     implementation "com.sun.xml.bind:jaxb-core:2.2.11"
     implementation "com.sun.xml.bind:jaxb-impl:2.2.11"
     implementation "javax.activation:activation:1.1.1"
+
 }

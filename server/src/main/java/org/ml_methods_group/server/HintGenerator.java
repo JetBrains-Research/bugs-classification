@@ -1,5 +1,6 @@
 package org.ml_methods_group.server;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.ml_methods_group.classification.classifiers.AdapterClassifier;
 import org.ml_methods_group.classification.classifiers.CompositeClassifier;
 import org.ml_methods_group.classification.classifiers.KNearestNeighbors;
@@ -15,8 +16,11 @@ import org.ml_methods_group.common.metrics.functions.FuzzyJaccardDistanceFunctio
 import org.ml_methods_group.common.metrics.functions.HeuristicChangesBasedDistanceFunction;
 import org.ml_methods_group.common.metrics.selectors.ClosestPairSelector;
 import org.ml_methods_group.common.serialization.ProtobufSerializationUtils;
+import org.ml_methods_group.parsing.CodeValidator;
+import org.ml_methods_group.parsing.JavaCodeValidator;
 
 import javax.annotation.Resource;
+import javax.inject.Singleton;
 import javax.ws.rs.GET;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
@@ -31,13 +35,16 @@ import java.util.*;
 import static org.ml_methods_group.common.Solution.Verdict.FAIL;
 import static org.ml_methods_group.common.Solution.Verdict.OK;
 
+@Singleton
 @Path("/bugs-classification")
 public class HintGenerator {
 
     private final Map<Integer, Classifier<Solution, String>> classifiers = new HashMap<>();
+    private final CodeValidator validator = new JavaCodeValidator();
+    private final ObjectMapper mapper = new ObjectMapper();
 
     public HintGenerator() {
-        try (InputStream data = HintGenerator.class.getResourceAsStream("/meta.txt");
+        try (InputStream data = HintGenerator.class.getResourceAsStream("/data.txt");
              Scanner reader = new Scanner(data)) {
             while (reader.hasNext()) {
                 final var problemId = Integer.parseInt(reader.nextLine().trim());
@@ -61,7 +68,7 @@ public class HintGenerator {
         final var metric = CommonUtils.metricFor(
                 new FuzzyJaccardDistanceFunction<>(new CodeChangeSimilarityMetric()),
                 Changes::getChanges);
-        final var changeClassifier = new KNearestNeighbors<Changes, String>(15, metric);
+        final var changeClassifier = new KNearestNeighbors<Changes, String>(10, metric);
         changeClassifier.train(marks);
         return new AdapterClassifier<>(changeClassifier, new ChangesExtractor(changeGenerator, selector));
     }
@@ -69,18 +76,44 @@ public class HintGenerator {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/hint")
-    public Response getHint(@QueryParam("problem") int problemId,
-                            @QueryParam("code") String code) {
+    public String getHint(@QueryParam("problem") int problemId,
+                            @QueryParam("code") String code) throws IOException {
         try {
             final var classifier = classifiers.get(problemId);
             if (classifier == null) {
-                return Response.error("Unsupported problem!");
+                return asJSON(Response.error("Unsupported problem!"));
             }
-            final var solution = new Solution(code, problemId, -1, -1, FAIL);
-            final var result = classifier.mostProbable(solution);
-            return Response.success(result.getKey(), result.getValue());
+            final var solution = asSolution(code, problemId);
+            if (solution.isEmpty()) {
+                return asJSON(Response.error("Failed to build AST"));
+            }
+            final var result = classifier.mostProbable(solution.get());
+            return asJSON(Response.success(result.getKey(), result.getValue()));
+
         } catch (Exception e) {
-            return Response.error("Unexpected exception: " + e.getClass().getName() + " " + e.getMessage());
+            return asJSON(Response.error("Unexpected exception: " + e.getClass().getName() + " " + e.getMessage()));
         }
+    }
+
+    private Optional<Solution> asSolution(String text, int problemId) {
+        return validator.validate(text)
+                .map(code -> new Solution(code, problemId, -1, -1, FAIL));
+    }
+
+    private String asJSON(Object object) throws IOException {
+        return mapper.writeValueAsString(object);
+    }
+
+    public static void main(String[] args) throws IOException {
+        HintGenerator generator = new HintGenerator();
+        System.out.println(generator.getHint(58088, "public static <T> void findMinMax(\n" +
+                "    Stream<? extends T> stream,\n" +
+                "    Comparator<? super T> order,\n" +
+                "    BiConsumer<? super T, ? super T> minMaxConsumer) {\n" +
+                "    \n" +
+                "    ArrayList<T> list = stream.sorted(order).collect(Collectors.toCollection(ArrayList::new));\n" +
+                "    minMaxConsumer.accept(list.get(0), list.get(list.size()-1));\n" +
+                "    \n" +
+                "}"));
     }
 }

@@ -1,6 +1,7 @@
 package org.ml_methods_group;
 
 import com.github.gumtreediff.tree.ITree;
+import org.ml_methods_group.cache.HashDatabase;
 import org.ml_methods_group.classification.classifiers.CompositeClassifier;
 import org.ml_methods_group.classification.classifiers.KNearestNeighbors;
 import org.ml_methods_group.clustering.clusterers.CompositeClusterer;
@@ -25,10 +26,13 @@ import org.ml_methods_group.common.preparation.Unifier;
 import org.ml_methods_group.common.preparation.basic.BasicUnifier;
 import org.ml_methods_group.common.preparation.basic.MinValuePicker;
 import org.ml_methods_group.common.serialization.ProtobufSerializationUtils;
+import org.ml_methods_group.evaluation.EvaluationInfo;
 import org.ml_methods_group.evaluation.approaches.BOWApproach;
 import org.ml_methods_group.evaluation.approaches.FuzzyJaccardApproach;
 import org.ml_methods_group.parsing.JavaCodeValidator;
 import org.ml_methods_group.parsing.ParsingUtils;
+import org.ml_methods_group.testing.extractors.CachedFeaturesExtractor;
+import org.ml_methods_group.testing.selectors.CacheOptionSelector;
 
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -44,7 +48,7 @@ import static org.ml_methods_group.common.Solution.Verdict.OK;
 import static org.ml_methods_group.evaluation.approaches.BOWApproach.*;
 
 public class Application {
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws Exception {
         switch (args[0]) {
             case "parse":
                 parse(Paths.get(args[1]), Paths.get(args[2]), Integer.parseInt(args[3]));
@@ -72,14 +76,18 @@ public class Application {
 
     public static void cluster(Path data, Path storage) throws IOException {
         final Dataset dataset = ProtobufSerializationUtils.loadDataset(data);
-        final var selector = new FixedIdOptionSelector<>(
-                dataset.getValues(x -> x.getVerdict() == OK),
-                Solution::getSessionId,
-                Solution::getSessionId);
-        final var normalizer = new NamesASTNormalizer();
-        final var treeGenerator = new CachedASTGenerator(normalizer);
-        final var changeGenerator = new BasicChangeGenerator(treeGenerator);
-        final var extractor = new ChangesExtractor(changeGenerator, selector);
+        final ASTGenerator astGenerator = new CachedASTGenerator(new NamesASTNormalizer());
+        final ChangeGenerator changeGenerator = new BasicChangeGenerator(astGenerator);
+        final Unifier<Solution> unifier = new BasicUnifier<>(
+                CommonUtils.compose(astGenerator::buildTree, ITree::getHash)::apply,
+                CommonUtils.checkEquals(astGenerator::buildTree, ASTUtils::deepEquals),
+                new MinValuePicker<>(Comparator.comparingInt(Solution::getSolutionId)));
+        final OptionSelector<Solution, Solution> selector = new ClosestPairSelector<>(
+                unifier.unify(dataset.getValues(CommonUtils.check(Solution::getVerdict, OK::equals))),
+                new HeuristicChangesBasedDistanceFunction(changeGenerator));
+        final var extractor = new CachedFeaturesExtractor<>(
+                new ChangesExtractor(changeGenerator, selector),
+                Solution::getSolutionId);
         final var changes = dataset.getValues(CommonUtils.check(Solution::getVerdict, FAIL::equals))
                 .stream()
                 .map(extractor::process)
@@ -113,9 +121,16 @@ public class Application {
                 }
                 System.out.println("-------------------------------------------------");
                 System.out.println("Your mark:");
-                final String mark = scanner.next();
-                if (!mark.equals("-")) {
-                    marks.put(cluster, mark);
+                while (true) {
+                    final String mark = scanner.nextLine();
+                    if (mark.equals("-")) {
+                        marks.remove(cluster);
+                    } else if (mark.equals("+")) {
+                        System.out.println("Final mark: " + marks.get(cluster));
+                        break;
+                    } else {
+                        marks.put(cluster, mark);
+                    }
                 }
             }
         }

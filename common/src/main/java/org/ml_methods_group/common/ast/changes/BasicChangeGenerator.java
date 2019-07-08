@@ -38,8 +38,10 @@ public class BasicChangeGenerator implements ChangeGenerator {
 
     @Override
     public Changes getChanges(Solution before, Solution after) {
+        final ITree beforeTree = generator.buildTree(before);
+        final ITree afterTree = generator.buildTree(after);
         final ChangesGenerationResult result = factories.stream()
-                .map(factory -> generate(before, after, factory))
+                .map(factory -> generate(beforeTree.deepCopy(), afterTree.deepCopy(), factory))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .min(Comparator.comparingInt(ChangesGenerationResult::size))
@@ -50,11 +52,20 @@ public class BasicChangeGenerator implements ChangeGenerator {
         return new Changes(before, after, changes);
     }
 
-    private Optional<ChangesGenerationResult> generate(Solution before, Solution after,
+    @Override
+    public int diffSize(ITree origin, ITree target) {
+        return factories.stream()
+                .map(factory -> generate(origin.deepCopy(), target.deepCopy(), factory))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .mapToInt(ChangesGenerationResult::size)
+                .min()
+                .orElseThrow(RuntimeException::new);
+    }
+
+    private Optional<ChangesGenerationResult> generate(ITree beforeTree, ITree afterTree,
                                                        BiFunction<ITree, ITree, Matcher> factory) {
         try {
-            final ITree beforeTree = generator.buildTree(before);
-            final ITree afterTree = generator.buildTree(after);
             final Matcher matcher = factory.apply(beforeTree, afterTree);
             matcher.match();
             final ActionGenerator generator = new ActionGenerator(beforeTree, afterTree, matcher.getMappings());

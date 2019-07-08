@@ -49,19 +49,44 @@ import static org.ml_methods_group.evaluation.approaches.BOWApproach.*;
 
 public class Application {
     public static void main(String[] args) throws Exception {
+        if (args.length == 0) {
+            System.out.println("Command expected: parse, cluster or mark");
+            return;
+        }
         switch (args[0]) {
             case "parse":
+                if (args.length != 4) {
+                    System.out.println("Wrong number of arguments! Expected:" + System.lineSeparator() +
+                            "    Path to .csv file with submissions" + System.lineSeparator() +
+                            "    Path to file to store parsed solutions" + System.lineSeparator() +
+                            "    ID of problem (integer)" + System.lineSeparator());
+                    return;
+                }
                 parse(Paths.get(args[1]), Paths.get(args[2]), Integer.parseInt(args[3]));
                 break;
             case "cluster":
+                if (args.length != 3) {
+                    System.out.println("Wrong number of arguments! Expected:" + System.lineSeparator() +
+                            "    Path to file which store parsed solutions" + System.lineSeparator() +
+                            "    Path to file to store clusters" + System.lineSeparator());
+                    return;
+                }
                 cluster(Paths.get(args[1]), Paths.get(args[2]));
                 break;
             case "mark":
+                if (args.length != 5) {
+                    System.out.println("Wrong number of arguments! Expected:" + System.lineSeparator() +
+                            "    Path to file which store clusters" + System.lineSeparator() +
+                            "    Path to file to store marked clusters" + System.lineSeparator() +
+                            "    Number of examples to show" + System.lineSeparator() +
+                            "    Number of clusters to mark" + System.lineSeparator());
+                    return;
+                }
                 mark(Paths.get(args[1]), Paths.get(args[2]), Integer.parseInt(args[3]), Integer.parseInt(args[4]));
                 break;
-            case "classify":
-                classify(Paths.get(args[1]), Paths.get(args[2]), Paths.get(args[3]));
-                break;
+//            case "classify":
+//                classify(Paths.get(args[1]), Paths.get(args[2]), Paths.get(args[3]));
+//                break;
             default:
                 System.out.println("Undefined command!");
         }
@@ -117,6 +142,9 @@ public class Application {
                     System.out.println("    Example #" + i);
                     System.out.println("    Session id: " + solution.getOrigin().getSessionId());
                     System.out.println(solution.getOrigin().getCode());
+                    System.out.println();
+                    System.out.println("    Submission fix:");
+                    solution.getChanges().forEach(System.out::println);
                     System.out.println();
                 }
                 System.out.println("-------------------------------------------------");

@@ -77,21 +77,24 @@ public class HintGenerator {
     @Produces(MediaType.APPLICATION_JSON)
     @Path("/hint")
     public String getHint(@QueryParam("problem") int problemId,
-                            @QueryParam("code") String code) throws IOException {
+                          @QueryParam("code") String code) throws IOException {
+        final long requestTime = System.currentTimeMillis();
         try {
             final var classifier = classifiers.get(problemId);
             if (classifier == null) {
-                return asJSON(Response.error("Unsupported problem!"));
+                return asJSON(Response.error("Unsupported problem!", requestTime));
             }
             final var solution = asSolution(code, problemId);
             if (solution.isEmpty()) {
-                return asJSON(Response.error("Failed to build AST"));
+                return asJSON(Response.error("Failed to build AST", requestTime));
             }
-            final var result = classifier.mostProbable(solution.get());
-            return asJSON(Response.success(result.getKey(), result.getValue()));
+            final var result = classifier.reliability(solution.get());
+            return asJSON(Response.success(result, requestTime));
 
         } catch (Exception e) {
-            return asJSON(Response.error("Unexpected exception: " + e.getClass().getName() + " " + e.getMessage()));
+            return asJSON(Response.error(
+                    "Unexpected exception: " + e.getClass().getName() + " " + e.getMessage(),
+                    requestTime));
         }
     }
 

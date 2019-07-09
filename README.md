@@ -6,32 +6,52 @@ git clone https://github.com/ml-in-programming/bugs-classification.git
 
 cd bugs-classification
 
-gradle build
+gradlew build
 
-Получившийся jar-ник: build\libs\bugs-classification-v1.jar
+Запускаемый jar-файл: build\libs\bugs-classification-v1.jar
+
+war-файл для сервера: server\build\libs\server-v1.war
 
 ## Запуск
 
-java -jar bugs-classification-v1.jar [команда]
+java -jar build\libs\bugs-classification-v1.jar [команда]
 
 
-1. parse [csv-файл] [куда сохранить датасет]   --  преобразует csv файл в используемый в проекте формат
+1. parse _src_ _dst_  
+Преобразует csv файл в используемый в проекте формат
 
-Пример: `java -jar bugs-classification-v1.jar parse data.csv data.tmp`
+| Аргумент  | Значение |
+| :------------- | :------------- |
+| _src_ | Исходный csv-файл с данными. Ожидаемый формат описан ниже.  |
+| _dst_ | Итоговый файл с предобработанными данными для дальнейшей работы. |
+| _step\_id_ | ID задачи для фильтрации решений. |
 
-2. cluster [файл с данными] [куда сохранить кластеры]   --   кластеризует неправильные решения  
+Пример: `java -jar build\libs\bugs-classification-v1.jar parse data.csv solutions.tmp 239566`
 
-Пример: `java -jar bugs-classification-v1.jar cluster data.tmp clusters.tmp
+2. cluster _src_ _dst_  
+Кластеризует неправильные решения  
 
-3. mark [файд с кластерами] [файл, куда записать результат] [сколько примеров показывать из кластера] [сколько кластеров показать]    --   позволяет разметить кластеры
+| Аргумент  | Значение |
+| :------------- | :------------- |
+| _src_ | Файл с предобработанными данными, полученный с помощью команды _parse_.  |
+| _dst_ | Итоговый файл с кластеризованными исправлениями. |
 
-Пример: `java -jar bugs-classification-v1.jar show clusters.tmp marks.tmp 5 40`
+Пример: `java -jar build\libs\bugs-classification-v1.jar cluster solutions.tmp clusters.tmp
 
-4. classify [файл с датасетом] [файл с размеченными кластерами] [файл решением]    --   классифицирует новое решение
+3. mark _src_ _dst_ _n\_show_ _n\_clusters_  
+Позволяет разметить кластеры. Размечается n самых больших кластеров.
 
+| Аргумент  | Значение |
+| :------------- | :------------- |
+| _src_ | Файл с полученными кластерами, полученный с помощью команды _cluster_.  |
+| _dst_ | Итоговый файл с размеченными данными. |
+| _n\_show_ | Количество элементов кластера, которые будут показываться для примера |
+| _n\_clusters_ | Количество кластеров, которые будут размечены. |
 
+Пример: `java -jar build\libs\bugs-classification-v1.jar mark clusters.tmp marks.tmp 5 40`
 
-Формат исходного csv файла ожидается такой:
+## Формат исходного csv файла 
+Ожидается такой формат (порядок столбцов значения не имеет):
 ```csv
 step_id,user_id,submission_code,is_passed,timestamp
 239,566,"public class HelloWorld {

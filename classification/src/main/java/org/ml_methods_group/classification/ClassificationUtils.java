@@ -14,11 +14,11 @@ public class ClassificationUtils {
         final TreeSet<Wrapper<Double, Integer>> heap = new TreeSet<>(Wrapper::compare);
         for (int i = 0; i < targets.size(); i++) {
             final double distance = metric.distance(value, targets.get(i), bound);
-            if (heap.size() < k || distance < bound) {
+            if (heap.size() < k) {
                 heap.add(new Wrapper<>(distance, i));
-                if (heap.size() > k) {
-                    heap.pollLast();
-                }
+            } else if (distance < bound) {
+                heap.add(new Wrapper<>(distance, i));
+                heap.pollLast();
                 bound = heap.last().getFeatures();
             }
         }

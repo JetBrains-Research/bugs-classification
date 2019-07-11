@@ -1,8 +1,7 @@
 package org.ml_methods_group.classification;
 
-import org.ml_methods_group.common.*;
-import org.ml_methods_group.common.serialization.MarkedSolutionsClusters;
-import org.ml_methods_group.common.serialization.SolutionClassifier;
+import org.ml_methods_group.common.DistanceFunction;
+import org.ml_methods_group.common.Wrapper;
 
 import java.util.List;
 import java.util.TreeSet;

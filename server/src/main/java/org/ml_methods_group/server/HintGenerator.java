@@ -1,6 +1,9 @@
 package org.ml_methods_group.server;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.github.gumtreediff.matchers.CompositeMatchers;
+import com.github.gumtreediff.matchers.MappingStore;
+import com.github.gumtreediff.matchers.Matcher;
 import com.github.gumtreediff.tree.ITree;
 import org.ml_methods_group.classification.classifiers.AdapterClassifier;
 import org.ml_methods_group.classification.classifiers.KNearestNeighbors;
@@ -33,8 +36,11 @@ import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.Serializable;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 
 import static org.ml_methods_group.common.Solution.Verdict.FAIL;
 import static org.ml_methods_group.common.Solution.Verdict.OK;
@@ -66,7 +72,9 @@ public class HintGenerator {
                 .filter(CommonUtils.check(Solution::getVerdict, OK::equals));
         final var marks = ProtobufSerializationUtils.loadMarkedChangesClusters(Paths.get(markedDataset));
         final var treeGenerator = new CachedASTGenerator(new NamesASTNormalizer());
-        final var changeGenerator = new BasicChangeGenerator(treeGenerator);
+        final var changeGenerator = new BasicChangeGenerator(treeGenerator,
+                Collections.singletonList((Serializable & BiFunction<ITree, ITree, Matcher>) (x, y) ->
+                        new CompositeMatchers.ClassicGumtree(x, y, new MappingStore())));
         final Unifier<Solution> unifier = new BasicUnifier<>(
                 CommonUtils.compose(treeGenerator::buildTree, ITree::getHash)::apply,
                 CommonUtils.checkEquals(treeGenerator::buildTree, ASTUtils::deepEquals),
@@ -81,7 +89,7 @@ public class HintGenerator {
         final var metric = CommonUtils.metricFor(
                 new FuzzyJaccardDistanceFunction<>(new CodeChangeSimilarityMetric()),
                 Changes::getChanges);
-        final var changeClassifier = new KNearestNeighbors<Changes, String>(10, metric);
+        final var changeClassifier = new KNearestNeighbors<Changes, String>(5, metric);
         changeClassifier.train(marks);
         return new AdapterClassifier<>(changeClassifier, new ChangesExtractor(changeGenerator, selector));
     }
@@ -118,69 +126,5 @@ public class HintGenerator {
 
     private String asJSON(Object object) throws IOException {
         return mapper.writeValueAsString(object);
-    }
-
-    public static void main(String[] args) throws IOException {
-        HintGenerator generator = new HintGenerator();
-//        final var data = ProtobufSerializationUtils.loadDataset(
-//                Paths.get("C:\\internship\\bugs-classification\\data\\53619\\solutions.tmp"))
-//                .filter(CommonUtils.check(Solution::getVerdict, OK::equals));
-//        final var marks = ProtobufSerializationUtils.loadMarkedChangesClusters(
-//                Paths.get("C:\\internship\\bugs-classification\\data\\53619\\marks.tmp"));
-//        final var treeGenerator = new CachedASTGenerator(new NamesASTNormalizer());
-//        final var changeGenerator = new BasicChangeGenerator(treeGenerator);
-//        final Unifier<Solution> unifier = new BasicUnifier<>(
-//                CommonUtils.compose(treeGenerator::buildTree, ITree::getHash)::apply,
-//                CommonUtils.checkEquals(treeGenerator::buildTree, ASTUtils::deepEquals),
-//                new MinValuePicker<>(Comparator.comparingInt(Solution::getSolutionId)));
-//        final var heuristicExtractor = new HeuristicASTRepresentationExtractor();
-//        final var selector = new HeuristicClosestPairSelector<>(
-//                treeGenerator::buildTree,
-//                new EditDistance(changeGenerator),
-//                heuristicExtractor,
-//                heuristicExtractor.getDistanceFunction(),
-//                unifier.unify(data.getValues()));
-//        System.out.println(data.getValues().size());
-//        System.out.println(unifier.unify(data.getValues()).size());
-//        final var metric = CommonUtils.metricFor(
-//                new FuzzyJaccardDistanceFunction<>(new CodeChangeSimilarityMetric()),
-//                Changes::getChanges);
-//        final var changeClassifier = new KNearestNeighbors<Changes, String>(10, metric);
-//        var changeExtractor = new ChangesExtractor(changeGenerator, selector);
-//        changeClassifier.train(marks);
-//        Solution solution = generator.asSolution(
-//                "private static void configureLogging() {\n" +
-//                        "        Logger logA = Logger.getLogger(\"org.stepic.java.logging.ClassA\");\n" +
-//                        "        logA.setLevel(Level.ALL);\n" +
-//                        "        Logger logB = Logger.getLogger(\"org.stepic.java.logging.ClassB\");\n" +
-//                        "        logB.setLevel(Level.WARNING);\n" +
-//                        "        Logger logC = Logger.getLogger(\"org.stepic.java\");\n" +
-//                        "        ConsoleHandler ch = new ConsoleHandler();\n" +
-//                        "        ch.setLevel(Level.ALL);\n" +
-//                        "        XMLFormatter formatter = new XMLFormatter();\n" +
-//                        "        ch.setFormatter(formatter);\n" +
-//                        "        logC.addHander(ch);\n" +
-//                        "        logC.setUseParentHandlers(false);\n" +
-//                        "    }",
-//                53619).get();
-//        System.out.println(selector.selectOption(solution).get().getCode());
-//        changeExtractor.process(solution).getChanges().forEach(System.out::println);
-        for (int i = 0; i < 10; i++) {
-            System.out.println(generator.getHint(53619,
-                    "private static void configureLogging() {\n" +
-                            "        Logger logA = Logger.getLogger(\"org.stepic.java.logging.ClassA\");\n" +
-                            "        logA.setLevel(Level.ALL);\n" +
-                            "        Logger logB = Logger.getLogger(\"org.stepic.java.logging.ClassB\");\n" +
-                            "        logB.setLevel(Level.WARNING);\n" +
-                            "        Logger logC = Logger.getLogger(\"org.stepic.java\");\n" +
-                            "        ConsoleHandler ch = new ConsoleHandler();\n" +
-                            "        ch.setLevel(Level.ALL);\n" +
-                            "        XMLFormatter formatter = new XMLFormatter();\n" +
-                            "        ch.setFormatter(formatter);\n" +
-                            "        logC.addHander(ch);\n" +
-                            "        logC.setUseParentHandlers(false);\n" +
-                            "    }"));
-        }
-
     }
 }

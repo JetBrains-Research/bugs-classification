@@ -1,9 +1,6 @@
 package org.ml_methods_group;
 
 import com.github.gumtreediff.tree.ITree;
-import org.ml_methods_group.cache.HashDatabase;
-import org.ml_methods_group.classification.classifiers.CompositeClassifier;
-import org.ml_methods_group.classification.classifiers.KNearestNeighbors;
 import org.ml_methods_group.clustering.clusterers.CompositeClusterer;
 import org.ml_methods_group.clustering.clusterers.HAC;
 import org.ml_methods_group.common.*;
@@ -21,23 +18,17 @@ import org.ml_methods_group.common.extractors.ChangesExtractor;
 import org.ml_methods_group.common.extractors.HashExtractor;
 import org.ml_methods_group.common.metrics.functions.HeuristicChangesBasedDistanceFunction;
 import org.ml_methods_group.common.metrics.selectors.ClosestPairSelector;
-import org.ml_methods_group.common.metrics.selectors.FixedIdOptionSelector;
 import org.ml_methods_group.common.preparation.Unifier;
 import org.ml_methods_group.common.preparation.basic.BasicUnifier;
 import org.ml_methods_group.common.preparation.basic.MinValuePicker;
 import org.ml_methods_group.common.serialization.ProtobufSerializationUtils;
-import org.ml_methods_group.evaluation.EvaluationInfo;
-import org.ml_methods_group.evaluation.approaches.BOWApproach;
-import org.ml_methods_group.evaluation.approaches.FuzzyJaccardApproach;
 import org.ml_methods_group.parsing.JavaCodeValidator;
 import org.ml_methods_group.parsing.ParsingUtils;
 import org.ml_methods_group.testing.extractors.CachedFeaturesExtractor;
-import org.ml_methods_group.testing.selectors.CacheOptionSelector;
 
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;

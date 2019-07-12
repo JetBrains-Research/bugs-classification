@@ -30,47 +30,52 @@ import org.ml_methods_group.parsing.JavaCodeValidator;
 
 import javax.inject.Singleton;
 import javax.ws.rs.GET;
-import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.Serializable;
+import java.nio.charset.Charset;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 
 import static org.ml_methods_group.common.Solution.Verdict.FAIL;
 import static org.ml_methods_group.common.Solution.Verdict.OK;
 
 @Singleton
-@Path("/bugs-classification")
+@javax.ws.rs.Path("/bugs-classification")
 public class HintGenerator {
-
     private final Map<Integer, Classifier<Solution, String>> classifiers = new HashMap<>();
     private final CodeValidator validator = new JavaCodeValidator();
     private final ObjectMapper mapper = new ObjectMapper();
 
-    public HintGenerator() {
-        try (InputStream data = HintGenerator.class.getResourceAsStream("/data.txt");
-             Scanner reader = new Scanner(data)) {
-            while (reader.hasNext()) {
-                final var problemId = Integer.parseInt(reader.nextLine().trim());
-                final var marksPath = reader.nextLine().trim();
-                final var dataPath = reader.nextLine().trim();
+    public HintGenerator() throws IOException {
+        final Path path = Paths.get(new String(
+                HintGenerator.class.getResourceAsStream("/data.txt").readAllBytes(),
+                Charset.defaultCharset()).trim());
+        final String[] data = path.toFile()
+                .list((dir, name) -> name.matches("\\d{1,9}"));
+        if (data == null) {
+            throw new IOException("Data folder wasn't found!");
+        }
+        for (var problem : data) {
+            try {
+                final var problemId = Integer.parseInt(problem);
+                final var marksPath = path.resolve(problem).resolve("marks.tmp");
+                final var dataPath = path.resolve(problem).resolve("solutions.tmp");
                 classifiers.put(problemId, loadClassifier(marksPath, dataPath));
+            } catch (Exception e) {
+                throw new IOException(e);
             }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
         }
     }
 
-    private static Classifier<Solution, String> loadClassifier(String markedDataset, String dataset) throws IOException {
-        final var data = ProtobufSerializationUtils.loadDataset(Paths.get(dataset))
+    private static Classifier<Solution, String> loadClassifier(Path markedDataset, Path dataset) throws IOException {
+        final var data = ProtobufSerializationUtils.loadDataset(dataset)
                 .filter(CommonUtils.check(Solution::getVerdict, OK::equals));
-        final var marks = ProtobufSerializationUtils.loadMarkedChangesClusters(Paths.get(markedDataset));
+        final var marks = ProtobufSerializationUtils.loadMarkedChangesClusters(markedDataset);
         final var treeGenerator = new CachedASTGenerator(new NamesASTNormalizer());
         final var changeGenerator = new BasicChangeGenerator(treeGenerator,
                 Collections.singletonList((Serializable & BiFunction<ITree, ITree, Matcher>) (x, y) ->
@@ -96,7 +101,15 @@ public class HintGenerator {
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
-    @Path("/hint")
+    @javax.ws.rs.Path("/classifiers")
+    public String getClassifiers() throws IOException {
+        final var response = new ArrayList<>(classifiers.keySet());
+        return asJSON(response);
+    }
+
+    @GET
+    @Produces(MediaType.APPLICATION_JSON)
+    @javax.ws.rs.Path("/hint")
     public String getHint(@QueryParam("problem") int problemId,
                           @QueryParam("code") String code) throws IOException {
         final long requestTime = System.currentTimeMillis();
@@ -126,5 +139,10 @@ public class HintGenerator {
 
     private String asJSON(Object object) throws IOException {
         return mapper.writeValueAsString(object);
+    }
+
+    public static void main(String[] args) throws IOException {
+        HintGenerator generator = new HintGenerator();
+        System.out.println(generator.getClassifiers());
     }
 }

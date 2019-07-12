@@ -1,3 +1,1 @@
-58088
-C:\internship\bugs-classification\res\marks.tmp
-C:\internship\bugs-classification\res\data.tmp
+C:\internship\bugs-classification\data

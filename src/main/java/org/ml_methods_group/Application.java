@@ -1,5 +1,7 @@
 package org.ml_methods_group;
 
+import com.github.gumtreediff.matchers.CompositeMatchers;
+import com.github.gumtreediff.matchers.MappingStore;
 import com.github.gumtreediff.tree.ITree;
 import org.ml_methods_group.clustering.clusterers.CompositeClusterer;
 import org.ml_methods_group.clustering.clusterers.HAC;
@@ -75,9 +77,16 @@ public class Application {
                 }
                 mark(Paths.get(args[1]), Paths.get(args[2]), Integer.parseInt(args[3]), Integer.parseInt(args[4]));
                 break;
-//            case "classify":
-//                classify(Paths.get(args[1]), Paths.get(args[2]), Paths.get(args[3]));
-//                break;
+            case "prepare":
+                if (args.length != 4) {
+                    System.out.println("Wrong number of arguments! Expected:" + System.lineSeparator() +
+                            "    Path to file which store marks" + System.lineSeparator() +
+                            "    Path to file which store marks parsed solutions" + System.lineSeparator() +
+                            "    Path to file to store prepared marked data" + System.lineSeparator());
+                    return;
+                }
+                prepare(Paths.get(args[1]), Paths.get(args[2]), Paths.get(args[3]));
+                break;
             default:
                 System.out.println("Undefined command!");
         }
@@ -155,6 +164,27 @@ public class Application {
         }
         final var marked = new MarkedClusters<>(marks);
         ProtobufSerializationUtils.storeMarkedChangesClusters(marked, dst);
+    }
+
+    public static void prepare(Path marks, Path data, Path dst) throws IOException {
+        final Dataset dataset = ProtobufSerializationUtils.loadDataset(data);
+        final ASTGenerator astGenerator = new CachedASTGenerator(new NamesASTNormalizer());
+        final ChangeGenerator changeGenerator = new BasicChangeGenerator(
+                astGenerator,
+                Collections.singletonList((x, y) -> new CompositeMatchers.ClassicGumtree(x, y, new MappingStore())));
+        final Unifier<Solution> unifier = new BasicUnifier<>(
+                CommonUtils.compose(astGenerator::buildTree, ITree::getHash)::apply,
+                CommonUtils.checkEquals(astGenerator::buildTree, ASTUtils::deepEquals),
+                new MinValuePicker<>(Comparator.comparingInt(Solution::getSolutionId)));
+        final OptionSelector<Solution, Solution> selector = new ClosestPairSelector<>(
+                unifier.unify(dataset.getValues(CommonUtils.check(Solution::getVerdict, OK::equals))),
+                new HeuristicChangesBasedDistanceFunction(changeGenerator));
+        final var extractor = new CachedFeaturesExtractor<>(
+                new ChangesExtractor(changeGenerator, selector),
+                Solution::getSolutionId);
+        final var changes = ProtobufSerializationUtils.loadMarkedChangesClusters(marks);
+        final var prepared = changes.map(change -> extractor.process(change.getOrigin()));
+        ProtobufSerializationUtils.storeMarkedChangesClusters(prepared, dst);
     }
 
     public static void classify(Path data, Path marks, Path element) throws IOException {

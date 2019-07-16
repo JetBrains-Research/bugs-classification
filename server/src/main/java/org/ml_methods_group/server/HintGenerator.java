@@ -63,7 +63,7 @@ public class HintGenerator {
         for (var problem : data) {
             try {
                 final var problemId = Integer.parseInt(problem);
-                final var marksPath = path.resolve(problem).resolve("marks.tmp");
+                final var marksPath = path.resolve(problem).resolve("prepared.tmp");
                 final var dataPath = path.resolve(problem).resolve("solutions.tmp");
                 classifiers.put(problemId, loadClassifier(marksPath, dataPath));
             } catch (Exception e) {
@@ -143,6 +143,16 @@ public class HintGenerator {
 
     public static void main(String[] args) throws IOException {
         HintGenerator generator = new HintGenerator();
-        System.out.println(generator.getClassifiers());
+        System.out.println(generator.getHint(53676, "public static String getCallerClassAndMethodName() {\n" +
+                "        try {\n" +
+                "            throw new Exception(\"test\");\n" +
+                "        } catch (Exception e) {\n" +
+                "            StackTraceElement[] stackTraceElements = e.getStackTrace();\n" +
+                "            if (stackTraceElements.length >= 3) {\n" +
+                "                return stackTraceElements[1].getClassName() + \"#\" + stackTraceElements[1].getMethodName();\n" +
+                "            }\n" +
+                "        }\n" +
+                "        return null;\n" +
+                "}"));
     }
 }

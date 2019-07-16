@@ -50,6 +50,18 @@ java -jar build\libs\bugs-classification-v1.jar [команда]
 
 Пример: `java -jar build\libs\bugs-classification-v1.jar mark clusters.tmp marks.tmp 5 40`
 
+4. prepare _src_ _solutions_ _dst_
+Преобразует размеченные данные в формат, нужный для быстрого создания классификатора.
+
+| Аргумент  | Значение |
+| :------------- | :------------- |
+| _src_ | Файл с полученными кластерами, полученный с помощью команды _cluster_.  |
+| _solutions_ | Файл с предобработанными данными, полученный с помощью команды parse |
+| _dst_ | Итоговый файл с размеченными данными. |
+
+Пример: `java -jar build\libs\bugs-classification-v1.jar prepare marks.tmp solutions.tmp prepared.tmp`
+
+
 ## Формат исходного csv файла 
 Ожидается такой формат (порядок столбцов значения не имеет):
 ```csv

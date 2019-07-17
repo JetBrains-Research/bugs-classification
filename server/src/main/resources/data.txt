@@ -1,1 +1,1 @@
-C:\internship\bugs-classification\data
+D:\internship\bugs-classification\data

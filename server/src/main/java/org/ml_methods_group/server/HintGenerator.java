@@ -67,7 +67,7 @@ public class HintGenerator {
                 final var dataPath = path.resolve(problem).resolve("solutions.tmp");
                 classifiers.put(problemId, loadClassifier(marksPath, dataPath));
             } catch (Exception e) {
-                throw new IOException(e);
+                throw new IOException("Failed to load classifier from " + path.resolve(problem), e);
             }
         }
     }
@@ -122,8 +122,8 @@ public class HintGenerator {
             if (solution.isEmpty()) {
                 return asJSON(Response.error("Failed to build AST", requestTime));
             }
-            final var result = classifier.reliability(solution.get());
-            return asJSON(Response.success(result, requestTime));
+            final var result = classifier.mostProbable(solution.get());
+            return asJSON(Response.success(result.getKey(), result.getValue(), requestTime));
 
         } catch (Exception e) {
             return asJSON(Response.error(
@@ -143,16 +143,19 @@ public class HintGenerator {
 
     public static void main(String[] args) throws IOException {
         HintGenerator generator = new HintGenerator();
-        System.out.println(generator.getHint(53676, "public static String getCallerClassAndMethodName() {\n" +
-                "        try {\n" +
-                "            throw new Exception(\"test\");\n" +
-                "        } catch (Exception e) {\n" +
-                "            StackTraceElement[] stackTraceElements = e.getStackTrace();\n" +
-                "            if (stackTraceElements.length >= 3) {\n" +
-                "                return stackTraceElements[1].getClassName() + \"#\" + stackTraceElements[1].getMethodName();\n" +
-                "            }\n" +
-                "        }\n" +
-                "        return null;\n" +
-                "}"));
+        System.out.println(generator.getClassifiers());
+        for (int i = 0; i < 100; i++) {
+            System.out.println(generator.getHint(53676, "public static String getCallerClassAndMethodName() {\n" +
+                    "        try {\n" +
+                    "            throw new Exception(\"test\");\n" +
+                    "        } catch (Exception e) {\n" +
+                    "            StackTraceElement[] stackTraceElements = e.getStackTrace();\n" +
+                    "            if (stackTraceElements.length >= 3) {\n" +
+                    "                return stackTraceElements[1].getClassName() + \"#\" + stackTraceElements[1].getMethodName();\n" +
+                    "            }\n" +
+                    "        }\n" +
+                    "        return null;\n" +
+                    "}"));
+        }
     }
 }

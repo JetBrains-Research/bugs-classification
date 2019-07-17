@@ -8,6 +8,7 @@ import org.ml_methods_group.common.proto.*;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
@@ -69,40 +70,8 @@ public class EntityToProtoUtils {
                 .build();
     }
 
-    public static ProtoVectorFeatures transformVectorFeatures(double[] vector) {
-        final ProtoVectorFeatures.Builder builder = ProtoVectorFeatures.newBuilder();
-        for (var value : vector) {
-            builder.addFeatures(value);
-        }
-        return builder.build();
-    }
-
-    public static ProtoVectorListFeatures transformVectorListFeatures(List<double[]> features) {
-        final List<ProtoVectorFeatures> protoFeatures = features.stream()
-                .map(EntityToProtoUtils::transformVectorFeatures)
-                .collect(Collectors.toList());
-        return ProtoVectorListFeatures.newBuilder()
-                .addAllFeatures(protoFeatures)
-                .build();
-    }
-
-    public static ProtoStringListFeatures transformStringListFeatures(List<String> features) {
-        return ProtoStringListFeatures.newBuilder()
-                .addAllFeatures(features)
-                .build();
-    }
-
-    public static ProtoChangeListFeatures transformChangeListFeatures(List<CodeChange> features) {
-        final List<ProtoAtomicChange> protoFeatures = features.stream()
-                .map(EntityToProtoUtils::transform)
-                .collect(Collectors.toList());
-        return ProtoChangeListFeatures.newBuilder()
-                .addAllFeatures(protoFeatures)
-                .build();
-    }
-
     private static <F> void tryCastFeaturesList(List<?> features, Class<F> template,
-                                               Consumer<List<F>> consumer) {
+                                                Consumer<List<F>> consumer) {
         final boolean classesCheck = features.stream()
                 .map(Object::getClass)
                 .allMatch(template::equals);
@@ -113,59 +82,83 @@ public class EntityToProtoUtils {
         }
     }
 
-    public static ProtoFeaturesWrapper transform(Wrapper<?, ?> wrapper) {
-        final ProtoFeaturesWrapper.Builder builder = ProtoFeaturesWrapper.newBuilder();
-        if (wrapper.getMeta() instanceof Solution) {
-            builder.setSolution(transform((Solution) wrapper.getMeta()));
-        } else {
-            throw new IllegalArgumentException("Unsupported meta information type!");
-        }
-        if (wrapper.getFeatures() instanceof double[]) {
-            builder.setVectorFeatures(transformVectorFeatures((double[]) wrapper.getFeatures()));
-        } else if (wrapper.getFeatures() instanceof List) {
-            final List<?> features = (List<?>) wrapper.getFeatures();
-            tryCastFeaturesList(features, String.class, x ->
-                    builder.setStringListFeatures(transformStringListFeatures(x)));
-            tryCastFeaturesList(features, CodeChange.class, x ->
-                    builder.setChangeListFeatures(transformChangeListFeatures(x)));
-            tryCastFeaturesList(features, double[].class, x ->
-                    builder.setVectorListFeatures(transformVectorListFeatures(x)));
-        }
-        return builder.build();
-    }
+//    public static ProtoFeaturesWrapper transform(Wrapper<?, ?> wrapper) {
+//        final ProtoFeaturesWrapper.Builder builder = ProtoFeaturesWrapper.newBuilder();
+//        if (wrapper.getMeta() instanceof Solution) {
+//            builder.setSolution(transform((Solution) wrapper.getMeta()));
+//        } else {
+//            throw new IllegalArgumentException("Unsupported meta information type!");
+//        }
+//        if (wrapper.getFeatures() instanceof double[]) {
+//            builder.setVectorFeatures(transformVectorFeatures((double[]) wrapper.getFeatures()));
+//        } else if (wrapper.getFeatures() instanceof List) {
+//            final List<?> features = (List<?>) wrapper.getFeatures();
+//            tryCastFeaturesList(features, String.class, x ->
+//                    builder.setStringListFeatures(transformStringListFeatures(x)));
+//            tryCastFeaturesList(features, CodeChange.class, x ->
+//                    builder.setChangeListFeatures(transformChangeListFeatures(x)));
+//            tryCastFeaturesList(features, double[].class, x ->
+//                    builder.setVectorListFeatures(transformVectorListFeatures(x)));
+//        }
+//        return builder.build();
+//    }
 
-    public static ProtoFeaturesWrapper wrapAndTransform(Solution solution) {
-        return ProtoFeaturesWrapper.newBuilder()
-                .setSolution(transform(solution))
-                .build();
-    }
 
-    public static ProtoCluster transform(Cluster<?> cluster) {
-        final List<ProtoFeaturesWrapper> solutions;
-        if (cluster.stream().map(Object::getClass).allMatch(Solution.class::equals)) {
-            solutions = cluster.stream()
-                    .map(Solution.class::cast)
-                    .map(EntityToProtoUtils::wrapAndTransform)
-                    .collect(Collectors.toList());
-        } else if (cluster.stream().map(Object::getClass).allMatch(Wrapper.class::equals)) {
-            solutions = cluster.stream()
-                    .map(Wrapper.class::cast)
-                    .map(EntityToProtoUtils::transform)
-                    .collect(Collectors.toList());
-        } else {
-            throw new IllegalArgumentException("Unsupported cluster elements types");
-        }
+    public static ProtoCluster transformSolutionsCluster(Cluster<Solution> cluster) {
+        final List<ProtoSolution> solutions = cluster.stream()
+                .map(EntityToProtoUtils::transform)
+                .collect(Collectors.toList());
         return ProtoCluster.newBuilder()
                 .addAllSolutions(solutions)
                 .build();
     }
 
-    public static ProtoClusters transform(Clusters<?> clusters) {
+    public static ProtoClusters transform(Clusters<Solution> clusters) {
         final List<ProtoCluster> proto = clusters.getClusters()
+                .stream()
+                .map(EntityToProtoUtils::transformSolutionsCluster)
+                .collect(Collectors.toList());
+        return ProtoClusters.newBuilder()
+                .addAllClusters(proto)
+                .build();
+    }
+
+    public static ProtoMarkedChangesCluster transform(Map.Entry<Cluster<Changes>, String> cluster) {
+        final var protos = cluster.getKey().stream()
+                .map(EntityToProtoUtils::transform)
+                .collect(Collectors.toList());
+        return ProtoMarkedChangesCluster.newBuilder()
+                .addAllSolutions(protos)
+                .setMark(cluster.getValue())
+                .build();
+    }
+
+    public static ProtoMarkedChangesClusters transformMarkedChangesClusters(MarkedClusters<Changes, String> clusters) {
+        final List<ProtoMarkedChangesCluster> proto = clusters.getMarks()
+                .entrySet()
                 .stream()
                 .map(EntityToProtoUtils::transform)
                 .collect(Collectors.toList());
-        return ProtoClusters.newBuilder()
+        return ProtoMarkedChangesClusters.newBuilder()
+                .addAllClusters(proto)
+                .build();
+    }
+
+    public static ProtoChangesCluster transformChangesCluster(Cluster<Changes> cluster) {
+        final List<ProtoChanges> solutions = cluster.stream()
+                .map(EntityToProtoUtils::transform)
+                .collect(Collectors.toList());
+        return ProtoChangesCluster.newBuilder()
+                .addAllSolutions(solutions)
+                .build();
+    }
+
+    public static ProtoChangesClusters transformChangesClusters(Clusters<Changes> clusters) {
+        final List<ProtoChangesCluster> proto = clusters.getClusters()
+                .stream()
+                .map(EntityToProtoUtils::transformChangesCluster)
+                .collect(Collectors.toList());
+        return ProtoChangesClusters.newBuilder()
                 .addAllClusters(proto)
                 .build();
     }
@@ -193,11 +186,11 @@ public class EntityToProtoUtils {
     public static ProtoSolutionMarksHolder transform(SolutionMarksHolder holder) {
         final var builder = ProtoSolutionMarksHolder.newBuilder();
         for (var entry : holder) {
-           final var solutionMarks = ProtoSolutionsMarks.newBuilder()
+            final var solutionMarks = ProtoSolutionsMarks.newBuilder()
                     .addAllMarks(entry.getValue())
                     .setSolution(transform(entry.getKey()))
                     .build();
-           builder.addMap(solutionMarks);
+            builder.addMap(solutionMarks);
         }
         return builder.build();
     }

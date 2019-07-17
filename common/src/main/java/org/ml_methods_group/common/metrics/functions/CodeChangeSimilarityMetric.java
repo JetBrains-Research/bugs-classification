@@ -62,6 +62,10 @@ public class CodeChangeSimilarityMetric implements SimilarityMetric<CodeChange> 
                 (labelModifier + typeModifier) / 2 : labelModifier;
     }
 
+    private double matchLabels(String a, String b) {
+        return DamerauLevenshteinDistance.problemFor(a, b).solve();
+    }
+
     private double matchParents(NodeContext a, NodeContext b) {
         return matchState(a.getParent(), b.getParent()) * matchState(a.getParentOfParent(), b.getParentOfParent());
     }

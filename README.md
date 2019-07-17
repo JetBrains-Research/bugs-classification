@@ -17,7 +17,7 @@ war-файл для сервера: server\build\libs\server-v1.war
 java -jar build\libs\bugs-classification-v1.jar [команда]
 
 
-1. parse _src_ _dst_  
+1. **parse** _src_ _dst_  
 Преобразует csv файл в используемый в проекте формат
 
 | Аргумент  | Значение |
@@ -28,7 +28,7 @@ java -jar build\libs\bugs-classification-v1.jar [команда]
 
 Пример: `java -jar build\libs\bugs-classification-v1.jar parse data.csv solutions.tmp 239566`
 
-2. cluster _src_ _dst_  
+2. **cluster** _src_ _dst_  
 Кластеризует неправильные решения  
 
 | Аргумент  | Значение |
@@ -38,7 +38,7 @@ java -jar build\libs\bugs-classification-v1.jar [команда]
 
 Пример: `java -jar build\libs\bugs-classification-v1.jar cluster solutions.tmp clusters.tmp
 
-3. mark _src_ _dst_ _n\_show_ _n\_clusters_  
+3. **mark** _src_ _dst_ _n\_show_ _n\_clusters_  
 Позволяет разметить кластеры. Размечается n самых больших кластеров.
 
 | Аргумент  | Значение |
@@ -50,7 +50,7 @@ java -jar build\libs\bugs-classification-v1.jar [команда]
 
 Пример: `java -jar build\libs\bugs-classification-v1.jar mark clusters.tmp marks.tmp 5 40`
 
-4. prepare _src_ _solutions_ _dst_
+4. **prepare** _src_ _solutions_ _dst_
 Преобразует размеченные данные в формат, нужный для быстрого создания классификатора.
 
 | Аргумент  | Значение |
@@ -108,7 +108,7 @@ ip:port/server-v1/webapi/bugs-classification/hint?problem=*step_id*&code=*soluti
 | _code_ | Текст решения |
 
 **Формат ответа следующий:**
-```json
+```
 {"hint":*hint_text*,"confidence":*confidence*,"errorMessage":*error_message*,"status":*status*,"time":*time*}
 ```
 | Аргумент  | Значение |
@@ -132,7 +132,7 @@ http://localhost:8080/server-v1/webapi/bugs-classification/hint?problem=239566&c
 
 а ответ так
 
-```json
+```
 {"hint":"Похоже удача сегодня не на вашей стороне","confidence":1.0,"errorMessage":"","status":"OK","time":556}
 ```
 
@@ -146,7 +146,7 @@ ip:port/server-v1/webapi/bugs-classification/classifiers
 ```
 
 **Формат ответа следующий:**
-```json
+```
 [*problem_1*, *problem_2*, ...]
 ```
 

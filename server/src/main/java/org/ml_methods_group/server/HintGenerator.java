@@ -32,9 +32,10 @@ import org.ml_methods_group.parsing.CodeValidator;
 import org.ml_methods_group.parsing.JavaCodeValidator;
 
 import javax.inject.Singleton;
+import javax.ws.rs.Consumes;
 import javax.ws.rs.GET;
+import javax.ws.rs.POST;
 import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
 import java.io.IOException;
 import java.io.Serializable;
@@ -112,51 +113,54 @@ public class HintGenerator {
         return new ArrayList<>(classifiers.keySet());
     }
 
-    @GET
+    @POST
+    @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     @javax.ws.rs.Path("/hint")
-    public Response getHint(@QueryParam("problem") int problemId,
-                            @QueryParam("code") String code) {
+    public HintResponse getHint(HintRequest request) {
         final long requestTime = System.currentTimeMillis();
         try {
-            final var classifier = classifiers.get(problemId);
+            final var classifier = classifiers.get(request.getProblem());
             if (classifier == null) {
-                return Response.error("Unsupported problem!", requestTime);
+                return HintResponse.error("Unsupported problem: " + request.getProblem(), requestTime);
             }
-            final var solution = asSolution(code, problemId);
+            final var solution = asSolution(request);
             if (solution.isEmpty()) {
-                return Response.error("Failed to build AST", requestTime);
+                return HintResponse.error("Failed to build AST", requestTime);
             }
             final var result = classifier.mostProbable(solution.get());
-            return Response.success(result.getKey(), result.getValue(), requestTime);
+            return HintResponse.success(result.getKey(), result.getValue(), requestTime);
 
         } catch (Exception e) {
-            return Response.error(
+            return HintResponse.error(
                     "Unexpected exception: " + e.getClass().getName() + " " + e.getMessage(),
                     requestTime);
         }
     }
 
-    private Optional<Solution> asSolution(String text, int problemId) {
-        return validator.validate(text)
-                .map(code -> new Solution(code, problemId, -1, -1, FAIL));
+    private Optional<Solution> asSolution(HintRequest request) {
+        return validator.validate(request.getCode())
+                .map(code -> new Solution(code, request.getProblem(), -1, -1, FAIL));
     }
 
     public static void main(String[] args) throws IOException {
-        HintGenerator generator = new HintGenerator();
+        final HintGenerator generator = new HintGenerator();
         System.out.println(generator.getClassifiers());
+        final HintRequest request = new HintRequest(
+                53676, "public static String getCallerClassAndMethodName() {\n" +
+                "        try {\n" +
+                "            throw new Exception(\"test\");\n" +
+                "        } catch (Exception e) {\n" +
+                "            StackTraceElement[] stackTraceElements = e.getStackTrace();\n" +
+                "            if (stackTraceElements.length >= 3) {\n" +
+                "                return stackTraceElements[1].getClassName() + \"#\" + stackTraceElements[1].getMethodName();\n" +
+                "            }\n" +
+                "        }\n" +
+                "        return null;\n" +
+                "}"
+        );
         for (int i = 0; i < 100; i++) {
-            System.out.println(generator.getHint(53676, "public static String getCallerClassAndMethodName() {\n" +
-                    "        try {\n" +
-                    "            throw new Exception(\"test\");\n" +
-                    "        } catch (Exception e) {\n" +
-                    "            StackTraceElement[] stackTraceElements = e.getStackTrace();\n" +
-                    "            if (stackTraceElements.length >= 3) {\n" +
-                    "                return stackTraceElements[1].getClassName() + \"#\" + stackTraceElements[1].getMethodName();\n" +
-                    "            }\n" +
-                    "        }\n" +
-                    "        return null;\n" +
-                    "}"));
+            System.out.println(generator.getHint(request));
         }
     }
 }

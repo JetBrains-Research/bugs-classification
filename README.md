@@ -99,9 +99,13 @@ path
 Позволяет получить подсказку для неправильного решения.
 
 **Формат запроса следующий:**
+
+Ожидается POST запрос по адресу
 ```url
-ip:port/server-v1/webapi/bugs-classification/hint?problem=*step_id*&code=*solution_code*
+ip:port/server-v1/webapi/bugs-classification/hint
 ```
+со следующими аргументами в формате JSON
+
 | Аргумент  | Значение |
 | :------------- | :------------- |
 | _problem_ | Идентификатор задачи (step\_id)  |
@@ -119,15 +123,18 @@ ip:port/server-v1/webapi/bugs-classification/hint?problem=*step_id*&code=*soluti
 | _status_ | Статус обработки запроса. Может принимать два значения: OK и ERROR |
 | _time_ | Время обработки запроса на сервере |
 
-Пример: для данного решения задачи с номером 239566
+**Пример:**
+Для данного решения задачи с номером 239566
 ```java
-void foo() {
-}
+void foo() {}
 ```
-запрос будет выглядеть так
+запрос будет выглядеть, например, так
 
 ```
-http://localhost:8080/server-v1/webapi/bugs-classification/hint?problem=239566&code=void+foo%28%29+%7B%0D%0A%7D
+curl --header "Content-Type: application/json" \
+--request POST \
+--data '{"problem":53619,"code":"void foo() {}"}' \
+http://localhost:8080/server-v1/webapi/bugs-classification/hint
 ```
 
 а ответ так
@@ -141,6 +148,8 @@ http://localhost:8080/server-v1/webapi/bugs-classification/hint?problem=239566&c
 Позволяет узнать список задач, для которых доступна функция получения подсказок.
 
 **Формат запроса следующий:**
+
+Ожидается GET запрос
 ```url
 ip:port/server-v1/webapi/bugs-classification/classifiers
 ```

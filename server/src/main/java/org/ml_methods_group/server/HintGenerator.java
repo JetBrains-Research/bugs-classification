@@ -1,10 +1,13 @@
 package org.ml_methods_group.server;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+//import com.fasterxml.jackson.databind.ObjectMapper;
+
 import com.github.gumtreediff.matchers.CompositeMatchers;
 import com.github.gumtreediff.matchers.MappingStore;
 import com.github.gumtreediff.matchers.Matcher;
 import com.github.gumtreediff.tree.ITree;
+import org.glassfish.jersey.jackson.JacksonFeature;
+import org.glassfish.jersey.server.ResourceConfig;
 import org.ml_methods_group.classification.classifiers.AdapterClassifier;
 import org.ml_methods_group.classification.classifiers.KNearestNeighbors;
 import org.ml_methods_group.common.Classifier;
@@ -49,7 +52,10 @@ import static org.ml_methods_group.common.Solution.Verdict.OK;
 public class HintGenerator {
     private final Map<Integer, Classifier<Solution, String>> classifiers = new HashMap<>();
     private final CodeValidator validator = new JavaCodeValidator();
-    private final ObjectMapper mapper = new ObjectMapper();
+
+    static {
+        new ResourceConfig().packages("org.ml_methods_group.server").register(JacksonFeature.class);
+    }
 
     public HintGenerator() throws IOException {
         final Path path = Paths.get(new String(
@@ -102,43 +108,38 @@ public class HintGenerator {
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @javax.ws.rs.Path("/classifiers")
-    public String getClassifiers() throws IOException {
-        final var response = new ArrayList<>(classifiers.keySet());
-        return asJSON(response);
+    public List<Integer> getClassifiers() {
+        return new ArrayList<>(classifiers.keySet());
     }
 
     @GET
     @Produces(MediaType.APPLICATION_JSON)
     @javax.ws.rs.Path("/hint")
-    public String getHint(@QueryParam("problem") int problemId,
-                          @QueryParam("code") String code) throws IOException {
+    public Response getHint(@QueryParam("problem") int problemId,
+                            @QueryParam("code") String code) {
         final long requestTime = System.currentTimeMillis();
         try {
             final var classifier = classifiers.get(problemId);
             if (classifier == null) {
-                return asJSON(Response.error("Unsupported problem!", requestTime));
+                return Response.error("Unsupported problem!", requestTime);
             }
             final var solution = asSolution(code, problemId);
             if (solution.isEmpty()) {
-                return asJSON(Response.error("Failed to build AST", requestTime));
+                return Response.error("Failed to build AST", requestTime);
             }
             final var result = classifier.mostProbable(solution.get());
-            return asJSON(Response.success(result.getKey(), result.getValue(), requestTime));
+            return Response.success(result.getKey(), result.getValue(), requestTime);
 
         } catch (Exception e) {
-            return asJSON(Response.error(
+            return Response.error(
                     "Unexpected exception: " + e.getClass().getName() + " " + e.getMessage(),
-                    requestTime));
+                    requestTime);
         }
     }
 
     private Optional<Solution> asSolution(String text, int problemId) {
         return validator.validate(text)
                 .map(code -> new Solution(code, problemId, -1, -1, FAIL));
-    }
-
-    private String asJSON(Object object) throws IOException {
-        return mapper.writeValueAsString(object);
     }
 
     public static void main(String[] args) throws IOException {

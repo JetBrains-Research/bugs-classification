@@ -1,13 +1,13 @@
 package org.ml_methods_group.server;
 
 public class Response {
-    private final String hint;
-    private final double confidence;
-    private final String errorMessage;
-    private final ResponseStatus status;
-    private final long time;
+    private String hint;
+    private double confidence;
+    private String errorMessage;
+    private ResponseStatus status;
+    private long time;
 
-    Response(String hint, double confidence, String errorMessage, ResponseStatus status, long time) {
+    private Response(String hint, double confidence, String errorMessage, ResponseStatus status, long time) {
         this.hint = hint;
         this.confidence = confidence;
         this.errorMessage = errorMessage;
@@ -19,20 +19,40 @@ public class Response {
         return hint;
     }
 
+    public void setHint(String hint) {
+        this.hint = hint;
+    }
+
     public double getConfidence() {
         return confidence;
+    }
+
+    public void setConfidence(double confidence) {
+        this.confidence = confidence;
     }
 
     public String getErrorMessage() {
         return errorMessage;
     }
 
+    public void setErrorMessage(String errorMessage) {
+        this.errorMessage = errorMessage;
+    }
+
     public ResponseStatus getStatus() {
         return status;
     }
 
+    public void setStatus(ResponseStatus status) {
+        this.status = status;
+    }
+
     public long getTime() {
         return time;
+    }
+
+    public void setTime(long time) {
+        this.time = time;
     }
 
     public enum ResponseStatus {OK, ERROR}

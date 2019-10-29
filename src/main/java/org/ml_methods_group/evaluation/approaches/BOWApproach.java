@@ -129,7 +129,7 @@ public class BOWApproach {
 
     public static void createCSV(int wordsLimit,
                                   List<Solution> solutions,
-                                  FeaturesExtractor<Solution, Changes> generator,
+                                  FeaturesExtractor<Solution, List<Changes>> generator,
                                   Map<Solution, List<String>> marksDictionary,
                                   Path datasetPath) throws IOException {
         final HashExtractor<NodeContext> weak = HashExtractor.<NodeContext>builder()
@@ -174,35 +174,42 @@ public class BOWApproach {
 
         final List<CodeChange> allChanges = solutions.stream()
                 .map(generator::process)
+                .flatMap(List::stream)
                 .map(Changes::getChanges)
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
+
         final HashMap<String, Integer> dict = BOWExtractor.mostCommon(extractors, allChanges, wordsLimit);
-        final FeaturesExtractor<Solution, BOWVector> extractor = generator.compose(
-                new BOWExtractor<>(dict, extractors).extend(Changes::getChanges));
+        //final FeaturesExtractor<Solution, BOWVector> extractor = generator.compose(
+        //        new BOWExtractor<>(dict, extractors).extend(Changes::getChanges));
+        var bowExtractor = new BOWExtractor<>(dict, extractors);
         try (var out = new PrintWriter(datasetPath.toFile())) {
             // Header
-            out.print("id");
+            out.print("id,");
             for (int i = 0; i < dict.size(); ++i) {
-                out.print("," + i);
+                out.print(i + ',');
             }
-            out.println(",cluster");
+            out.println("cluster");
             // Body
             for (Solution solution : solutions) {
-                out.print(solution.getSolutionId() + ",");
-                for (var counter : extractor.process(solution).getCounters()) {
-                    out.print(counter + ",");
-                }
-                var marks = marksDictionary.getOrDefault(solution, new ArrayList<String>());
-                if (marks.size() == 0 || marks.size() == 1 && marks.get(0).equals("")) {
-                    out.println("unknown");
-                    continue;
-                }
-                for (int i = 0; i < marks.size(); ++i) {
-                    if (i == marks.size() - 1)
-                        out.println(marks.get(i));
-                    else
-                        out.print(marks.get(i) + "|");
+                System.out.println("current solution: " + solution.getSolutionId());
+                var kNearestSolutions = generator.process(solution);
+                for (var neighbor : kNearestSolutions) {
+                    out.print(solution.getSolutionId() + '|' + neighbor.hashCode() + ',');
+                    for (var counter : bowExtractor.process(neighbor.getChanges()).getCounters()) {
+                        out.print(counter + ",");
+                    }
+                    var marks = marksDictionary.getOrDefault(solution, new ArrayList<String>());
+                    if (marks.size() == 0 || marks.size() == 1 && marks.get(0).equals("")) {
+                        out.println("unknown");
+                        continue;
+                    }
+                    for (int i = 0; i < marks.size(); ++i) {
+                        if (i == marks.size() - 1)
+                            out.println(marks.get(i));
+                        else
+                            out.print(marks.get(i) + "|");
+                    }
                 }
             }
         } catch (FileNotFoundException e) {

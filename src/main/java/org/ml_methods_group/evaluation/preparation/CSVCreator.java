@@ -11,6 +11,7 @@ import org.ml_methods_group.common.ast.generation.ASTGenerator;
 import org.ml_methods_group.common.ast.generation.CachedASTGenerator;
 import org.ml_methods_group.common.ast.normalization.NamesASTNormalizer;
 import org.ml_methods_group.common.extractors.ChangesExtractor;
+import org.ml_methods_group.common.extractors.KNearestNeighborsChangesExtractor;
 import org.ml_methods_group.common.metrics.functions.HeuristicChangesBasedDistanceFunction;
 import org.ml_methods_group.common.metrics.selectors.ClosestPairSelector;
 import org.ml_methods_group.common.metrics.selectors.KClosestPairsSelector;
@@ -31,6 +32,7 @@ import org.ml_methods_group.testing.ClassificationTester;
 import org.ml_methods_group.testing.ClassificationTestingResult;
 import org.ml_methods_group.testing.selectors.CacheOptionSelector;
 
+import java.io.Console;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.nio.file.Path;
@@ -80,27 +82,31 @@ public class CSVCreator {
             final List<Solution> correctFromTrain = train.getValues(x -> x.getVerdict() == OK);
             final List<Solution> incorrectFromTest = test.getValues(x -> x.getVerdict() == FAIL);
             final List<Solution> incorrectFromTrain = train.getValues(x -> x.getVerdict() == FAIL);
-            final OptionSelector<Solution, Solution> selector = new CacheOptionSelector<>(
-                    new ClosestPairSelector<>(unifier.unify(correctFromTrain), metric),
+            final OptionSelector<Solution, List<Solution>> selector = new CacheOptionSelector<>(
+                    new KClosestPairsSelector<>(unifier.unify(correctFromTrain), metric, 5),
                     database,
                     Solution::getSolutionId,
-                    Solution::getSolutionId);
-            final FeaturesExtractor<Solution, Changes> generator = new ChangesExtractor(changeGenerator, selector);
+                    List::hashCode);
+            //var selector = new KClosestPairsSelector<>(unifier.unify(correctFromTrain), metric, 5);
+            final FeaturesExtractor<Solution, List<Changes>> generator =
+                    new KNearestNeighborsChangesExtractor(changeGenerator, selector);
 
             var marksDictionary = new HashMap<Solution, List<String>>();
 
-            for (var entry : testHolder) {
+            // Marks for Test
+            /*for (var entry : testHolder) {
                 marksDictionary.put(entry.getKey(), entry.getValue());
-            }
-
-            /*var flatMarks = markedClusters.getFlatMarks();
-            for (var solution : incorrectFromTrain) {
-                marksDictionary.put(solution, Collections.singletonList(flatMarks.get(solution)));
             }*/
 
-            BOWApproach.createCSV(5000, incorrectFromTest, generator, marksDictionary,
-                    datasetPath.resolve("test_dataset.csv"));
-
+            // Marks for train
+            var flatMarks = markedClusters.getFlatMarks();
+            for (var solution : incorrectFromTrain) {
+                marksDictionary.put(solution, Collections.singletonList(flatMarks.get(solution)));
+            }
+            System.out.println("Start creating .csv");
+            BOWApproach.createCSV(1000, incorrectFromTrain, generator, marksDictionary,
+                    datasetPath.resolve("train_dataset.csv"));
+            /*
             final Classifier<Solution, String> classifier = classificationTemplate.createApproach(train, generator)
                     .getClassifier("k-nearest-15");
             classifier.train(markedClusters);
@@ -109,7 +115,7 @@ public class CSVCreator {
             System.out.println("(Recall, Precision)");
             for (double t = 0.05; t < 1; t += 0.05) {
                 System.out.println("(" + result.getCoverage(t) + ", " + result.getPrecision(t) + ")");
-            }
+            }*/
         }
     }
 

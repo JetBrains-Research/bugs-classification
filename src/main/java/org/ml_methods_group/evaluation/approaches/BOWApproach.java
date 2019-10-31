@@ -187,15 +187,15 @@ public class BOWApproach {
             // Header
             out.print("id,");
             for (int i = 0; i < dict.size(); ++i) {
-                out.print(i + ',');
+                out.print(i + ",");
             }
             out.println("cluster");
             // Body
             for (Solution solution : solutions) {
-                System.out.println("current solution: " + solution.getSolutionId());
+                //System.out.println("current solution: " + solution.getSolutionId());
                 var kNearestSolutions = generator.process(solution);
                 for (var neighbor : kNearestSolutions) {
-                    out.print(solution.getSolutionId() + '|' + neighbor.hashCode() + ',');
+                    out.print(solution.getSolutionId() + "0" + neighbor.hashCode() + ",");
                     for (var counter : bowExtractor.process(neighbor.getChanges()).getCounters()) {
                         out.print(counter + ",");
                     }

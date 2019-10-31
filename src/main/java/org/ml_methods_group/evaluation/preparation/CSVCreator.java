@@ -83,7 +83,7 @@ public class CSVCreator {
             final List<Solution> incorrectFromTest = test.getValues(x -> x.getVerdict() == FAIL);
             final List<Solution> incorrectFromTrain = train.getValues(x -> x.getVerdict() == FAIL);
             final OptionSelector<Solution, List<Solution>> selector = new CacheOptionSelector<>(
-                    new KClosestPairsSelector<>(unifier.unify(correctFromTrain), metric, 5),
+                    new KClosestPairsSelector<>(unifier.unify(correctFromTrain), metric, 3),
                     database,
                     Solution::getSolutionId,
                     List::hashCode);
@@ -105,7 +105,7 @@ public class CSVCreator {
             }
             System.out.println("Start creating .csv");
             BOWApproach.createCSV(1000, incorrectFromTrain, generator, marksDictionary,
-                    datasetPath.resolve("train_dataset.csv"));
+                    datasetPath.resolve("train_dataset_3_nearest.csv"));
             /*
             final Classifier<Solution, String> classifier = classificationTemplate.createApproach(train, generator)
                     .getClassifier("k-nearest-15");

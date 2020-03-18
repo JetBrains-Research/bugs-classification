@@ -1,5 +1,6 @@
 package org.ml_methods_group.evaluation.approaches;
 
+import io.grpc.Status;
 import org.ml_methods_group.common.*;
 import org.ml_methods_group.common.ast.NodeType;
 import org.ml_methods_group.common.ast.changes.ChangeType;
@@ -17,17 +18,19 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 import static org.ml_methods_group.common.Solution.Verdict.FAIL;
 import static org.ml_methods_group.common.serialization.ProtobufSerializationUtils.loadSolutionMarksHolder;
 
 public class BOWApproach {
+
     public static final HashExtractor<ChangeType> CHANGE_TYPE_HASH = HashExtractor.<ChangeType>builder()
             .append("CT")
             .hashComponent(ChangeType::ordinal)
             .build();
-
 
     public static final HashExtractor<NodeType> NODE_TYPE_HASH = HashExtractor.<NodeType>builder()
             .append("NT")
@@ -54,14 +57,16 @@ public class BOWApproach {
     public static final HashExtractor<NodeState> FULL_NODE_STATE_HASH = HashExtractor.<NodeState>builder()
             .append("FNS")
             .hashComponent(NodeState::getType, NODE_TYPE_HASH)
+            .append(",")
             .hashComponent(NodeState::getLabel)
+            .append(",")
             .hashComponent(NodeState::getJavaType)
             .build();
 
     public static final ApproachTemplate<BOWVector> TEMPLATE = (d, g) -> getDefaultApproach(20000, d, g);
 
     public static Approach<BOWVector> getDefaultApproach(int wordsLimit, Dataset train,
-                                              FeaturesExtractor<Solution, Changes> generator) {
+                                                         FeaturesExtractor<Solution, Changes> generator) {
         final HashExtractor<NodeContext> weak = HashExtractor.<NodeContext>builder()
                 .append("TOC")
                 .hashComponent(NodeContext::getNode, TYPE_ONLY_NODE_STATE_HASH)
@@ -77,7 +82,9 @@ public class BOWApproach {
         final HashExtractor<NodeContext> full = HashExtractor.<NodeContext>builder()
                 .append("FCC")
                 .hashComponent(NodeContext::getNode, FULL_NODE_STATE_HASH)
+                .append(",")
                 .hashComponent(NodeContext::getParent, TYPE_ONLY_NODE_STATE_HASH)
+                .append(",")
                 .hashComponent(NodeContext::getParentOfParent, TYPE_ONLY_NODE_STATE_HASH)
                 .build();
         final HashExtractor<NodeContext> extended = HashExtractor.<NodeContext>builder()
@@ -107,14 +114,16 @@ public class BOWApproach {
         return HashExtractor.<CodeChange>builder()
                 .append("CCE")
                 .hashComponent(CodeChange::getChangeType, CHANGE_TYPE_HASH)
+                .append(",")
                 .hashComponent(CodeChange::getOriginalContext, extractor)
+                .append(",")
                 .hashComponent(CodeChange::getDestinationContext, extractor)
                 .build();
     }
 
     private static Approach<BOWVector> getApproach(int wordsLimit, Dataset train,
-                                        FeaturesExtractor<Solution, Changes> generator,
-                                        List<HashExtractor<CodeChange>> extractors) {
+                                                   FeaturesExtractor<Solution, Changes> generator,
+                                                   List<HashExtractor<CodeChange>> extractors) {
         final List<CodeChange> changes = train.getValues(x -> x.getVerdict() == FAIL)
                 .stream()
                 .map(generator::process)
@@ -125,95 +134,5 @@ public class BOWApproach {
         final FeaturesExtractor<Solution, BOWVector> extractor = generator.compose(
                 new BOWExtractor<>(dict, extractors).extend(Changes::getChanges));
         return new Approach<>(extractor, BOWExtractor::cosineDistance, "BOW" + wordsLimit);
-    }
-
-    public static void createCSV(int wordsLimit,
-                                  List<Solution> solutions,
-                                  FeaturesExtractor<Solution, List<Changes>> generator,
-                                  Map<Solution, List<String>> marksDictionary,
-                                  Path datasetPath) throws IOException {
-        final HashExtractor<NodeContext> weak = HashExtractor.<NodeContext>builder()
-                .append("TOC")
-                .hashComponent(NodeContext::getNode, TYPE_ONLY_NODE_STATE_HASH)
-                .hashComponent(NodeContext::getParent, TYPE_ONLY_NODE_STATE_HASH)
-                .hashComponent(NodeContext::getParentOfParent, TYPE_ONLY_NODE_STATE_HASH)
-                .build();
-        final HashExtractor<NodeContext> javaTypes = HashExtractor.<NodeContext>builder()
-                .append("JTC")
-                .hashComponent(NodeContext::getNode, JAVA_TYPE_NODE_STATE_HASH)
-                .hashComponent(NodeContext::getParent, TYPE_ONLY_NODE_STATE_HASH)
-                .hashComponent(NodeContext::getParentOfParent, TYPE_ONLY_NODE_STATE_HASH)
-                .build();
-        final HashExtractor<NodeContext> full = HashExtractor.<NodeContext>builder()
-                .append("FCC")
-                .hashComponent(NodeContext::getNode, FULL_NODE_STATE_HASH)
-                .hashComponent(NodeContext::getParent, TYPE_ONLY_NODE_STATE_HASH)
-                .hashComponent(NodeContext::getParentOfParent, TYPE_ONLY_NODE_STATE_HASH)
-                .build();
-        final HashExtractor<NodeContext> extended = HashExtractor.<NodeContext>builder()
-                .append("ECC")
-                .hashComponent(NodeContext::getNode, JAVA_TYPE_NODE_STATE_HASH)
-                .hashComponent(NodeContext::getParent, LABEL_NODE_STATE_HASH)
-                .hashComponent(NodeContext::getParentOfParent, TYPE_ONLY_NODE_STATE_HASH)
-                .build();
-        final HashExtractor<NodeContext> fullExtended = HashExtractor.<NodeContext>builder()
-                .append("FEC")
-                .hashComponent(NodeContext::getNode, FULL_NODE_STATE_HASH)
-                .hashComponent(NodeContext::getParent, LABEL_NODE_STATE_HASH)
-                .hashComponent(NodeContext::getParentOfParent, TYPE_ONLY_NODE_STATE_HASH)
-                .build();
-        final HashExtractor<NodeContext> deepExtended = HashExtractor.<NodeContext>builder()
-                .append("DEC")
-                .hashComponent(NodeContext::getNode, JAVA_TYPE_NODE_STATE_HASH)
-                .hashComponent(NodeContext::getParent, LABEL_NODE_STATE_HASH)
-                .hashComponent(NodeContext::getParentOfParent, LABEL_NODE_STATE_HASH)
-                .build();
-        List<HashExtractor<CodeChange>> extractors = Arrays.asList(getCodeChangeHasher(weak),
-                getCodeChangeHasher(javaTypes), getCodeChangeHasher(full), getCodeChangeHasher(extended),
-                getCodeChangeHasher(fullExtended), getCodeChangeHasher(deepExtended));
-
-        final List<CodeChange> allChanges = solutions.stream()
-                .map(generator::process)
-                .flatMap(List::stream)
-                .map(Changes::getChanges)
-                .flatMap(List::stream)
-                .collect(Collectors.toList());
-
-        final HashMap<String, Integer> dict = BOWExtractor.mostCommon(extractors, allChanges, wordsLimit);
-        //final FeaturesExtractor<Solution, BOWVector> extractor = generator.compose(
-        //        new BOWExtractor<>(dict, extractors).extend(Changes::getChanges));
-        var bowExtractor = new BOWExtractor<>(dict, extractors);
-        try (var out = new PrintWriter(datasetPath.toFile())) {
-            // Header
-            out.print("id,");
-            for (int i = 0; i < dict.size(); ++i) {
-                out.print(i + ",");
-            }
-            out.println("cluster");
-            // Body
-            for (Solution solution : solutions) {
-                //System.out.println("current solution: " + solution.getSolutionId());
-                var kNearestSolutions = generator.process(solution);
-                for (var neighbor : kNearestSolutions) {
-                    out.print(solution.getSolutionId() + "0" + neighbor.hashCode() + ",");
-                    for (var counter : bowExtractor.process(neighbor.getChanges()).getCounters()) {
-                        out.print(counter + ",");
-                    }
-                    var marks = marksDictionary.getOrDefault(solution, new ArrayList<String>());
-                    if (marks.size() == 0 || marks.size() == 1 && marks.get(0).equals("")) {
-                        out.println("unknown");
-                        continue;
-                    }
-                    for (int i = 0; i < marks.size(); ++i) {
-                        if (i == marks.size() - 1)
-                            out.println(marks.get(i));
-                        else
-                            out.print(marks.get(i) + "|");
-                    }
-                }
-            }
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
     }
 }

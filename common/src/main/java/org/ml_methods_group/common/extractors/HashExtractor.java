@@ -18,7 +18,7 @@ public class HashExtractor<T> implements FeaturesExtractor<T, String> {
     public String process(T value) {
         return hashers.stream()
                 .map(hasher -> hasher.process(value))
-                .collect(Collectors.joining("", "[", "]"));
+                .collect(Collectors.joining("", "", ""));
     }
 
     public static <T> HashExtractorBuilder<T> builder() {

@@ -1,9 +1,6 @@
 package org.ml_methods_group.common.extractors;
 
-import org.ml_methods_group.common.BiFeaturesExtractor;
-import org.ml_methods_group.common.FeaturesExtractor;
-import org.ml_methods_group.common.OptionSelector;
-import org.ml_methods_group.common.Solution;
+import org.ml_methods_group.common.*;
 import org.ml_methods_group.common.ast.changes.ChangeGenerator;
 import org.ml_methods_group.common.ast.changes.Changes;
 
@@ -15,16 +12,16 @@ public class KNearestNeighborsChangesExtractor implements FeaturesExtractor<Solu
         BiFeaturesExtractor<Solution, List<Solution>, List<Changes>> {
 
     private final ChangeGenerator generator;
-    private final OptionSelector<Solution, List<Solution>> selector;
+    private final ManyOptionsSelector<Solution, Solution> selector;
 
-    public KNearestNeighborsChangesExtractor(ChangeGenerator generator, OptionSelector<Solution, List<Solution>> selector) {
+    public KNearestNeighborsChangesExtractor(ChangeGenerator generator, ManyOptionsSelector<Solution, Solution> selector) {
         this.generator = generator;
         this.selector = selector;
     }
 
     @Override
     public List<Changes> process(Solution value) {
-        var options = selector.selectOption(value).orElseThrow(NoSuchElementException::new);
+        var options = selector.selectOptions(value).orElseThrow(NoSuchElementException::new);
         return options.stream()
                 .map(option -> generator.getChanges(value, option))
                 .collect(Collectors.toList());

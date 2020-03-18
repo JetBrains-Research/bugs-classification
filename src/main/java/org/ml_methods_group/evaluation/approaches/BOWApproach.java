@@ -1,7 +1,8 @@
 package org.ml_methods_group.evaluation.approaches;
 
-import io.grpc.Status;
-import org.ml_methods_group.common.*;
+import org.ml_methods_group.common.Dataset;
+import org.ml_methods_group.common.FeaturesExtractor;
+import org.ml_methods_group.common.Solution;
 import org.ml_methods_group.common.ast.NodeType;
 import org.ml_methods_group.common.ast.changes.ChangeType;
 import org.ml_methods_group.common.ast.changes.Changes;
@@ -11,19 +12,13 @@ import org.ml_methods_group.common.ast.changes.CodeChange.NodeState;
 import org.ml_methods_group.common.extractors.BOWExtractor;
 import org.ml_methods_group.common.extractors.BOWExtractor.BOWVector;
 import org.ml_methods_group.common.extractors.HashExtractor;
-import org.ml_methods_group.evaluation.EvaluationInfo;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.nio.file.Path;
-import java.util.*;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.ml_methods_group.common.Solution.Verdict.FAIL;
-import static org.ml_methods_group.common.serialization.ProtobufSerializationUtils.loadSolutionMarksHolder;
 
 public class BOWApproach {
 

@@ -8,16 +8,12 @@ import org.ml_methods_group.common.ast.changes.ChangeType;
 import org.ml_methods_group.common.ast.changes.Changes;
 import org.ml_methods_group.common.ast.changes.CodeChange;
 import org.ml_methods_group.common.extractors.BOWExtractor;
-import org.ml_methods_group.common.extractors.BOWExtractor.BOWVector;
 import org.ml_methods_group.common.extractors.HashExtractor;
 
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.stream.Collectors;
-
-import static org.ml_methods_group.common.Solution.Verdict.FAIL;
 
 public class TokenBasedDatasetsCreator {
 

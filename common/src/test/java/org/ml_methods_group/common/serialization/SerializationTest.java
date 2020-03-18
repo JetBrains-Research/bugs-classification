@@ -9,14 +9,16 @@ import org.ml_methods_group.common.ast.changes.CodeChange.NodeContext;
 import org.ml_methods_group.common.ast.changes.CodeChange.NodeState;
 import org.ml_methods_group.common.proto.*;
 
-import java.io.*;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 
-import static java.util.Arrays.deepEquals;
 import static org.junit.Assert.*;
 import static org.ml_methods_group.common.Solution.Verdict.FAIL;
 import static org.ml_methods_group.common.Solution.Verdict.OK;

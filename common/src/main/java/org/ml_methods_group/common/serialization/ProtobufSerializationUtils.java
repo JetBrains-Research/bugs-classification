@@ -2,7 +2,6 @@ package org.ml_methods_group.common.serialization;
 
 import org.ml_methods_group.common.*;
 import org.ml_methods_group.common.ast.changes.Changes;
-import org.ml_methods_group.common.ast.changes.CodeChange;
 import org.ml_methods_group.common.proto.*;
 
 import java.io.File;
@@ -11,8 +10,6 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
-import java.util.function.Function;
 
 public class ProtobufSerializationUtils {
 

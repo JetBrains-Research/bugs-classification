@@ -5,7 +5,6 @@ import org.ml_methods_group.common.FeaturesExtractor;
 import java.util.List;
 import java.util.function.BinaryOperator;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 public class FoldExtractor<V, F> implements FeaturesExtractor<V, F> {
 

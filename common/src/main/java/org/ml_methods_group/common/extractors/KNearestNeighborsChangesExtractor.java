@@ -1,6 +1,9 @@
 package org.ml_methods_group.common.extractors;
 
-import org.ml_methods_group.common.*;
+import org.ml_methods_group.common.BiFeaturesExtractor;
+import org.ml_methods_group.common.FeaturesExtractor;
+import org.ml_methods_group.common.ManyOptionsSelector;
+import org.ml_methods_group.common.Solution;
 import org.ml_methods_group.common.ast.changes.ChangeGenerator;
 import org.ml_methods_group.common.ast.changes.Changes;
 

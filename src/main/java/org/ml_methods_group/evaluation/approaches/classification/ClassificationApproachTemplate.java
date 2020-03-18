@@ -1,6 +1,8 @@
 package org.ml_methods_group.evaluation.approaches.classification;
 
-import org.ml_methods_group.common.*;
+import org.ml_methods_group.common.Dataset;
+import org.ml_methods_group.common.FeaturesExtractor;
+import org.ml_methods_group.common.Solution;
 import org.ml_methods_group.common.ast.changes.Changes;
 import org.ml_methods_group.evaluation.approaches.Approach;
 import org.ml_methods_group.evaluation.approaches.ApproachTemplate;

@@ -36,7 +36,7 @@ public class MarkedClustersSaver {
             new ClusteringApproachTemplate(((dataset, generator) ->
                     BOWApproach.getDefaultApproach(20000, dataset, generator)));
 
-    public static void createClusters(String problem) throws Exception {
+    public static void createClusters(Path datasetPath) throws Exception {
         try (final HashDatabase database = new HashDatabase(EvaluationInfo.PATH_TO_CACHE)) {
             final ASTGenerator astGenerator = new CachedASTGenerator(new NamesASTNormalizer());
             final ChangeGenerator changeGenerator = new BasicChangeGenerator(astGenerator);
@@ -47,7 +47,6 @@ public class MarkedClustersSaver {
             final DistanceFunction<Solution> metric = new HeuristicChangesBasedDistanceFunction(changeGenerator);
 
             // Collect data
-            final Path datasetPath = EvaluationInfo.PATH_TO_DATASET.resolve(problem);
             final SolutionMarksHolder trainHolder = loadSolutionMarksHolder(datasetPath.resolve("extended.tmp"));
             final SolutionMarksHolder testHolder = loadSolutionMarksHolder(datasetPath.resolve("test_marks.tmp"));
             final Dataset train = loadDataset(datasetPath.resolve("train.tmp"));

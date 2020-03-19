@@ -69,13 +69,20 @@ public class PipelineEvaluation {
     public static final List<String> problems = Arrays.asList("factorial", "loggers", "reflection", "deserialization");
 
     public static void main(String[] args) throws Exception {
-        System.out.println("Start saving clusters");
-        createClusters(problems.get(0));
-        System.out.println("Clusters created, starting pipeline");
-        runNewPipeline(problems.get(0));
+        var problem = problems.get(1);
+        final Path datasetPath = EvaluationInfo.PATH_TO_DATASET.resolve(problem);
+        Path pathToTrain = datasetPath.resolve("train_tokens_dataset.txt");
+        Path pathToTest = datasetPath.resolve("test_tokens_dataset.txt");
+
+        System.out.println("Start clustering");
+        createClusters(datasetPath);
+        System.out.println("Clusters created and saved, starting creating datasets");
+        runNewPipeline(datasetPath, pathToTrain, pathToTest);
+        System.out.println("End creating datasets, start training classification model");
+        runClassification(pathToTrain, pathToTest);
     }
 
-    public static void runNewPipeline(String problem) throws Exception {
+    public static void runNewPipeline(Path globalDatasetPath, Path pathToTrain, Path pathToTest) throws Exception {
         try (final HashDatabase database = new HashDatabase(EvaluationInfo.PATH_TO_CACHE)) {
             final ASTGenerator astGenerator = new CachedASTGenerator(new NamesASTNormalizer());
             final ChangeGenerator changeGenerator = new BasicChangeGenerator(astGenerator);
@@ -85,16 +92,14 @@ public class PipelineEvaluation {
                     new MinValuePicker<>(Comparator.comparingInt(Solution::getSolutionId)));
             final DistanceFunction<Solution> metric = new HeuristicChangesBasedDistanceFunction(changeGenerator);
 
-            final Path datasetPath = EvaluationInfo.PATH_TO_DATASET.resolve(problem);
-            final SolutionMarksHolder testHolder = loadSolutionMarksHolder(datasetPath.resolve("test_marks.tmp"));
-            final Dataset train = loadDataset(datasetPath.resolve("train.tmp"));
-            final Dataset test = loadDataset(datasetPath.resolve("test.tmp"));
-            final MarkedClusters<Solution, String> markedClusters = loadMarkedClusters(datasetPath.resolve("clusters.tmp"));
+            final SolutionMarksHolder testHolder = loadSolutionMarksHolder(globalDatasetPath.resolve("test_marks.tmp"));
+            final Dataset train = loadDataset(globalDatasetPath.resolve("train.tmp"));
+            final Dataset test = loadDataset(globalDatasetPath.resolve("test.tmp"));
+            final MarkedClusters<Solution, String> markedClusters = loadMarkedClusters(globalDatasetPath.resolve("clusters.tmp"));
             final List<Solution> correctFromTrain = train.getValues(x -> x.getVerdict() == OK);
             final List<Solution> incorrectFromTrain = train.getValues(x -> x.getVerdict() == FAIL);
             final List<Solution> incorrectFromTest = test.getValues(x -> x.getVerdict() == FAIL);
-            Path pathToTrain = datasetPath.resolve("__train_tokens_dataset.txt");
-            Path pathToTest = datasetPath.resolve("__test_tokens_dataset.txt");
+
 
             final var oneNearestSelector = getCacheSelectorFromTemplate(
                     new KClosestPairsSelector<>(unifier.unify(correctFromTrain), metric, 1), database);
@@ -105,7 +110,6 @@ public class PipelineEvaluation {
             final FeaturesExtractor<Solution, List<Changes>> threeNearestGenerator =
                     new KNearestNeighborsChangesExtractor(changeGenerator, threeNearestSelector);
 
-            System.out.println("Start creating dataset");
             var datasetCreator = new TokenBasedDatasetsCreator(20000, train, threeNearestGenerator);
             var testMarksDictionary = new HashMap<Solution, List<String>>();
             for (var entry : testHolder) {
@@ -118,12 +122,26 @@ public class PipelineEvaluation {
                 trainMarksDictionary.put(solution, Collections.singletonList(flatMarks.get(solution)));
             }
             datasetCreator.createCodeChangesDataset(incorrectFromTrain, threeNearestGenerator, trainMarksDictionary, pathToTrain);
-            System.out.println("End creating dataset");
-
-            //runClassification(pathToTrain, pathToTest);
         }
     }
 
+    public static void runClassification(Path pathToTrain, Path pathToTest) throws Exception {
+        String pythonBinaryPath = EvaluationInfo.PATH_TO_PYTHON_BINARY.toString();
+        Path pythonScriptPath = EvaluationInfo.PATH_TO_PYTHON_SCRIPTS.resolve("classification.py");
+        String[] command = {pythonBinaryPath, pythonScriptPath.toString(),
+                "--train", pathToTrain.toString(), "--validate", pathToTest.toString()};
+        ProcessBuilder pb = new ProcessBuilder(command);
+        pb.redirectOutput(ProcessBuilder.Redirect.INHERIT);
+        pb.redirectError(ProcessBuilder.Redirect.INHERIT);
+        Process process = pb.start();
+        try {
+            process.waitFor();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } finally {
+            process.destroy();
+        }
+    }
 
     public static void runOldPipeline(String problem) throws Exception {
         try (final HashDatabase database = new HashDatabase(EvaluationInfo.PATH_TO_CACHE)) {

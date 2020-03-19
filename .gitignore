@@ -28,6 +28,7 @@ out/
 .gradle/
 *.csv
 .cache/
+__pycache__
 
 src/main/java/org/ml_methods_group/tmp/*
 server/src/main/resources/data.txt

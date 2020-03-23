@@ -38,7 +38,6 @@ import java.util.stream.Collectors;
 import static org.ml_methods_group.common.Solution.Verdict.FAIL;
 import static org.ml_methods_group.common.Solution.Verdict.OK;
 import static org.ml_methods_group.common.serialization.ProtobufSerializationUtils.*;
-import static org.ml_methods_group.evaluation.preparation.MarkedClustersSaver.createClusters;
 
 public class PipelineEvaluation {
 
@@ -69,17 +68,17 @@ public class PipelineEvaluation {
     public static final List<String> problems = Arrays.asList("factorial", "loggers", "reflection", "deserialization");
 
     public static void main(String[] args) throws Exception {
-        var problem = problems.get(1);
+        var problem = problems.get(2);
         final Path datasetPath = EvaluationInfo.PATH_TO_DATASET.resolve(problem);
-        Path pathToTrain = datasetPath.resolve("train_tokens_dataset.txt");
-        Path pathToTest = datasetPath.resolve("test_tokens_dataset.txt");
+        Path pathToTrain = datasetPath.resolve("__train_tokens_dataset.csv");
+        Path pathToTest = datasetPath.resolve("__test_tokens_dataset.csv");
 
-        System.out.println("Start clustering");
-        createClusters(datasetPath);
+        //System.out.println("Start clustering");
+        //createClusters(datasetPath);
         System.out.println("Clusters created and saved, starting creating datasets");
         runNewPipeline(datasetPath, pathToTrain, pathToTest);
-        System.out.println("End creating datasets, start training classification model");
-        runClassification(pathToTrain, pathToTest);
+        //System.out.println("End creating datasets, start training classification model");
+        //runClassification(pathToTrain, pathToTest);
     }
 
     public static void runNewPipeline(Path globalDatasetPath, Path pathToTrain, Path pathToTest) throws Exception {

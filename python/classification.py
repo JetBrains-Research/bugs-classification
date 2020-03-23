@@ -10,7 +10,6 @@ from typing import Tuple, List
 
 from app.tokens_dataset import TokensDataSet
 from app.model import AttentionBiGRUClassifier
-from utils import transform_tokens_to_csv
 
 
 def parse_cmd_arguments(argv: List[str]) -> Tuple[Path, Path]:
@@ -82,13 +81,7 @@ if __name__ == '__main__':
     path_to_train, path_to_test = parse_cmd_arguments(sys.argv[1:])
     device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
     print('Load data')
-    path_to_train_csv = Path(f'{str(path_to_train)[:-4]}.csv')
-    path_to_test_csv = Path(f'{str(path_to_test)[:-4]}.csv')
-    transform_tokens_to_csv(path_to_tokens=path_to_train,
-                            path_to_csv=path_to_train_csv)
-    transform_tokens_to_csv(path_to_tokens=path_to_test,
-                            path_to_csv=path_to_test_csv)
-    data = load_dataset(path_to_train_csv, path_to_test_csv, device)
+    data = load_dataset(path_to_train, path_to_test, device)
     model = AttentionBiGRUClassifier(tokens_per_change=11,
                                      embedding_dim=40,
                                      hidden_dim=200,
@@ -99,7 +92,7 @@ if __name__ == '__main__':
     loss = torch.nn.CrossEntropyLoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
     print('Training model')
-    train(data, model, device, loss, optimizer, batch_size=50, epochs=1)
+    train(data, model, device, loss, optimizer, batch_size=50, epochs=15)
     model.eval()
     model.to(torch.device('cpu'))
     data.send_to(torch.device('cpu'))

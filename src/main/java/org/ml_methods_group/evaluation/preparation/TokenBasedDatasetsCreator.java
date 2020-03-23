@@ -12,6 +12,7 @@ import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.ml_methods_group.common.Hashers.*;
 
@@ -38,19 +39,41 @@ public class TokenBasedDatasetsCreator {
     }
 
     public void createCodeChangesDataset(List<Solution> solutions,
-                                                FeaturesExtractor<Solution, List<Changes>> generator,
-                                                Map<Solution, List<String>> marksDictionary,
-                                                Path datasetPath) {
+                                         FeaturesExtractor<Solution, List<Changes>> generator,
+                                         Map<Solution, List<String>> marksDictionary,
+                                         Path datasetPath) {
+        var preprocessedNeighbours = new HashMap<Integer, List<Changes>>();
+        var maxTokens = new AtomicInteger(0);
+        solutions.parallelStream().forEach(solution -> {
+            List<Changes> kChanges = generator.process(solution);
+            preprocessedNeighbours.put(solution.getSolutionId(), kChanges);
+            int tokensLength = kChanges.stream()
+                    .map(x -> x.getChanges().size())
+                    .max(Comparator.comparing(Integer::valueOf)).get();
+            maxTokens.getAndAccumulate(tokensLength, Math::max);
+        });
         try (var out = new PrintWriter(datasetPath.toFile())) {
-            var fullExtractor = hashers.get(2);
+            var fullExtractor = getCodeChangeHasher(full);
+            int tokensPerChange = 11;
+            // Print CSV header
+            out.print("id,real_len,");
+            for (int i = 0; i < maxTokens.get() * tokensPerChange; ++i) {
+                out.print(i + ",");
+            }
+            out.println("cluster");
+            // Print content
             for (Solution solution : solutions) {
-                int numberOfNeighbor = 0;
-                List<Changes> nearestNeighbors = generator.process(solution);
-                for (var item : nearestNeighbors) {
-                    out.print(solution.getSolutionId() + Integer.toString(numberOfNeighbor++) + ",");
-                    List<CodeChange> changes = item.getChanges();
-                    for (CodeChange change : changes) {
-                        out.print(fullExtractor.process(change) + ",");
+                int idSuffix = 0;
+                List<Changes> nearestNeighbours = preprocessedNeighbours.get(solution.getSolutionId());
+                for (var neighbour : nearestNeighbours) {
+                    out.print(solution.getSolutionId() + Integer.toString(idSuffix++) + ",");
+                    List<CodeChange> changes = neighbour.getChanges();
+                    out.print(changes.size() * tokensPerChange + ",");
+                    for (CodeChange cc : changes) {
+                        out.print(fullExtractor.process(cc) + ",");
+                    }
+                    for (int i = 0; i < maxTokens.get() - changes.size(); ++i) {
+                        out.print("<PAD>,");
                     }
                     var marks = marksDictionary.getOrDefault(solution, new ArrayList<String>());
                     if (marks.stream().allMatch(Objects::isNull)
@@ -67,9 +90,9 @@ public class TokenBasedDatasetsCreator {
     }
 
     public void createBowDataset(List<Solution> train,
-                                        FeaturesExtractor<Solution, List<Changes>> generator,
-                                        Map<Solution, List<String>> marksDictionary,
-                                        Path datasetPath) {
+                                 FeaturesExtractor<Solution, List<Changes>> generator,
+                                 Map<Solution, List<String>> marksDictionary,
+                                 Path datasetPath) {
         BOWExtractor<CodeChange> extractor = new BOWExtractor<>(dict, hashers);
         try (var out = new PrintWriter(datasetPath.toFile())) {
             // Header

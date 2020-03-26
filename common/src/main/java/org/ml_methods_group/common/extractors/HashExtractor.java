@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class HashExtractor<T> implements FeaturesExtractor<T, String> {
-    final List<FeaturesExtractor<T, String>> hashers;
+    public final List<FeaturesExtractor<T, String>> hashers;
 
     public HashExtractor(List<FeaturesExtractor<T, String>> hashers) {
         this.hashers = hashers;

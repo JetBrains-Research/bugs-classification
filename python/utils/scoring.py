@@ -10,20 +10,21 @@ def fuzzy_pr_auc_score(y, y_pred, **kwargs):
     def contains_label(marks, label):
         return label in marks.split('|')
 
-    for sample_index in range(0, y.shape[0]):
-        most_probable_index = np.argmax(y_pred[sample_index])
-        confidence = y_pred[sample_index][most_probable_index]
-        is_true = contains_label(y[sample_index], labels[most_probable_index])
+    for predictions, target in zip(y_pred, y):
+        most_probable_index = np.argmax(predictions)
+        confidence = predictions[most_probable_index]
+        is_true = contains_label(target, labels[most_probable_index])
         results.append((confidence, is_true))
 
-    count = lambda predicate: sum(predicate(*pair) for pair in results)
+    def count(predicate):
+        return sum(predicate(*pair) for pair in results)
 
     def precision(treshold):
         positive = count(lambda x, a: x >= treshold)
-        return 1 if positive == 0 else count(lambda x, a: (x >= treshold and a == True)) / positive
+        return 1 if positive == 0 else count(lambda x, a: (x >= treshold and a is True)) / positive
 
     def recall(treshold):
-        return count(lambda x, a: (x >= treshold and a == True)) / y.shape[0]
+        return count(lambda x, a: (x >= treshold and a is True)) / y.shape[0]
 
     points = []
     for treshold in np.arange(0.05, 1.0, 0.05):
@@ -34,18 +35,16 @@ def fuzzy_pr_auc_score(y, y_pred, **kwargs):
     prev_precision = 1
     prev_recall = 0
     for point in points:
-        # print(point)
         auc += (point[1] - prev_recall) * (point[0] + prev_precision) / 2.0
         prev_precision = point[0]
         prev_recall = point[1]
-    auc += (1 - prev_recall) * (prev_precision) / 2
+    auc += (1 - prev_recall) * prev_precision / 2
     return auc
 
 
 def get_cv_scores(clf, X, y, labels, n_splits=10):
     kfold = KFold(n_splits=n_splits, shuffle=True)
-    return cross_val_score(clf, X, y,
-                           cv=kfold,
+    return cross_val_score(clf, X, y, cv=kfold,
                            scoring=make_scorer(fuzzy_pr_auc_score, needs_proba=True, labels=labels))
 
 
@@ -58,8 +57,6 @@ def get_pr_auc_score(clf, X_train, y_train, X_test, y_test, labels):
 def print_results(clf, X_train, y_train, X_test, y_test, labels):
     cv_scores = get_cv_scores(clf, X_train, y_train, labels)
     holdout_score = get_pr_auc_score(clf, X_train, y_train, X_test, y_test, labels)
-    print('Cross validation score:\n')
-    print('scores: {}\n'.format(cv_scores))
-    print('mean: {}, std: {}'.format(cv_scores.mean(), cv_scores.std()))
-    print('Holdout score: ')
-    print(holdout_score)
+    print(f'Cross validation scores:\n{cv_scores}\n')
+    print(f'mean: {cv_scores.mean()}, std: {cv_scores.std()}')
+    print(f'Holdout score:\n{holdout_score}')

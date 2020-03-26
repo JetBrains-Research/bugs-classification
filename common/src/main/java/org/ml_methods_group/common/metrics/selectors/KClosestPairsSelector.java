@@ -11,10 +11,10 @@ public class KClosestPairsSelector<V> implements ManyOptionsSelector<V, V> {
     private final DistanceFunction<V> metric;
     private final int k;
 
-    public KClosestPairsSelector(List<V> options, DistanceFunction<V> metric, int k_nearest) {
+    public KClosestPairsSelector(List<V> options, DistanceFunction<V> metric, int kNearest) {
         this.options = options;
         this.metric = metric;
-        this.k = k_nearest;
+        this.k = kNearest;
     }
 
     @Override
@@ -25,23 +25,18 @@ public class KClosestPairsSelector<V> implements ManyOptionsSelector<V, V> {
         List<V> kClosest = new ArrayList<>(Collections.nCopies(k, options.get(0)));
         List<Double> kClosestDistances = new ArrayList<>(Collections.nCopies(k, Double.MAX_VALUE));
         for (V option : options) {
-            final double currentDistance = metric.distance(value, option, Double.MAX_VALUE);
+            final double currentDistance = metric.distance(value, option, kClosestDistances.get(k - 1));
             for (int i = 0; i < k; ++i) {
                 double kthDistance = kClosestDistances.get(i);
-                if (kthDistance > currentDistance) {
-                    for (int j = k - 1; j > i; j--) {
-                        kClosest.set(j, kClosest.get(j - 1));
-                        kClosestDistances.set(j, kClosestDistances.get(j - 1));
-                    }
-                    kClosestDistances.set(i, currentDistance);
-                    kClosest.set(i, option);
+                if (kClosestDistances.get(i) > currentDistance) {
+                    kClosest.add(i, option);
+                    kClosest.remove(k);
+                    kClosestDistances.add(i, currentDistance);
+                    kClosestDistances.remove(k);
                     break;
                 }
             }
         }
-        for (var dist : kClosestDistances)
-            System.out.print(dist + " ");
-        System.out.println();
         return Optional.of(kClosest);
     }
 
@@ -51,5 +46,5 @@ public class KClosestPairsSelector<V> implements ManyOptionsSelector<V, V> {
     }
 
     @Override
-    public int getKNearest() { return k; }
+    public int getSelectionSize() { return k; }
 }

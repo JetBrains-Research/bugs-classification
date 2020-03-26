@@ -38,6 +38,7 @@ import java.util.stream.Collectors;
 import static org.ml_methods_group.common.Solution.Verdict.FAIL;
 import static org.ml_methods_group.common.Solution.Verdict.OK;
 import static org.ml_methods_group.common.serialization.ProtobufSerializationUtils.*;
+import static org.ml_methods_group.evaluation.preparation.MarkedClustersSavingUtils.createClusters;
 
 public class PipelineEvaluation {
 
@@ -69,19 +70,18 @@ public class PipelineEvaluation {
 
     public static void main(String[] args) throws Exception {
         var problem = problems.get(2);
-        final Path datasetPath = EvaluationInfo.PATH_TO_DATASET.resolve(problem);
-        Path pathToTrain = datasetPath.resolve("__train_tokens_dataset.csv");
-        Path pathToTest = datasetPath.resolve("__test_tokens_dataset.csv");
-
-        //System.out.println("Start clustering");
-        //createClusters(datasetPath);
+        Path pathToDataset = EvaluationInfo.PATH_TO_DATASET.resolve(problem);
+        Path pathToTrain = pathToDataset.resolve("train_tokens_dataset.csv");
+        Path pathToTest = pathToDataset.resolve("test_tokens_dataset.csv");
+        System.out.println("Start clustering");
+        createClusters(pathToDataset);
         System.out.println("Clusters created and saved, starting creating datasets");
-        runNewPipeline(datasetPath, pathToTrain, pathToTest);
-        //System.out.println("End creating datasets, start training classification model");
-        //runClassification(pathToTrain, pathToTest);
+        runNewPipeline(pathToDataset, pathToTrain, pathToTest);
+        System.out.println("End creating datasets, start training classification model");
+        runClassification(pathToTrain, pathToTest);
     }
 
-    public static void runNewPipeline(Path globalDatasetPath, Path pathToTrain, Path pathToTest) throws Exception {
+    public static void runNewPipeline(Path pathToDataset, Path pathToTrain, Path pathToTest) throws Exception {
         try (final HashDatabase database = new HashDatabase(EvaluationInfo.PATH_TO_CACHE)) {
             final ASTGenerator astGenerator = new CachedASTGenerator(new NamesASTNormalizer());
             final ChangeGenerator changeGenerator = new BasicChangeGenerator(astGenerator);
@@ -91,10 +91,11 @@ public class PipelineEvaluation {
                     new MinValuePicker<>(Comparator.comparingInt(Solution::getSolutionId)));
             final DistanceFunction<Solution> metric = new HeuristicChangesBasedDistanceFunction(changeGenerator);
 
-            final SolutionMarksHolder testHolder = loadSolutionMarksHolder(globalDatasetPath.resolve("test_marks.tmp"));
-            final Dataset train = loadDataset(globalDatasetPath.resolve("train.tmp"));
-            final Dataset test = loadDataset(globalDatasetPath.resolve("test.tmp"));
-            final MarkedClusters<Solution, String> markedClusters = loadMarkedClusters(globalDatasetPath.resolve("clusters.tmp"));
+            final SolutionMarksHolder testHolder = loadSolutionMarksHolder(pathToDataset.resolve("test_marks.tmp"));
+            final Dataset train = loadDataset(pathToDataset.resolve("train.tmp"));
+            final Dataset test = loadDataset(pathToDataset.resolve("test.tmp"));
+            final MarkedClusters<Solution, String> markedClusters =
+                    loadMarkedClusters(pathToDataset.resolve("clusters.tmp"));
             final List<Solution> correctFromTrain = train.getValues(x -> x.getVerdict() == OK);
             final List<Solution> incorrectFromTrain = train.getValues(x -> x.getVerdict() == FAIL);
             final List<Solution> incorrectFromTest = test.getValues(x -> x.getVerdict() == FAIL);
@@ -109,18 +110,29 @@ public class PipelineEvaluation {
             final FeaturesExtractor<Solution, List<Changes>> threeNearestGenerator =
                     new KNearestNeighborsChangesExtractor(changeGenerator, threeNearestSelector);
 
-            var datasetCreator = new TokenBasedDatasetsCreator(20000, train, threeNearestGenerator);
+            var datasetCreator = new TokenBasedDatasetsCreator(train);
             var testMarksDictionary = new HashMap<Solution, List<String>>();
             for (var entry : testHolder) {
                 testMarksDictionary.put(entry.getKey(), entry.getValue());
             }
-            datasetCreator.createCodeChangesDataset(incorrectFromTest, generator, testMarksDictionary, pathToTest);
-            var trainMarksDictionary = new HashMap<Solution, List<String>>();
-            var flatMarks = markedClusters.getFlatMarks();
-            for (var solution : incorrectFromTrain) {
-                trainMarksDictionary.put(solution, Collections.singletonList(flatMarks.get(solution)));
-            }
-            datasetCreator.createCodeChangesDataset(incorrectFromTrain, threeNearestGenerator, trainMarksDictionary, pathToTrain);
+            datasetCreator.createCodeChangesDataset(
+                    incorrectFromTest,
+                    generator,
+                    testMarksDictionary,
+                    pathToTest
+            );
+
+//            var trainMarksDictionary = new HashMap<Solution, List<String>>();
+//            var flatMarks = markedClusters.getFlatMarks();
+//            for (var solution : incorrectFromTrain) {
+//                trainMarksDictionary.put(solution, Collections.singletonList(flatMarks.get(solution)));
+//            }
+//            datasetCreator.createCodeChangesDataset(
+//                    incorrectFromTrain,
+//                    threeNearestGenerator,
+//                    trainMarksDictionary,
+//                    pathToTrain
+//            );
         }
     }
 

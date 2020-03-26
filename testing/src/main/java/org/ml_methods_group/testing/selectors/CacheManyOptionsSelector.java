@@ -36,7 +36,7 @@ public class CacheManyOptionsSelector<V, O> implements ManyOptionsSelector<V, O>
                 .asLongStream()
                 .reduce(0, (h, x) -> h * 37 + x);
         this.repository = database.repositoryForName(
-                "option_selector@" + hash + oracle.getKNearest(),
+                "option_selector@" + hash + oracle.getSelectionSize(),
                 Integer.class, String.class);
         this.oracle = oracle;
         this.valueIdExtractor = valueIdExtractor;
@@ -51,7 +51,7 @@ public class CacheManyOptionsSelector<V, O> implements ManyOptionsSelector<V, O>
     }
 
     @Override
-    public int getKNearest() { return oracle.getKNearest(); }
+    public int getSelectionSize() { return oracle.getSelectionSize(); }
 
     @Override
     public Optional<List<O>> selectOptions(V value) {

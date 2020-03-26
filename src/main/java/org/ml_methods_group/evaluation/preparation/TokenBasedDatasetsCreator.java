@@ -3,6 +3,7 @@ package org.ml_methods_group.evaluation.preparation;
 import org.ml_methods_group.common.Dataset;
 import org.ml_methods_group.common.FeaturesExtractor;
 import org.ml_methods_group.common.Solution;
+import org.ml_methods_group.common.ast.changes.ChangeType;
 import org.ml_methods_group.common.ast.changes.Changes;
 import org.ml_methods_group.common.ast.changes.CodeChange;
 import org.ml_methods_group.common.extractors.BOWExtractor;
@@ -13,26 +14,15 @@ import java.io.PrintWriter;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import static org.ml_methods_group.common.Hashers.*;
 
 public class TokenBasedDatasetsCreator {
 
-    private HashMap<String, Integer> dict;
-    private List<HashExtractor<CodeChange>> hashers;
+    private final List<HashExtractor<CodeChange>> hashers;
 
-    public TokenBasedDatasetsCreator(int wordsLimit, Dataset train,
-                                     FeaturesExtractor<Solution, List<Changes>> generator) {
-        /*
-        List<CodeChange> changes = train.getValues(x -> x.getVerdict() == FAIL)
-                .stream()
-                .map(generator::process)
-                .flatMap(List::stream)
-                .map(Changes::getChanges)
-                .flatMap(List::stream)
-                .collect(Collectors.toList());
-        this.dict = BOWExtractor.mostCommon(hashers, changes, wordsLimit);
-        */
+    public TokenBasedDatasetsCreator(Dataset train) {
         this.hashers = Arrays.asList(getCodeChangeHasher(weak),
                 getCodeChangeHasher(javaTypes), getCodeChangeHasher(full), getCodeChangeHasher(extended),
                 getCodeChangeHasher(fullExtended), getCodeChangeHasher(deepExtended));
@@ -53,15 +43,15 @@ public class TokenBasedDatasetsCreator {
             maxTokens.getAndAccumulate(tokensLength, Math::max);
         });
         try (var out = new PrintWriter(datasetPath.toFile())) {
-            var fullExtractor = getCodeChangeHasher(full);
+            var extractor = getCodeChangeHasher(full);
             int tokensPerChange = 11;
-            // Print CSV header
+            // CSV header
             out.print("id,real_len,");
             for (int i = 0; i < maxTokens.get() * tokensPerChange; ++i) {
                 out.print(i + ",");
             }
             out.println("cluster");
-            // Print content
+            // Content
             for (Solution solution : solutions) {
                 int idSuffix = 0;
                 List<Changes> nearestNeighbours = preprocessedNeighbours.get(solution.getSolutionId());
@@ -70,7 +60,7 @@ public class TokenBasedDatasetsCreator {
                     List<CodeChange> changes = neighbour.getChanges();
                     out.print(changes.size() * tokensPerChange + ",");
                     for (CodeChange cc : changes) {
-                        out.print(fullExtractor.process(cc) + ",");
+                        out.print(extractor.process(cc) + ",");
                     }
                     for (int i = 0; i < maxTokens.get() - changes.size(); ++i) {
                         out.print("<PAD>,");
@@ -90,18 +80,26 @@ public class TokenBasedDatasetsCreator {
     }
 
     public void createBowDataset(List<Solution> train,
+                                 int wordsLimit,
                                  FeaturesExtractor<Solution, List<Changes>> generator,
                                  Map<Solution, List<String>> marksDictionary,
                                  Path datasetPath) {
+        List<CodeChange> changes = train.stream()
+                .map(generator::process)
+                .flatMap(List::stream)
+                .map(Changes::getChanges)
+                .flatMap(List::stream)
+                .collect(Collectors.toList());
+        var dict = BOWExtractor.mostCommon(hashers, changes, wordsLimit);
         BOWExtractor<CodeChange> extractor = new BOWExtractor<>(dict, hashers);
         try (var out = new PrintWriter(datasetPath.toFile())) {
-            // Header
+            // CSV header
             out.print("id,");
             for (int i = 0; i < dict.size(); ++i) {
                 out.print(i + ",");
             }
             out.println("cluster");
-            // Body
+            // Content
             for (Solution solution : train) {
                 List<Changes> neighbors = generator.process(solution);
                 int additionalId = 0;

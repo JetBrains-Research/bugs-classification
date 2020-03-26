@@ -7,5 +7,5 @@ import java.util.Optional;
 public interface ManyOptionsSelector<V,O> {
     Optional<List<O>> selectOptions(V value);
     Collection<O> getAllPossibleOptions();
-    int getKNearest();
+    int getSelectionSize();
 }

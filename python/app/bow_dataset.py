@@ -4,6 +4,9 @@ from .dataset import DataSet
 
 class BOWDataSet(DataSet):
 
+    def __init__(self, path_to_train, path_to_test, k_nearest_for_train=3):
+        super().__init__(path_to_train, path_to_test, k_nearest_for_train)
+
     def make_tensors(self):
         self.X_train = torch.LongTensor(self.df[self.df.columns[0:-1]].values)
         self.y_train = torch.LongTensor(self.df['cluster'].values)

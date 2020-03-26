@@ -33,9 +33,7 @@ def parse_cmd_arguments(argv: List[str]) -> Tuple[Path, Path]:
 
 
 def load_dataset(path_to_train: Path, path_to_test: Path, device: torch.device) -> TokensDataSet:
-    data = TokensDataSet()
-    data.load(path_to_train, path_to_test, 3)
-    data.parse_tokens()
+    data = TokensDataSet(path_to_train, path_to_test)
     data.dev_test_split(ratio=0.5)
     data.make_tensors()
     data.send_to(device)
@@ -72,7 +70,9 @@ def train(data: TokensDataSet, model: torch.nn.Module, device: torch.device,
             loss_val.backward()
             total_loss += loss_val.item()
             optimizer.step()
+            break
         print(f'epoch: {epoch} | loss: {total_loss}')
+        break
 
 
 if __name__ == '__main__':

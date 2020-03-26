@@ -30,7 +30,7 @@ import static org.ml_methods_group.common.Solution.Verdict.FAIL;
 import static org.ml_methods_group.common.Solution.Verdict.OK;
 import static org.ml_methods_group.common.serialization.ProtobufSerializationUtils.*;
 
-public class MarkedClustersSaver {
+public class MarkedClustersSavingUtils {
 
     public static final ClusteringApproachTemplate clusteringTemplate =
             new ClusteringApproachTemplate(((dataset, generator) ->

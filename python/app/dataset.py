@@ -3,12 +3,7 @@ import pandas as pd
 
 class DataSet:
 
-    def __init__(self):
-        self.clusters_vocab = {}
-        self.cluster2idx = {}
-
-    def load(self, path_to_train, path_to_test, k_nearest_for_train=3):
-
+    def __init__(self, path_to_train, path_to_test, k_nearest_for_train=3):
         self.df = pd.read_csv(path_to_train, index_col='id', engine='python')
         self.holdout_df = pd.read_csv(path_to_test, index_col='id', engine='python')
 

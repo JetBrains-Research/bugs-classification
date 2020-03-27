@@ -7,7 +7,12 @@ import org.ml_methods_group.common.ast.changes.CodeChange.NodeContext;
 import org.ml_methods_group.common.ast.changes.CodeChange.NodeState;
 import org.ml_methods_group.common.extractors.HashExtractor;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
 public class Hashers {
+
     public static final HashExtractor<ChangeType> CHANGE_TYPE_HASH = HashExtractor.<ChangeType>builder()
             .append("CT")
             .hashComponent(ChangeType::ordinal)
@@ -33,9 +38,9 @@ public class Hashers {
     public static final HashExtractor<NodeState> FULL_NODE_STATE_HASH = HashExtractor.<NodeState>builder()
             .append("FNS")
             .hashComponent(NodeState::getType, NODE_TYPE_HASH)
-            .append(",")
+            .append(Character.toString(31))
             .hashComponent(NodeState::getLabel)
-            .append(",")
+            .append(Character.toString(31))
             .hashComponent(NodeState::getJavaType)
             .build();
     public static final HashExtractor<NodeContext> weak = HashExtractor.<NodeContext>builder()
@@ -53,9 +58,9 @@ public class Hashers {
     public static final HashExtractor<NodeContext> full = HashExtractor.<NodeContext>builder()
             .append("FCC")
             .hashComponent(NodeContext::getNode, FULL_NODE_STATE_HASH)
-            .append(",")
+            .append(Character.toString(31))
             .hashComponent(NodeContext::getParent, TYPE_ONLY_NODE_STATE_HASH)
-            .append(",")
+            .append(Character.toString(31))
             .hashComponent(NodeContext::getParentOfParent, TYPE_ONLY_NODE_STATE_HASH)
             .build();
     public static final HashExtractor<NodeContext> extended = HashExtractor.<NodeContext>builder()
@@ -81,10 +86,14 @@ public class Hashers {
         return HashExtractor.<CodeChange>builder()
                 .append("CCE")
                 .hashComponent(CodeChange::getChangeType, CHANGE_TYPE_HASH)
-                .append(",")
+                .append(Character.toString(31))
                 .hashComponent(CodeChange::getOriginalContext, hasher)
-                .append(",")
+                .append(Character.toString(31))
                 .hashComponent(CodeChange::getDestinationContext, hasher)
                 .build();
     }
+
+    public static final List<HashExtractor<CodeChange>> hashers = Arrays.asList(getCodeChangeHasher(weak),
+            getCodeChangeHasher(javaTypes), getCodeChangeHasher(full), getCodeChangeHasher(extended),
+            getCodeChangeHasher(fullExtended), getCodeChangeHasher(deepExtended));
 }

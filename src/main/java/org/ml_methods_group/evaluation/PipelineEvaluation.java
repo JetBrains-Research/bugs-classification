@@ -1,6 +1,7 @@
 package org.ml_methods_group.evaluation;
 
 import com.github.gumtreediff.tree.ITree;
+import com.github.javaparser.Token;
 import org.ml_methods_group.cache.HashDatabase;
 import org.ml_methods_group.common.*;
 import org.ml_methods_group.common.ast.ASTUtils;
@@ -110,12 +111,11 @@ public class PipelineEvaluation {
             final FeaturesExtractor<Solution, List<Changes>> threeNearestGenerator =
                     new KNearestNeighborsChangesExtractor(changeGenerator, threeNearestSelector);
 
-            var datasetCreator = new TokenBasedDatasetsCreator(train);
             var testMarksDictionary = new HashMap<Solution, List<String>>();
             for (var entry : testHolder) {
                 testMarksDictionary.put(entry.getKey(), entry.getValue());
             }
-            datasetCreator.createCodeChangesDataset(
+            TokenBasedDatasetsCreator.createCodeChangesDataset(
                     incorrectFromTest,
                     generator,
                     testMarksDictionary,
@@ -127,7 +127,7 @@ public class PipelineEvaluation {
             for (var solution : incorrectFromTrain) {
                 trainMarksDictionary.put(solution, Collections.singletonList(flatMarks.get(solution)));
             }
-            datasetCreator.createCodeChangesDataset(
+            TokenBasedDatasetsCreator.createCodeChangesDataset(
                     incorrectFromTrain,
                     threeNearestGenerator,
                     trainMarksDictionary,

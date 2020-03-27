@@ -20,18 +20,10 @@ import static org.ml_methods_group.common.Hashers.*;
 
 public class TokenBasedDatasetsCreator {
 
-    private final List<HashExtractor<CodeChange>> hashers;
-
-    public TokenBasedDatasetsCreator(Dataset train) {
-        this.hashers = Arrays.asList(getCodeChangeHasher(weak),
-                getCodeChangeHasher(javaTypes), getCodeChangeHasher(full), getCodeChangeHasher(extended),
-                getCodeChangeHasher(fullExtended), getCodeChangeHasher(deepExtended));
-    }
-
-    public void createCodeChangesDataset(List<Solution> solutions,
-                                         FeaturesExtractor<Solution, List<Changes>> generator,
-                                         Map<Solution, List<String>> marksDictionary,
-                                         Path datasetPath) {
+    public static void createCodeChangesDataset(List<Solution> solutions,
+                                                FeaturesExtractor<Solution, List<Changes>> generator,
+                                                Map<Solution, List<String>> marksDictionary,
+                                                Path datasetPath) {
         var preprocessedNeighbours = new HashMap<Integer, List<Changes>>();
         var maxTokens = new AtomicInteger(0);
         solutions.parallelStream().forEach(solution -> {
@@ -45,9 +37,10 @@ public class TokenBasedDatasetsCreator {
         try (var out = new PrintWriter(datasetPath.toFile())) {
             var extractor = getCodeChangeHasher(full);
             int tokensPerChange = 11;
+            int tokensLineLength = maxTokens.get() * tokensPerChange;
             // CSV header
             out.print("id,real_len,");
-            for (int i = 0; i < maxTokens.get() * tokensPerChange; ++i) {
+            for (int i = 0; i < tokensLineLength; ++i) {
                 out.print(i + ",");
             }
             out.println("cluster");
@@ -60,9 +53,10 @@ public class TokenBasedDatasetsCreator {
                     List<CodeChange> changes = neighbour.getChanges();
                     out.print(changes.size() * tokensPerChange + ",");
                     for (CodeChange cc : changes) {
-                        out.print(extractor.process(cc) + ",");
+                        String atomicCodeChangeTokens = extractor.process(cc).replaceAll("[,'\"]", "");
+                        out.print(atomicCodeChangeTokens.replace((char)31, ',') + ",");
                     }
-                    for (int i = 0; i < maxTokens.get() - changes.size(); ++i) {
+                    for (int i = changes.size() * tokensPerChange; i < tokensLineLength; ++i) {
                         out.print("<PAD>,");
                     }
                     var marks = marksDictionary.getOrDefault(solution, new ArrayList<String>());
@@ -79,11 +73,11 @@ public class TokenBasedDatasetsCreator {
         }
     }
 
-    public void createBowDataset(List<Solution> train,
-                                 int wordsLimit,
-                                 FeaturesExtractor<Solution, List<Changes>> generator,
-                                 Map<Solution, List<String>> marksDictionary,
-                                 Path datasetPath) {
+    public static void createBowDataset(List<Solution> train,
+                                        int wordsLimit,
+                                        FeaturesExtractor<Solution, List<Changes>> generator,
+                                        Map<Solution, List<String>> marksDictionary,
+                                        Path datasetPath) {
         List<CodeChange> changes = train.stream()
                 .map(generator::process)
                 .flatMap(List::stream)

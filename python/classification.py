@@ -70,12 +70,10 @@ def train(data: TokensDataSet, model: torch.nn.Module, device: torch.device,
             loss_val.backward()
             total_loss += loss_val.item()
             optimizer.step()
-            break
         print(f'epoch: {epoch} | loss: {total_loss}')
-        break
 
 
-if __name__ == '__main__':
+def main():
     print('Start classification')
     seed_deterministic_random()
     path_to_train, path_to_test = parse_cmd_arguments(sys.argv[1:])
@@ -104,3 +102,7 @@ if __name__ == '__main__':
                               y_true=y_true,
                               labels=np.array(sorted(data.clusters_vocab)))
     print(f'PR-AUC: {pr_auc_score}')
+
+
+if __name__ == '__main__':
+    main()

@@ -23,5 +23,6 @@ class DataSet:
         
     def dev_test_split(self, ratio=0.5):
         split_index = int(self.holdout_df.shape[0] * ratio)
-        self.dev_df = self.holdout_df.iloc[:split_index]
-        self.test_df = self.holdout_df.iloc[split_index:]
+        dev_df = self.holdout_df.iloc[:split_index]
+        test_df = self.holdout_df.iloc[split_index:]
+        return dev_df, test_df

@@ -1,7 +1,6 @@
 import getopt
 import random
 import sys
-from time import sleep
 
 import numpy as np
 import torch
@@ -34,8 +33,6 @@ def parse_cmd_arguments(argv: List[str]) -> Tuple[Path, Path]:
 
 def load_dataset(path_to_train: Path, path_to_test: Path, device: torch.device) -> TokensDataSet:
     data = TokensDataSet(path_to_train, path_to_test)
-    data.dev_test_split(ratio=0.5)
-    data.make_tensors()
     data.send_to(device)
     return data
 

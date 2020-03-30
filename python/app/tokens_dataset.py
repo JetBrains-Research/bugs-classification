@@ -5,11 +5,12 @@ from .dataset import DataSet
 
 class TokensDataSet(DataSet):
 
-    def __init__(self, path_to_train, path_to_test, k_nearest_for_train=3):
+    def __init__(self, path_to_train, path_to_test, k_nearest_for_train=3, ratio=0.5):
         super().__init__(path_to_train, path_to_test, k_nearest_for_train)
         self.tokens_vocab = set(self.df[self.df.columns[1:-1]].values.flatten())
         self.tokens_vocab.update(set(self.holdout_df[self.holdout_df.columns[1:-1]].values.flatten()))
         self.token2idx = {token: idx for idx, token in enumerate(self.tokens_vocab)}
+
         self.df = self.df.apply(lambda col:
                                 np.array([self.token2idx[token] for token in col.values])
                                 if col.name in self.df.columns[1:-1] else col)
@@ -17,7 +18,7 @@ class TokensDataSet(DataSet):
                                                 np.array([self.token2idx[token] for token in col.values])
                                                 if col.name in self.holdout_df.columns[1:-1] else col)
 
-    def make_tensors(self):
+        self.dev_df, self.test_df = super().dev_test_split(ratio)
         self.X_train = torch.LongTensor(self.df[self.df.columns[1:-1]].values)
         self.X_train_lengths = torch.LongTensor(self.df['real_len'].values)
         self.y_train = torch.LongTensor(self.df['cluster'].values)

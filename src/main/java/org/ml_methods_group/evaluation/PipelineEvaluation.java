@@ -72,8 +72,8 @@ public class PipelineEvaluation {
     public static void main(String[] args) throws Exception {
         var problem = problems.get(2);
         Path pathToDataset = EvaluationInfo.PATH_TO_DATASET.resolve(problem);
-        Path pathToTrain = pathToDataset.resolve("__train_tokens_dataset.csv");
-        Path pathToTest = pathToDataset.resolve("__test_tokens_dataset.csv");
+        Path pathToTrain = pathToDataset.resolve("train_tokens_dataset.csv");
+        Path pathToTest = pathToDataset.resolve("test_tokens_dataset.csv");
         System.out.println("Start clustering");
         createClusters(pathToDataset);
         System.out.println("Clusters created and saved, starting creating datasets");

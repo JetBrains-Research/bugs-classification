@@ -1,4 +1,4 @@
-package org.ml_methods_group.common.metrics.pickers;
+package org.ml_methods_group.common.metrics.representatives;
 
 import org.ml_methods_group.common.DistanceFunction;
 import org.ml_methods_group.common.ManyOptionsSelector;
@@ -10,13 +10,13 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-public class ClusterRepresentativePicker implements RepresentativePicker<Solution> {
+public class ClusterCentroidPicker implements RepresentativePicker<Solution> {
 
     private final ManyOptionsSelector<Solution, Solution> selector;
     private final DistanceFunction<Solution> metric;
 
-    public ClusterRepresentativePicker(DistanceFunction<Solution> metric,
-                                       ManyOptionsSelector<Solution, Solution> selector) {
+    public ClusterCentroidPicker(DistanceFunction<Solution> metric,
+                                 ManyOptionsSelector<Solution, Solution> selector) {
         this.metric = metric;
         this.selector = selector;
     }

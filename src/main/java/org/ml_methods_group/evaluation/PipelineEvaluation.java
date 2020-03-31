@@ -13,7 +13,7 @@ import org.ml_methods_group.common.ast.normalization.NamesASTNormalizer;
 import org.ml_methods_group.common.extractors.ChangesExtractor;
 import org.ml_methods_group.common.extractors.KNearestNeighborsChangesExtractor;
 import org.ml_methods_group.common.metrics.functions.HeuristicChangesBasedDistanceFunction;
-import org.ml_methods_group.common.metrics.pickers.ClusterRepresentativePicker;
+import org.ml_methods_group.common.metrics.representatives.ClusterCentroidPicker;
 import org.ml_methods_group.common.metrics.selectors.ClosestPairSelector;
 import org.ml_methods_group.common.metrics.selectors.KClosestPairsSelector;
 import org.ml_methods_group.common.preparation.Unifier;
@@ -102,7 +102,7 @@ public class PipelineEvaluation {
 
             final var selector = getCacheSelectorFromTemplate(
                     new KClosestPairsSelector<>(unifier.unify(correctFromTrain), metric, 1), database);
-            final var centerPicker = new ClusterRepresentativePicker(metric, selector);
+            final var centerPicker = new ClusterCentroidPicker(metric, selector);
             final List<Solution> centers = markedClusters.getMarks().keySet().stream()
                     .map(Cluster::getElements)
                     .map(centerPicker::pick)

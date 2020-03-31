@@ -1,4 +1,4 @@
-package org.ml_methods_group.common.metrics.pickers;
+package org.ml_methods_group.common.metrics.representatives;
 
 import org.ml_methods_group.common.ManyOptionsSelector;
 import org.ml_methods_group.common.ManyRepresentativesPicker;
@@ -8,12 +8,12 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public class HeuristicKRepresentativesPicker implements ManyRepresentativesPicker<Solution> {
+public class HeuristicKMostFrequentPicker implements ManyRepresentativesPicker<Solution> {
 
     private final ManyOptionsSelector<Solution, Solution> selector;
     private final int k;
 
-    public HeuristicKRepresentativesPicker(ManyOptionsSelector<Solution, Solution> selector, int k) {
+    public HeuristicKMostFrequentPicker(ManyOptionsSelector<Solution, Solution> selector, int k) {
         this.selector = selector;
         this.k = k;
     }

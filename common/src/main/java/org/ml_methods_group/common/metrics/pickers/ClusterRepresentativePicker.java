@@ -3,14 +3,14 @@ package org.ml_methods_group.common.metrics.pickers;
 import org.ml_methods_group.common.DistanceFunction;
 import org.ml_methods_group.common.ManyOptionsSelector;
 import org.ml_methods_group.common.Solution;
-import org.ml_methods_group.common.preparation.RepresenterPicker;
+import org.ml_methods_group.common.RepresentativePicker;
 
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-public class ClusterRepresentativePicker implements RepresenterPicker<Solution> {
+public class ClusterRepresentativePicker implements RepresentativePicker<Solution> {
 
     private final ManyOptionsSelector<Solution, Solution> selector;
     private final DistanceFunction<Solution> metric;

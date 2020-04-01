@@ -14,6 +14,7 @@ import org.ml_methods_group.common.extractors.ChangesExtractor;
 import org.ml_methods_group.common.extractors.KNearestNeighborsChangesExtractor;
 import org.ml_methods_group.common.metrics.functions.HeuristicChangesBasedDistanceFunction;
 import org.ml_methods_group.common.metrics.representatives.ClusterCentroidPicker;
+import org.ml_methods_group.common.metrics.representatives.HeuristicKMostFrequentPicker;
 import org.ml_methods_group.common.metrics.selectors.ClosestPairSelector;
 import org.ml_methods_group.common.metrics.selectors.KClosestPairsSelector;
 import org.ml_methods_group.common.preparation.Unifier;
@@ -72,7 +73,7 @@ public class PipelineEvaluation {
         var problem = problems.get(0);
         Path pathToDataset = EvaluationInfo.PATH_TO_DATASET.resolve(problem);
         Path pathToTrain = pathToDataset.resolve("train_tokens_dataset.csv");
-        Path pathToTest = pathToDataset.resolve("heuristic_test_tokens_dataset.csv");
+        Path pathToTest = pathToDataset.resolve("3_most_frequent_test_tokens_dataset.csv");
         System.out.println("Start clustering");
         //createClusters(pathToDataset);
         System.out.println("Clusters created and saved, starting creating datasets");
@@ -91,6 +92,7 @@ public class PipelineEvaluation {
                     new MinValuePicker<>(Comparator.comparingInt(Solution::getSolutionId)));
             final DistanceFunction<Solution> metric = new HeuristicChangesBasedDistanceFunction(changeGenerator);
 
+            // Load data
             final SolutionMarksHolder testHolder = loadSolutionMarksHolder(pathToDataset.resolve("test_marks.tmp"));
             final Dataset train = loadDataset(pathToDataset.resolve("train.tmp"));
             final Dataset test = loadDataset(pathToDataset.resolve("test.tmp"));
@@ -100,17 +102,19 @@ public class PipelineEvaluation {
             final List<Solution> incorrectFromTrain = train.getValues(x -> x.getVerdict() == FAIL);
             final List<Solution> incorrectFromTest = test.getValues(x -> x.getVerdict() == FAIL);
 
-            final var selector = getCacheSelectorFromTemplate(
+            // Collect clusters' representatives
+            final var optionsSelector = PipelineEvaluation.getCacheSelectorFromTemplate(
                     new KClosestPairsSelector<>(unifier.unify(correctFromTrain), metric, 1), database);
-            final var centerPicker = new ClusterCentroidPicker(metric, selector);
-            final List<Solution> centers = markedClusters.getMarks().keySet().stream()
+            final var picker = new HeuristicKMostFrequentPicker<Solution>(optionsSelector, 3);
+            final List<Solution> representatives = markedClusters.getMarks().keySet().stream()
                     .map(Cluster::getElements)
-                    .map(centerPicker::pick)
+                    .map(picker::pick)
+                    .flatMap(Collection::stream)
                     .collect(Collectors.toList());
-            System.out.println(unifier.unify(centers).size());
 
+            // Save datasets
             final var oneNearestSelector = getCacheSelectorFromTemplate(
-                    new KClosestPairsSelector<>(unifier.unify(centers), metric, 1), database);
+                    new KClosestPairsSelector<>(unifier.unify(representatives), metric, 1), database);
             final FeaturesExtractor<Solution, List<Changes>> generator =
                     new KNearestNeighborsChangesExtractor(changeGenerator, oneNearestSelector);
             var testMarksDictionary = new HashMap<Solution, List<String>>();

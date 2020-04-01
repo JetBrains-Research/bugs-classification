@@ -10,20 +10,20 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-public class ClusterCentroidPicker implements RepresentativePicker<Solution> {
+public class ClusterCentroidPicker<V> implements RepresentativePicker<V> {
 
-    private final ManyOptionsSelector<Solution, Solution> selector;
-    private final DistanceFunction<Solution> metric;
+    private final ManyOptionsSelector<V, V> selector;
+    private final DistanceFunction<V> metric;
 
-    public ClusterCentroidPicker(DistanceFunction<Solution> metric,
-                                 ManyOptionsSelector<Solution, Solution> selector) {
+    public ClusterCentroidPicker(DistanceFunction<V> metric,
+                                 ManyOptionsSelector<V, V> selector) {
         this.metric = metric;
         this.selector = selector;
     }
 
     @Override
-    public Solution pick(List<Solution> incorrect) {
-        final List<Solution> correct = incorrect.stream()
+    public V pick(List<V> incorrect) {
+        final List<V> correct = incorrect.stream()
                 .map(selector::selectOptions)
                 .map(Optional::get)
                 .flatMap(Collection::stream)
@@ -31,8 +31,8 @@ public class ClusterCentroidPicker implements RepresentativePicker<Solution> {
                 .collect(Collectors.toList());
         System.out.println(incorrect.size() + " " + correct.size());
         double minimalTotalDistanceToOthers = Double.MAX_VALUE;
-        Solution center = null;
-        for (Solution current : correct) {
+        V center = null;
+        for (V current : correct) {
             double totalDistance = correct.stream()
                     .map(other -> metric.distance(current, other))
                     .mapToDouble(Double::doubleValue)

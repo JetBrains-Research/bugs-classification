@@ -8,24 +8,24 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public class HeuristicKMostFrequentPicker implements ManyRepresentativesPicker<Solution> {
+public class HeuristicKMostFrequentPicker<V> implements ManyRepresentativesPicker<V> {
 
-    private final ManyOptionsSelector<Solution, Solution> selector;
+    private final ManyOptionsSelector<V, V> selector;
     private final int k;
 
-    public HeuristicKMostFrequentPicker(ManyOptionsSelector<Solution, Solution> selector, int k) {
+    public HeuristicKMostFrequentPicker(ManyOptionsSelector<V, V> selector, int k) {
         this.selector = selector;
         this.k = k;
     }
 
     @Override
-    public List<Solution> pick(List<Solution> incorrect) {
-        final Map<Solution, Long> correctCounter = incorrect.stream()
+    public List<V> pick(List<V> incorrect) {
+        final Map<V, Long> correctCounter = incorrect.stream()
                 .map(selector::selectOptions)
                 .map(Optional::get)
                 .flatMap(Collection::stream)
                 .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
-        final var queue = new PriorityQueue<Map.Entry<Solution, Long>>(Map.Entry.comparingByValue());
+        final var queue = new PriorityQueue<Map.Entry<V, Long>>(Map.Entry.comparingByValue());
         for (var entry : correctCounter.entrySet()) {
             queue.offer(entry);
             if (queue.size() > k) {

@@ -1,6 +1,6 @@
 package org.ml_methods_group.common.preparation.basic;
 
-import org.ml_methods_group.common.RepresentativePicker;
+import org.ml_methods_group.common.preparation.ValuePicker;
 import org.ml_methods_group.common.preparation.Unifier;
 
 import java.util.ArrayList;
@@ -13,11 +13,11 @@ import java.util.stream.Collectors;
 public class BasicUnifier<V> implements Unifier<V> {
     private final ToIntFunction<V> hashFunction;
     private final BiPredicate<V, V> equalsFunction;
-    private final RepresentativePicker<V> picker;
+    private final ValuePicker<V> picker;
 
     public BasicUnifier(ToIntFunction<V> hashFunction,
                         BiPredicate<V, V> equalsFunction,
-                        RepresentativePicker<V> picker) {
+                        ValuePicker<V> picker) {
         this.hashFunction = hashFunction;
         this.equalsFunction = equalsFunction;
         this.picker = picker;

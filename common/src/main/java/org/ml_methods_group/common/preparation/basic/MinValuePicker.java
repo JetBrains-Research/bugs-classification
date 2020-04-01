@@ -1,12 +1,12 @@
 package org.ml_methods_group.common.preparation.basic;
 
-import org.ml_methods_group.common.RepresentativePicker;
+import org.ml_methods_group.common.preparation.ValuePicker;
 
 import java.util.Comparator;
 import java.util.List;
 import java.util.NoSuchElementException;
 
-public class MinValuePicker<V> implements RepresentativePicker<V> {
+public class MinValuePicker<V> implements ValuePicker<V> {
 
     private final Comparator<V> comparator;
 

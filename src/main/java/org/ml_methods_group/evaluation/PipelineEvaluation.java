@@ -13,8 +13,7 @@ import org.ml_methods_group.common.ast.normalization.NamesASTNormalizer;
 import org.ml_methods_group.common.extractors.ChangesExtractor;
 import org.ml_methods_group.common.extractors.KNearestNeighborsChangesExtractor;
 import org.ml_methods_group.common.metrics.functions.HeuristicChangesBasedDistanceFunction;
-import org.ml_methods_group.common.metrics.representatives.ClusterCentroidPicker;
-import org.ml_methods_group.common.metrics.representatives.HeuristicKMostFrequentPicker;
+import org.ml_methods_group.common.metrics.representatives.KMostFrequentOptionsProducer;
 import org.ml_methods_group.common.metrics.selectors.ClosestPairSelector;
 import org.ml_methods_group.common.metrics.selectors.KClosestPairsSelector;
 import org.ml_methods_group.common.preparation.Unifier;
@@ -105,10 +104,9 @@ public class PipelineEvaluation {
             // Collect clusters' representatives
             final var optionsSelector = PipelineEvaluation.getCacheSelectorFromTemplate(
                     new KClosestPairsSelector<>(unifier.unify(correctFromTrain), metric, 1), database);
-            final var picker = new HeuristicKMostFrequentPicker<Solution>(optionsSelector, 3);
+            final var producer = new KMostFrequentOptionsProducer<Solution, Solution>(optionsSelector, 3);
             final List<Solution> representatives = markedClusters.getMarks().keySet().stream()
-                    .map(Cluster::getElements)
-                    .map(picker::pick)
+                    .map(producer::getRepresentatives)
                     .flatMap(Collection::stream)
                     .collect(Collectors.toList());
 

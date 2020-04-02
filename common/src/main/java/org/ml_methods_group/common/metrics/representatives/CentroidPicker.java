@@ -3,21 +3,20 @@ package org.ml_methods_group.common.metrics.representatives;
 import org.ml_methods_group.common.Cluster;
 import org.ml_methods_group.common.DistanceFunction;
 import org.ml_methods_group.common.ManyOptionsSelector;
-import org.ml_methods_group.common.RepresentativesProducer;
+import org.ml_methods_group.common.RepresentativesPicker;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-public class CentroidOptionProducer<V, O> implements RepresentativesProducer<V, O> {
+public class CentroidPicker<V, O> implements RepresentativesPicker<V, O> {
 
     private final ManyOptionsSelector<V, O> selector;
     private final DistanceFunction<O> metric;
 
-    public CentroidOptionProducer(DistanceFunction<O> metric,
-                                  ManyOptionsSelector<V, O> selector) {
+    public CentroidPicker(DistanceFunction<O> metric,
+                          ManyOptionsSelector<V, O> selector) {
         this.metric = metric;
         this.selector = selector;
     }
@@ -30,9 +29,8 @@ public class CentroidOptionProducer<V, O> implements RepresentativesProducer<V, 
                 .flatMap(Collection::stream)
                 .distinct()
                 .collect(Collectors.toList());
-        System.out.println(values.size() + " " + options.size());
         double minimalTotalDistanceToOthers = Double.MAX_VALUE;
-        O center = null;
+        O center = options.get(0);
         for (O current : options) {
             double totalDistance = options.stream()
                     .map(other -> metric.distance(current, other))
@@ -43,9 +41,7 @@ public class CentroidOptionProducer<V, O> implements RepresentativesProducer<V, 
                 center = current;
             }
         }
-        return List.of(Objects.requireNonNull(center));
+        return List.of(center);
     }
 
-    @Override
-    public int getSelectionSize() { return 1; }
 }

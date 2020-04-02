@@ -2,20 +2,20 @@ package org.ml_methods_group.common.metrics.representatives;
 
 import org.ml_methods_group.common.Cluster;
 import org.ml_methods_group.common.ManyOptionsSelector;
-import org.ml_methods_group.common.RepresentativesProducer;
+import org.ml_methods_group.common.RepresentativesPicker;
 
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public class KMostFrequentOptionsProducer<V, O> implements RepresentativesProducer<V, O> {
+public class KMostFrequentPicker<V, O> implements RepresentativesPicker<V, O> {
 
     private final ManyOptionsSelector<V, O> selector;
     private final int k;
 
-    public KMostFrequentOptionsProducer(ManyOptionsSelector<V, O> selector, int k) {
+    public KMostFrequentPicker(ManyOptionsSelector<V, O> selector, int kRepresentatives) {
         this.selector = selector;
-        this.k = k;
+        this.k = kRepresentatives;
     }
 
     @Override
@@ -37,8 +37,4 @@ public class KMostFrequentOptionsProducer<V, O> implements RepresentativesProduc
                 .collect(Collectors.toList());
     }
 
-    @Override
-    public int getSelectionSize() {
-        return k;
-    }
 }

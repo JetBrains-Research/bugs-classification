@@ -2,6 +2,7 @@ package org.ml_methods_group.evaluation.preparation;
 
 import com.github.gumtreediff.tree.ITree;
 import org.ml_methods_group.cache.HashDatabase;
+import org.ml_methods_group.clustering.clusterers.HAC;
 import org.ml_methods_group.common.*;
 import org.ml_methods_group.common.ast.ASTUtils;
 import org.ml_methods_group.common.ast.changes.BasicChangeGenerator;
@@ -54,7 +55,7 @@ public class MarkedClustersSavingUtils {
             final List<Solution> correct = train.getValues(x -> x.getVerdict() == OK);
             final List<Solution> incorrect = train.getValues(x -> x.getVerdict() == FAIL);
 
-            // Create clusters
+            // Create clusters based on edit scripts
             final OptionSelector<Solution, Solution> selector = new CacheOptionSelector<>(
                     new ClosestPairSelector<>(unifier.unify(correct), metric),
                     database,

@@ -14,10 +14,8 @@ import org.ml_methods_group.common.extractors.ChangesExtractor;
 import org.ml_methods_group.common.extractors.KNearestNeighborsChangesExtractor;
 import org.ml_methods_group.common.metrics.functions.HeuristicChangesBasedDistanceFunction;
 import org.ml_methods_group.common.metrics.representatives.CentroidPicker;
-import org.ml_methods_group.common.metrics.representatives.KMostFrequentPicker;
-import org.ml_methods_group.common.metrics.selectors.ClosestClustersOptionSelector;
 import org.ml_methods_group.common.metrics.selectors.ClosestPairSelector;
-import org.ml_methods_group.common.metrics.selectors.KClosestPairsSelector;
+import org.ml_methods_group.common.metrics.selectors.OptimizedOptionSelector;
 import org.ml_methods_group.common.preparation.Unifier;
 import org.ml_methods_group.common.preparation.basic.BasicUnifier;
 import org.ml_methods_group.common.preparation.basic.MinValuePicker;
@@ -70,7 +68,7 @@ public class PipelineEvaluation {
     }
 
     public static CacheRepresentativesPicker<Solution> getCacheRepresentativesPickerFromTemplate(
-            RepresentativesPicker<Solution, Solution> picker, Database database, List<Solution> options)
+            RepresentativesPicker<Solution> picker, Database database, List<Solution> options)
             throws Exception {
         return new CacheRepresentativesPicker<Solution>(
                 picker, options, database,
@@ -88,19 +86,19 @@ public class PipelineEvaluation {
     public static final List<String> problems = Arrays.asList("factorial", "loggers", "reflection", "deserialization");
 
     public static void main(String[] args) throws Exception {
-        var problem = problems.get(3);
+        var problem = problems.get(1);
         Path pathToDataset = EvaluationInfo.PATH_TO_DATASET.resolve(problem);
         Path pathToTrain = pathToDataset.resolve("train_tokens_dataset.csv");
-        Path pathToTest = pathToDataset.resolve("centroid_heuristic_test_tokens_dataset.csv");
+        Path pathToTest = pathToDataset.resolve("new_test_tokens_dataset.csv");
         System.out.println("Start clustering");
         //createClusters(pathToDataset);
         System.out.println("Clusters created and saved, starting creating datasets");
-        runNewPipeline(pathToDataset, pathToTrain, pathToTest);
+        saveDatasetsForClassification(pathToDataset, pathToTrain, pathToTest);
         System.out.println("End creating datasets, start training classification model");
         //runClassification(pathToTrain, pathToTest);
     }
 
-    public static void runNewPipeline(Path pathToDataset, Path pathToTrain, Path pathToTest) throws Exception {
+    public static void saveDatasetsForClassification(Path pathToDataset, Path pathToTrain, Path pathToTest) throws Exception {
         try (final HashDatabase database = new HashDatabase(EvaluationInfo.PATH_TO_CACHE)) {
             final ASTGenerator astGenerator = new CachedASTGenerator(new NamesASTNormalizer());
             final ChangeGenerator changeGenerator = new BasicChangeGenerator(astGenerator);
@@ -120,20 +118,26 @@ public class PipelineEvaluation {
             final List<Solution> incorrectFromTrain = train.getValues(x -> x.getVerdict() == FAIL);
             final List<Solution> incorrectFromTest = test.getValues(x -> x.getVerdict() == FAIL);
 
-            // Prepare centroid picker and clusters
-            final var clusters = new Clusters<>(new ArrayList<>(markedClusters.getMarks().keySet()));
-            final var selector = getCacheSelectorFromTemplate(
-                    new KClosestPairsSelector<>(unifier.unify(correctFromTrain), metric, 1), database);
+            // Prepare centroid picker and clusters of correct solutions
+            final int minClustersCount = (int) Math.round(Math.sqrt(correctFromTrain.size()));
+            final Clusters<Solution> clusters = new Clusters<>(
+                    loadSolutionClusters(pathToDataset.resolve("correct-solutions-clusters-80.tmp"))
+                            .getClusters().stream()
+                            .sorted(Comparator.<Cluster<Solution>>comparingInt(Cluster::size).reversed())
+                            .limit(minClustersCount)
+                            .collect(Collectors.toList())
+            );
             final var picker = getCacheRepresentativesPickerFromTemplate(
-                    new CentroidPicker<>(metric, selector), database, train.getValues());
-            final var centers = clusters.getClusters().stream()
-                    .map(x -> picker.getRepresentatives(x).get(0))
-                    .distinct()
-                    .collect(Collectors.toList());
+                    new CentroidPicker<>(metric), database, correctFromTrain
+            );
+            System.out.println(correctFromTrain.size());
+            clusters.getClusters().forEach(x -> System.out.print(x.size() + " "));
+            System.out.println();
 
             // Create test dataset
-            final var heuristicSelector =
-                    new ClosestClustersOptionSelector<>(clusters, picker, selector, metric, 5);
+            final var heuristicSelector = getCacheSelectorFromTemplate(
+                    new OptimizedOptionSelector<>(clusters, picker, metric, 5), database
+            );
             final FeaturesExtractor<Solution, List<Changes>> generator =
                     new KNearestNeighborsChangesExtractor(changeGenerator, heuristicSelector);
             var testMarksDictionary = new HashMap<Solution, List<String>>();

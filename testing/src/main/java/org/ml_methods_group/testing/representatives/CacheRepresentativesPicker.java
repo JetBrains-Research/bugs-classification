@@ -12,17 +12,17 @@ import java.util.function.Function;
 import java.util.function.ToIntFunction;
 import java.util.stream.Collectors;
 
-public class CacheRepresentativesPicker<V> implements RepresentativesPicker<V, V> {
+public class CacheRepresentativesPicker<V> implements RepresentativesPicker<V> {
 
     private final Repository<String, String> repository;
     private final Map<Integer, V> options;
-    private final RepresentativesPicker<V, V> oracle;
+    private final RepresentativesPicker<V> oracle;
     private final ToIntFunction<V> valueIdExtractor;
     private final ToIntFunction<V> optionIdExtractor;
     private final Function<List<Integer>, String> listEncoder;
     private final Function<String, List<Integer>> listDecoder;
 
-    public CacheRepresentativesPicker(RepresentativesPicker<V, V> oracle,
+    public CacheRepresentativesPicker(RepresentativesPicker<V> oracle,
                                       List<V> options,
                                       Database database,
                                       ToIntFunction<V> valueIdExtractor,

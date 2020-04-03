@@ -10,9 +10,11 @@ repositories {
 }
 
 jar {
-    from {configurations.compile.collect { it.isDirectory() ? it : zipTree(it)} }
-    exclude 'META-INF/*.RSA', 'META-INF/*.SF','META-INF/*.DSA'
-    manifest { attributes 'Main-Class': 'org.ml_methods_group.evaluation.PipelineEvaluation' }
+    from { configurations.compile.collect { it.isDirectory() ? it : zipTree(it) } }
+    exclude 'META-INF/*.RSA', 'META-INF/*.SF', 'META-INF/*.DSA'
+    manifest {
+        attributes 'Main-Class': 'org.ml_methods_group.evaluation.preparation.CorrectSolutionsClusterization'
+    }
 }
 
 dependencies {

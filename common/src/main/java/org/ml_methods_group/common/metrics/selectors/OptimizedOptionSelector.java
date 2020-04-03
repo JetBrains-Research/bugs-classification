@@ -6,24 +6,22 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-public class ClosestClustersOptionSelector<V> implements ManyOptionsSelector<V, V> {
+public class OptimizedOptionSelector<V> implements ManyOptionsSelector<V, V> {
 
     private final DistanceFunction<V> metric;
     private final int topClusters;
     private final Map<V, Cluster<V>> representatives;
-    private final ManyOptionsSelector<V, V> trainedSelector;
 
-    public ClosestClustersOptionSelector(Clusters<V> clusters,
-                                         RepresentativesPicker<V, V> picker,
-                                         ManyOptionsSelector<V, V> trainedSelector,
-                                         DistanceFunction<V> metric,
-                                         int topClusters) {
+    public OptimizedOptionSelector(Clusters<V> clusters, RepresentativesPicker<V> picker,
+                                   DistanceFunction<V> metric, int topClusters) {
         this.metric = metric;
-        this.trainedSelector = trainedSelector;
         this.topClusters = topClusters;
         this.representatives = clusters.getClusters().stream()
-                .collect(Collectors.toMap(cluster -> picker.getRepresentatives(cluster).get(0),
-                        Function.identity(), Cluster::merge));
+                .collect(Collectors.toMap(
+                        cluster -> picker.getRepresentatives(cluster).get(0),
+                        Function.identity(),
+                        Cluster::merge)
+                );
     }
 
     @Override
@@ -38,9 +36,6 @@ public class ClosestClustersOptionSelector<V> implements ManyOptionsSelector<V, 
         final List<V> options = queue.stream()
                 .map(representatives::get)
                 .map(Cluster::getElements)
-                .flatMap(Collection::stream)
-                .map(trainedSelector::selectOptions)
-                .map(Optional::get)
                 .flatMap(Collection::stream)
                 .collect(Collectors.toList());
         V closest = options.get(0);

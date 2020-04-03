@@ -10,29 +10,20 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-public class CentroidPicker<V, O> implements RepresentativesPicker<V, O> {
+public class CentroidPicker<V> implements RepresentativesPicker<V> {
 
-    private final ManyOptionsSelector<V, O> selector;
-    private final DistanceFunction<O> metric;
+    private final DistanceFunction<V> metric;
 
-    public CentroidPicker(DistanceFunction<O> metric,
-                          ManyOptionsSelector<V, O> selector) {
+    public CentroidPicker(DistanceFunction<V> metric) {
         this.metric = metric;
-        this.selector = selector;
     }
 
     @Override
-    public List<O> getRepresentatives(Cluster<V> values) {
-        final List<O> options = values.stream()
-                .map(selector::selectOptions)
-                .map(Optional::get)
-                .flatMap(Collection::stream)
-                .distinct()
-                .collect(Collectors.toList());
+    public List<V> getRepresentatives(Cluster<V> values) {
         double minimalTotalDistanceToOthers = Double.MAX_VALUE;
-        O center = options.get(0);
-        for (O current : options) {
-            double totalDistance = options.stream()
+        V center = values.getElements().get(0);
+        for (V current : values) {
+            double totalDistance = values.stream()
                     .map(other -> metric.distance(current, other))
                     .mapToDouble(Double::doubleValue)
                     .sum();

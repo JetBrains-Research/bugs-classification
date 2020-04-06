@@ -34,7 +34,7 @@ public class TokenBasedDatasetCreator implements DatasetCreator {
         });
         try (var out = new PrintWriter(datasetPath.toFile())) {
             var extractor = getCodeChangeHasher(FULL_HASHER);
-            int tokensPerChange = countTokens(FULL_HASHER);
+            int tokensPerChange = extractor.getTokensCount();
             int tokensLineLength = maxTokens.get() * tokensPerChange;
             // CSV header
             out.print("id,real_len,");
@@ -51,7 +51,7 @@ public class TokenBasedDatasetCreator implements DatasetCreator {
                     List<CodeChange> changes = neighbour.getChanges();
                     out.print(changes.size() * tokensPerChange + ",");
                     for (CodeChange cc : changes) {
-                        out.print(getTokens(extractor, cc) + ",");
+                        out.print(getTokens(extractor, cc));
                     }
                     for (int i = changes.size() * tokensPerChange; i < tokensLineLength; ++i) {
                         out.print("<PAD>,");

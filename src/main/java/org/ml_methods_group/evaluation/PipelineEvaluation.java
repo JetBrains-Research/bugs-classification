@@ -77,11 +77,11 @@ public class PipelineEvaluation {
         Path pathToTrain = pathToDataset.resolve("train_tokens_dataset.csv");
         Path pathToTest = pathToDataset.resolve("test_tokens_dataset.csv");
         System.out.println("Start clustering");
-        createClusters(pathToDataset);
+        //createClusters(pathToDataset);
         System.out.println("Clusters created and saved, starting creating datasets");
-        runNewPipeline(pathToDataset, pathToTrain, pathToTest);
+        //saveDatasetsForClassification(pathToDataset, pathToTrain, pathToTest);
         System.out.println("End creating datasets, start training classification model");
-        runClassification(pathToTrain, pathToTest);
+        //runClassification(pathToTrain, pathToTest);
     }
 
     public static void runNewPipeline(Path pathToDataset, Path pathToTrain, Path pathToTest) throws Exception {

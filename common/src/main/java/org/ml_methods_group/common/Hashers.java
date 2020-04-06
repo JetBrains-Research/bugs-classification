@@ -13,7 +13,9 @@ import java.util.Map;
 
 public class Hashers {
 
-    private static String tokenSeparator = Character.toString(31); // doesn't intersect with code symbols
+    private static String tokensSeparator = Character.toString(31); // doesn't intersect with code symbols
+
+    public static String getTokensSeparator() { return tokensSeparator; }
 
     public static final HashExtractor<ChangeType> CHANGE_TYPE_HASH = HashExtractor.<ChangeType>builder()
             .append("CT")
@@ -40,9 +42,9 @@ public class Hashers {
     public static final HashExtractor<NodeState> FULL_NODE_STATE_HASH = HashExtractor.<NodeState>builder()
             .append("FNS")
             .hashComponent(NodeState::getType, NODE_TYPE_HASH)
-            .append(tokenSeparator)
+            .append(tokensSeparator)
             .hashComponent(NodeState::getLabel)
-            .append(tokenSeparator)
+            .append(tokensSeparator)
             .hashComponent(NodeState::getJavaType)
             .build();
     public static final HashExtractor<NodeContext> WEAK_HASHER = HashExtractor.<NodeContext>builder()
@@ -60,9 +62,9 @@ public class Hashers {
     public static final HashExtractor<NodeContext> FULL_HASHER = HashExtractor.<NodeContext>builder()
             .append("FCC")
             .hashComponent(NodeContext::getNode, FULL_NODE_STATE_HASH)
-            .append(tokenSeparator)
+            .append(tokensSeparator)
             .hashComponent(NodeContext::getParent, TYPE_ONLY_NODE_STATE_HASH)
-            .append(tokenSeparator)
+            .append(tokensSeparator)
             .hashComponent(NodeContext::getParentOfParent, TYPE_ONLY_NODE_STATE_HASH)
             .build();
     public static final HashExtractor<NodeContext> EXTENDED_HASHER = HashExtractor.<NodeContext>builder()
@@ -88,25 +90,21 @@ public class Hashers {
         return HashExtractor.<CodeChange>builder()
                 .append("CCE")
                 .hashComponent(CodeChange::getChangeType, CHANGE_TYPE_HASH)
-                .append(tokenSeparator)
+                .append(tokensSeparator)
                 .hashComponent(CodeChange::getOriginalContext, hasher)
-                .append(tokenSeparator)
+                .append(tokensSeparator)
                 .hashComponent(CodeChange::getDestinationContext, hasher)
+                .append(tokensSeparator)
                 .build();
     }
 
-    public static final List<HashExtractor<CodeChange>> hashers = Arrays.asList(getCodeChangeHasher(WEAK_HASHER),
+    public static final List<HashExtractor<CodeChange>> codeChangeHashers = Arrays.asList(getCodeChangeHasher(WEAK_HASHER),
             getCodeChangeHasher(JAVA_TYPES_HASHER), getCodeChangeHasher(FULL_HASHER), getCodeChangeHasher(EXTENDED_HASHER),
             getCodeChangeHasher(FULL_EXTENDED_HASHER), getCodeChangeHasher(DEEP_EXTENDED_HASHER));
-
-    public static Integer countTokens(HashExtractor<NodeContext> hasher) {
-        Map<HashExtractor<NodeContext>, Integer> tokensPerChange = Map.of(FULL_HASHER, 11);
-        return tokensPerChange.get(hasher);
-    }
 
     public static String getTokens(HashExtractor<CodeChange> hasher, CodeChange cc) {
         String tokens = hasher.process(cc);
         String clearTokens = tokens.replaceAll("[,'\"]", "");
-        return clearTokens.replace(tokenSeparator, ",");
+        return clearTokens.replace(tokensSeparator, ",");
     }
 }

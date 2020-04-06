@@ -55,7 +55,8 @@ public class HashExtractor<T> implements FeaturesExtractor<T, String> {
         }
 
         public <F> HashExtractorBuilder<T> hashComponent(FeaturesExtractor<T, F> extractor) {
-            hashers.add(extractor.compose(Object::toString));
+            var currentHasher = extractor.compose(Object::toString);
+            hashers.add(currentHasher.compose(token -> token.replaceAll("[,'\"]", "")));
             return this;
         }
 

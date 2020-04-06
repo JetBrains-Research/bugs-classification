@@ -51,7 +51,7 @@ public class TokenBasedDatasetCreator implements DatasetCreator {
                     List<CodeChange> changes = neighbour.getChanges();
                     out.print(changes.size() * tokensPerChange + ",");
                     for (CodeChange cc : changes) {
-                        out.print(getTokens(extractor, cc));
+                        out.print(extractor.process(cc));
                     }
                     for (int i = changes.size() * tokensPerChange; i < tokensLineLength; ++i) {
                         out.print("<PAD>,");

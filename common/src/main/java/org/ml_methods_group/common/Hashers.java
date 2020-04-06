@@ -13,7 +13,7 @@ import java.util.Map;
 
 public class Hashers {
 
-    private static String tokensSeparator = Character.toString(31); // doesn't intersect with code symbols
+    private static String tokensSeparator = ",";
 
     public static String getTokensSeparator() { return tokensSeparator; }
 
@@ -98,13 +98,12 @@ public class Hashers {
                 .build();
     }
 
-    public static final List<HashExtractor<CodeChange>> codeChangeHashers = Arrays.asList(getCodeChangeHasher(WEAK_HASHER),
-            getCodeChangeHasher(JAVA_TYPES_HASHER), getCodeChangeHasher(FULL_HASHER), getCodeChangeHasher(EXTENDED_HASHER),
-            getCodeChangeHasher(FULL_EXTENDED_HASHER), getCodeChangeHasher(DEEP_EXTENDED_HASHER));
-
-    public static String getTokens(HashExtractor<CodeChange> hasher, CodeChange cc) {
-        String tokens = hasher.process(cc);
-        String clearTokens = tokens.replaceAll("[,'\"]", "");
-        return clearTokens.replace(tokensSeparator, ",");
-    }
+    public static final List<HashExtractor<CodeChange>> codeChangeHashers = Arrays.asList(
+            getCodeChangeHasher(WEAK_HASHER),
+            getCodeChangeHasher(JAVA_TYPES_HASHER),
+            getCodeChangeHasher(FULL_HASHER),
+            getCodeChangeHasher(EXTENDED_HASHER),
+            getCodeChangeHasher(FULL_EXTENDED_HASHER),
+            getCodeChangeHasher(DEEP_EXTENDED_HASHER)
+    );
 }

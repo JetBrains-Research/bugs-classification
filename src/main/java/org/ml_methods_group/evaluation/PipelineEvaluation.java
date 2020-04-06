@@ -22,7 +22,7 @@ import org.ml_methods_group.evaluation.approaches.BOWApproach;
 import org.ml_methods_group.evaluation.approaches.FuzzyJaccardApproach;
 import org.ml_methods_group.evaluation.approaches.classification.ClassificationApproachTemplate;
 import org.ml_methods_group.evaluation.approaches.clustering.ClusteringApproachTemplate;
-import org.ml_methods_group.evaluation.preparation.BOWDatasetCreator;
+import org.ml_methods_group.evaluation.preparation.DatasetCreator;
 import org.ml_methods_group.evaluation.preparation.TokenBasedDatasetCreator;
 import org.ml_methods_group.marking.markers.ManualClusterMarker;
 import org.ml_methods_group.marking.markers.Marker;
@@ -89,17 +89,14 @@ public class PipelineEvaluation {
     public static void main(String[] args) throws Exception {
         var problem = problems.get(3);
         Path pathToDataset = EvaluationInfo.PATH_TO_DATASET.resolve(problem);
-        Path pathToTrain = pathToDataset.resolve("bow_train_tokens_dataset.csv");
-        Path pathToTest = pathToDataset.resolve("bow_test_tokens_dataset.csv");
+        Path pathToTrain = pathToDataset.resolve("__train_tokens_dataset.csv");
+        Path pathToTest = pathToDataset.resolve("__test_tokens_dataset.csv");
         System.out.println("Start clustering");
         //createClusters(pathToDataset);
         System.out.println("Clusters created and saved, starting creating datasets");
-        //saveDatasetsForClassification(pathToDataset, pathToTrain, pathToTest);
+        saveDatasetsForClassification(pathToDataset, pathToTrain, pathToTest);
         System.out.println("End creating datasets, start training classification model");
         //runClassification(pathToTrain, pathToTest);
-
-        System.out.println(Hashers.getCodeChangeHasher(Hashers.FULL_HASHER).getTokensCount());
-
     }
 
     public static void saveDatasetsForClassification(Path pathToDataset, Path pathToTrain, Path pathToTest) throws Exception {
@@ -151,20 +148,20 @@ public class PipelineEvaluation {
             final FeaturesExtractor<Solution, List<Changes>> threeNearestGenerator =
                     new KNearestNeighborsChangesExtractor(changeGenerator, threeNearestSelector);
 
-            var testMarksDictionary = new HashMap<Solution, List<String>>();
+            final var testMarksDictionary = new HashMap<Solution, List<String>>();
             for (var entry : testHolder) {
                 testMarksDictionary.put(entry.getKey(), entry.getValue());
             }
-            var trainMarksDictionary = new HashMap<Solution, List<String>>();
-            var flatMarks = markedClusters.getFlatMarks();
+            final var trainMarksDictionary = new HashMap<Solution, List<String>>();
+            final Map<Solution, String> flatMarks = markedClusters.getFlatMarks();
             for (var solution : incorrectFromTrain) {
                 trainMarksDictionary.put(solution, Collections.singletonList(flatMarks.get(solution)));
             }
 
-            var datasetCreator = new BOWDatasetCreator(allIncorrect, threeNearestGenerator, 20000);
+            final DatasetCreator creator = new TokenBasedDatasetCreator();
 
             long startTime = System.nanoTime();
-            datasetCreator.createDataset(
+            creator.createDataset(
                     incorrectFromTest,
                     generator,
                     testMarksDictionary,
@@ -172,12 +169,13 @@ public class PipelineEvaluation {
             );
             long endTime = System.nanoTime();
             System.out.println("Time elapsed: " + TimeUnit.NANOSECONDS.toMillis(endTime - startTime));
-            datasetCreator.createDataset(
-                    incorrectFromTrain,
-                    threeNearestGenerator,
-                    trainMarksDictionary,
-                    pathToTrain
-            );
+
+//            creator.createDataset(
+//                    incorrectFromTrain,
+//                    threeNearestGenerator,
+//                    trainMarksDictionary,
+//                    pathToTrain
+//            );
         }
     }
 

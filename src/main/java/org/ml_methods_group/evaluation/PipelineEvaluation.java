@@ -13,9 +13,8 @@ import org.ml_methods_group.common.ast.normalization.NamesASTNormalizer;
 import org.ml_methods_group.common.extractors.ChangesExtractor;
 import org.ml_methods_group.common.extractors.KNearestNeighborsChangesExtractor;
 import org.ml_methods_group.common.metrics.functions.HeuristicChangesBasedDistanceFunction;
-import org.ml_methods_group.common.metrics.representatives.CentroidPicker;
 import org.ml_methods_group.common.metrics.selectors.ClosestPairSelector;
-import org.ml_methods_group.common.metrics.selectors.OptimizedOptionSelector;
+import org.ml_methods_group.common.metrics.selectors.KClosestPairsSelector;
 import org.ml_methods_group.common.preparation.Unifier;
 import org.ml_methods_group.common.preparation.basic.BasicUnifier;
 import org.ml_methods_group.common.preparation.basic.MinValuePicker;
@@ -23,7 +22,8 @@ import org.ml_methods_group.evaluation.approaches.BOWApproach;
 import org.ml_methods_group.evaluation.approaches.FuzzyJaccardApproach;
 import org.ml_methods_group.evaluation.approaches.classification.ClassificationApproachTemplate;
 import org.ml_methods_group.evaluation.approaches.clustering.ClusteringApproachTemplate;
-import org.ml_methods_group.evaluation.preparation.TokenBasedDatasetsCreator;
+import org.ml_methods_group.evaluation.preparation.BOWDatasetCreator;
+import org.ml_methods_group.evaluation.preparation.TokenBasedDatasetCreator;
 import org.ml_methods_group.marking.markers.ManualClusterMarker;
 import org.ml_methods_group.marking.markers.Marker;
 import org.ml_methods_group.testing.BasicClassificationTester;
@@ -37,6 +37,7 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.ml_methods_group.common.Solution.Verdict.FAIL;
 import static org.ml_methods_group.common.Solution.Verdict.OK;
@@ -86,10 +87,10 @@ public class PipelineEvaluation {
     public static final List<String> problems = Arrays.asList("factorial", "loggers", "reflection", "deserialization");
 
     public static void main(String[] args) throws Exception {
-        var problem = problems.get(1);
+        var problem = problems.get(3);
         Path pathToDataset = EvaluationInfo.PATH_TO_DATASET.resolve(problem);
         Path pathToTrain = pathToDataset.resolve("train_tokens_dataset.csv");
-        Path pathToTest = pathToDataset.resolve("new_test_tokens_dataset.csv");
+        Path pathToTest = pathToDataset.resolve("bow_test_tokens_dataset.csv");
         System.out.println("Start clustering");
         //createClusters(pathToDataset);
         System.out.println("Clusters created and saved, starting creating datasets");
@@ -117,36 +118,50 @@ public class PipelineEvaluation {
             final List<Solution> correctFromTrain = train.getValues(x -> x.getVerdict() == OK);
             final List<Solution> incorrectFromTrain = train.getValues(x -> x.getVerdict() == FAIL);
             final List<Solution> incorrectFromTest = test.getValues(x -> x.getVerdict() == FAIL);
+            final List<Solution> allIncorrect = Stream
+                    .concat(incorrectFromTrain.stream(), incorrectFromTest.stream())
+                    .collect(Collectors.toList());
 
-            // Prepare centroid picker and clusters of correct solutions
-            final int minClustersCount = (int) Math.round(Math.sqrt(correctFromTrain.size()));
-            final Clusters<Solution> clusters = new Clusters<>(
-                    loadSolutionClusters(pathToDataset.resolve("correct-solutions-clusters-80.tmp"))
-                            .getClusters().stream()
-                            .sorted(Comparator.<Cluster<Solution>>comparingInt(Cluster::size).reversed())
-                            .limit(minClustersCount)
-                            .collect(Collectors.toList())
-            );
-            final var picker = getCacheRepresentativesPickerFromTemplate(
-                    new CentroidPicker<>(metric), database, correctFromTrain
-            );
-            System.out.println(correctFromTrain.size());
-            clusters.getClusters().forEach(x -> System.out.print(x.size() + " "));
-            System.out.println();
+//            // Prepare centroid picker and clusters of correct solutions
+//            final int minClustersCount = (int) Math.round(Math.sqrt(correctFromTrain.size()));
+//            final Clusters<Solution> clusters = new Clusters<>(
+//                    loadSolutionClusters(pathToDataset.resolve("correct-solutions-clusters-40.tmp"))
+//                            .getClusters().stream()
+//                            .sorted(Comparator.<Cluster<Solution>>comparingInt(Cluster::size).reversed())
+//                            .limit(minClustersCount)
+//                            .collect(Collectors.toList())
+//            );
+//            final var picker = getCacheRepresentativesPickerFromTemplate(
+//                    new CentroidPicker<>(metric), database, correctFromTrain
+//            );
+//            System.out.println(correctFromTrain.size());
+//            clusters.getClusters().forEach(x -> System.out.print(x.size() + " "));
+//            System.out.println();
 
-            // Create test dataset
+            // Create datasets
             final var heuristicSelector = getCacheSelectorFromTemplate(
-                    new OptimizedOptionSelector<>(clusters, picker, metric, 5), database
-            );
+                    new KClosestPairsSelector<>(unifier.unify(correctFromTrain), metric, 1), database);
             final FeaturesExtractor<Solution, List<Changes>> generator =
                     new KNearestNeighborsChangesExtractor(changeGenerator, heuristicSelector);
+            final var threeNearestSelector = getCacheSelectorFromTemplate(
+                    new KClosestPairsSelector<>(unifier.unify(correctFromTrain), metric, 3), database);
+            final FeaturesExtractor<Solution, List<Changes>> threeNearestGenerator =
+                    new KNearestNeighborsChangesExtractor(changeGenerator, threeNearestSelector);
+
             var testMarksDictionary = new HashMap<Solution, List<String>>();
             for (var entry : testHolder) {
                 testMarksDictionary.put(entry.getKey(), entry.getValue());
             }
+            var trainMarksDictionary = new HashMap<Solution, List<String>>();
+            var flatMarks = markedClusters.getFlatMarks();
+            for (var solution : incorrectFromTrain) {
+                trainMarksDictionary.put(solution, Collections.singletonList(flatMarks.get(solution)));
+            }
+
+            var datasetCreator = new BOWDatasetCreator(allIncorrect, threeNearestGenerator, 20000);
 
             long startTime = System.nanoTime();
-            TokenBasedDatasetsCreator.createCodeChangesDataset(
+            datasetCreator.createDataset(
                     incorrectFromTest,
                     generator,
                     testMarksDictionary,
@@ -154,22 +169,12 @@ public class PipelineEvaluation {
             );
             long endTime = System.nanoTime();
             System.out.println("Time elapsed: " + TimeUnit.NANOSECONDS.toMillis(endTime - startTime));
-
-//            final var threeNearestSelector = getCacheSelectorFromTemplate(
-//                    new KClosestPairsSelector<>(unifier.unify(correctFromTrain), metric, 3), database);
-//            final FeaturesExtractor<Solution, List<Changes>> threeNearestGenerator =
-//                    new KNearestNeighborsChangesExtractor(changeGenerator, threeNearestSelector);
-//            var trainMarksDictionary = new HashMap<Solution, List<String>>();
-//            var flatMarks = markedClusters.getFlatMarks();
-//            for (var solution : incorrectFromTrain) {
-//                trainMarksDictionary.put(solution, Collections.singletonList(flatMarks.get(solution)));
-//            }
-//            TokenBasedDatasetsCreator.createCodeChangesDataset(
-//                    incorrectFromTrain,
-//                    threeNearestGenerator,
-//                    trainMarksDictionary,
-//                    pathToTrain
-//            );
+            datasetCreator.createDataset(
+                    incorrectFromTrain,
+                    threeNearestGenerator,
+                    trainMarksDictionary,
+                    pathToTrain
+            );
         }
     }
 

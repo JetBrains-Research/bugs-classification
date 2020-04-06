@@ -5,8 +5,8 @@ from .dataset import DataSet
 
 class TokensDataSet(DataSet):
 
-    def __init__(self, path_to_train, path_to_test, k_nearest_for_train=3, ratio=0.5):
-        super().__init__(path_to_train, path_to_test, k_nearest_for_train)
+    def __init__(self, path_to_train, path_to_test, ratio=0.3):
+        super().__init__(path_to_train, path_to_test)
         self.tokens_vocab = set(self.df[self.df.columns[1:-1]].values.flatten())
         self.tokens_vocab.update(set(self.holdout_df[self.holdout_df.columns[1:-1]].values.flatten()))
         self.token2idx = {token: idx for idx, token in enumerate(self.tokens_vocab)}

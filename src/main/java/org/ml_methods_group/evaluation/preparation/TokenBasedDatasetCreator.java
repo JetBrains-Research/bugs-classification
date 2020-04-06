@@ -1,21 +1,15 @@
 package org.ml_methods_group.evaluation.preparation;
 
-import org.ml_methods_group.common.Dataset;
 import org.ml_methods_group.common.FeaturesExtractor;
 import org.ml_methods_group.common.Solution;
-import org.ml_methods_group.common.ast.changes.ChangeType;
 import org.ml_methods_group.common.ast.changes.Changes;
 import org.ml_methods_group.common.ast.changes.CodeChange;
-import org.ml_methods_group.common.extractors.BOWExtractor;
-import org.ml_methods_group.common.extractors.HashExtractor;
 
-import javax.xml.crypto.Data;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 
 import static org.ml_methods_group.common.Hashers.*;
 
@@ -39,8 +33,8 @@ public class TokenBasedDatasetCreator implements DatasetCreator {
             maxTokens.getAndAccumulate(tokensLength, Math::max);
         });
         try (var out = new PrintWriter(datasetPath.toFile())) {
-            var extractor = getCodeChangeHasher(full);
-            int tokensPerChange = countTokens(full);
+            var extractor = getCodeChangeHasher(FULL_HASHER);
+            int tokensPerChange = countTokens(FULL_HASHER);
             int tokensLineLength = maxTokens.get() * tokensPerChange;
             // CSV header
             out.print("id,real_len,");

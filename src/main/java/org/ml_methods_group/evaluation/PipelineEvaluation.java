@@ -54,8 +54,7 @@ public class PipelineEvaluation {
     public static CacheManyOptionsSelector<Solution, Solution> getCacheSelectorFromTemplate(
             KClosestPairsSelector<Solution> selector, Database database) throws Exception {
         return new CacheManyOptionsSelector<Solution, Solution>(
-                selector,
-                database,
+                selector, database,
                 Solution::getSolutionId,
                 Solution::getSolutionId,
                 list -> list.stream()

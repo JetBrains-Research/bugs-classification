@@ -89,14 +89,17 @@ public class PipelineEvaluation {
     public static void main(String[] args) throws Exception {
         var problem = problems.get(3);
         Path pathToDataset = EvaluationInfo.PATH_TO_DATASET.resolve(problem);
-        Path pathToTrain = pathToDataset.resolve("train_tokens_dataset.csv");
+        Path pathToTrain = pathToDataset.resolve("bow_train_tokens_dataset.csv");
         Path pathToTest = pathToDataset.resolve("bow_test_tokens_dataset.csv");
         System.out.println("Start clustering");
         //createClusters(pathToDataset);
         System.out.println("Clusters created and saved, starting creating datasets");
-        saveDatasetsForClassification(pathToDataset, pathToTrain, pathToTest);
+        //saveDatasetsForClassification(pathToDataset, pathToTrain, pathToTest);
         System.out.println("End creating datasets, start training classification model");
         //runClassification(pathToTrain, pathToTest);
+
+        System.out.println(Hashers.getCodeChangeHasher(Hashers.FULL_HASHER).getTokensCount());
+
     }
 
     public static void saveDatasetsForClassification(Path pathToDataset, Path pathToTrain, Path pathToTest) throws Exception {

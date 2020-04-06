@@ -23,7 +23,8 @@ import org.ml_methods_group.evaluation.approaches.BOWApproach;
 import org.ml_methods_group.evaluation.approaches.FuzzyJaccardApproach;
 import org.ml_methods_group.evaluation.approaches.classification.ClassificationApproachTemplate;
 import org.ml_methods_group.evaluation.approaches.clustering.ClusteringApproachTemplate;
-import org.ml_methods_group.evaluation.preparation.TokenBasedDatasetsCreator;
+import org.ml_methods_group.evaluation.preparation.BOWDatasetCreator;
+import org.ml_methods_group.evaluation.preparation.TokenBasedDatasetCreator;
 import org.ml_methods_group.marking.markers.ManualClusterMarker;
 import org.ml_methods_group.marking.markers.Marker;
 import org.ml_methods_group.testing.BasicClassificationTester;
@@ -34,7 +35,9 @@ import org.ml_methods_group.testing.selectors.CacheOptionSelector;
 
 import java.nio.file.Path;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.ml_methods_group.common.Solution.Verdict.FAIL;
 import static org.ml_methods_group.common.Solution.Verdict.OK;
@@ -99,14 +102,33 @@ public class PipelineEvaluation {
             final List<Solution> correctFromTrain = train.getValues(x -> x.getVerdict() == OK);
             final List<Solution> incorrectFromTrain = train.getValues(x -> x.getVerdict() == FAIL);
             final List<Solution> incorrectFromTest = test.getValues(x -> x.getVerdict() == FAIL);
+            final List<Solution> allIncorrect = Stream
+                    .concat(incorrectFromTrain.stream(), incorrectFromTest.stream())
+                    .collect(Collectors.toList());
 
+//            // Prepare centroid picker and clusters of correct solutions
+//            final int minClustersCount = (int) Math.round(Math.sqrt(correctFromTrain.size()));
+//            final Clusters<Solution> clusters = new Clusters<>(
+//                    loadSolutionClusters(pathToDataset.resolve("correct-solutions-clusters-40.tmp"))
+//                            .getClusters().stream()
+//                            .sorted(Comparator.<Cluster<Solution>>comparingInt(Cluster::size).reversed())
+//                            .limit(minClustersCount)
+//                            .collect(Collectors.toList())
+//            );
+//            final var picker = getCacheRepresentativesPickerFromTemplate(
+//                    new CentroidPicker<>(metric), database, correctFromTrain
+//            );
+//            System.out.println(correctFromTrain.size());
+//            clusters.getClusters().forEach(x -> System.out.print(x.size() + " "));
+//            System.out.println();
 
-            final var oneNearestSelector = getCacheSelectorFromTemplate(
+            // Create datasets
+            final var heuristicSelector = getCacheSelectorFromTemplate(
                     new KClosestPairsSelector<>(unifier.unify(correctFromTrain), metric, 1), database);
+            final FeaturesExtractor<Solution, List<Changes>> generator =
+                    new KNearestNeighborsChangesExtractor(changeGenerator, heuristicSelector);
             final var threeNearestSelector = getCacheSelectorFromTemplate(
                     new KClosestPairsSelector<>(unifier.unify(correctFromTrain), metric, 3), database);
-            final FeaturesExtractor<Solution, List<Changes>> generator =
-                    new KNearestNeighborsChangesExtractor(changeGenerator, oneNearestSelector);
             final FeaturesExtractor<Solution, List<Changes>> threeNearestGenerator =
                     new KNearestNeighborsChangesExtractor(changeGenerator, threeNearestSelector);
 
@@ -114,19 +136,24 @@ public class PipelineEvaluation {
             for (var entry : testHolder) {
                 testMarksDictionary.put(entry.getKey(), entry.getValue());
             }
-            TokenBasedDatasetsCreator.createCodeChangesDataset(
-                    incorrectFromTest,
-                    generator,
-                    testMarksDictionary,
-                    pathToTest
-            );
-
             var trainMarksDictionary = new HashMap<Solution, List<String>>();
             var flatMarks = markedClusters.getFlatMarks();
             for (var solution : incorrectFromTrain) {
                 trainMarksDictionary.put(solution, Collections.singletonList(flatMarks.get(solution)));
             }
-            TokenBasedDatasetsCreator.createCodeChangesDataset(
+
+            var datasetCreator = new BOWDatasetCreator(allIncorrect, threeNearestGenerator, 20000);
+
+            long startTime = System.nanoTime();
+            datasetCreator.createDataset(
+                    incorrectFromTest,
+                    generator,
+                    testMarksDictionary,
+                    pathToTest
+            );
+            long endTime = System.nanoTime();
+            System.out.println("Time elapsed: " + TimeUnit.NANOSECONDS.toMillis(endTime - startTime));
+            datasetCreator.createDataset(
                     incorrectFromTrain,
                     threeNearestGenerator,
                     trainMarksDictionary,

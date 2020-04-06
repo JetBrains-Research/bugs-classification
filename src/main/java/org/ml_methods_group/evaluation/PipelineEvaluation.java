@@ -107,22 +107,6 @@ public class PipelineEvaluation {
                     .concat(incorrectFromTrain.stream(), incorrectFromTest.stream())
                     .collect(Collectors.toList());
 
-//            // Prepare centroid picker and clusters of correct solutions
-//            final int minClustersCount = (int) Math.round(Math.sqrt(correctFromTrain.size()));
-//            final Clusters<Solution> clusters = new Clusters<>(
-//                    loadSolutionClusters(pathToDataset.resolve("correct-solutions-clusters-40.tmp"))
-//                            .getClusters().stream()
-//                            .sorted(Comparator.<Cluster<Solution>>comparingInt(Cluster::size).reversed())
-//                            .limit(minClustersCount)
-//                            .collect(Collectors.toList())
-//            );
-//            final var picker = getCacheRepresentativesPickerFromTemplate(
-//                    new CentroidPicker<>(metric), database, correctFromTrain
-//            );
-//            System.out.println(correctFromTrain.size());
-//            clusters.getClusters().forEach(x -> System.out.print(x.size() + " "));
-//            System.out.println();
-
             // Create datasets
             final var heuristicSelector = getCacheSelectorFromTemplate(
                     new KClosestPairsSelector<>(unifier.unify(correctFromTrain), metric, 1), database);
@@ -154,13 +138,12 @@ public class PipelineEvaluation {
             );
             long endTime = System.nanoTime();
             System.out.println("Time elapsed: " + TimeUnit.NANOSECONDS.toMillis(endTime - startTime));
-
-//            creator.createDataset(
-//                    incorrectFromTrain,
-//                    threeNearestGenerator,
-//                    trainMarksDictionary,
-//                    pathToTrain
-//            );
+            creator.createDataset(
+                    incorrectFromTrain,
+                    threeNearestGenerator,
+                    trainMarksDictionary,
+                    pathToTrain
+            );
         }
     }
 

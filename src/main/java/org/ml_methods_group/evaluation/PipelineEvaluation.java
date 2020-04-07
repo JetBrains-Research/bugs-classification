@@ -126,10 +126,9 @@ public class PipelineEvaluation {
             // Prepare centroid picker and clusters of correct solutions
             final int minClustersCount = (int) Math.round(Math.sqrt(correctFromTrain.size()));
             final Clusters<Solution> clusters = new Clusters<>(
-                    loadSolutionClusters(pathToDataset.resolve("updated-clusters-40.tmp"))
+                    loadSolutionClusters(pathToDataset.resolve("sqrt-clusters-100.tmp"))
                             .getClusters().stream()
                             .sorted(Comparator.<Cluster<Solution>>comparingInt(Cluster::size).reversed())
-                            //.limit(minClustersCount)
                             .collect(Collectors.toList())
             );
             final var picker = getCacheRepresentativesPickerFromTemplate(

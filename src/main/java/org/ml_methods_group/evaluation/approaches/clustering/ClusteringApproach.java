@@ -2,7 +2,10 @@ package org.ml_methods_group.evaluation.approaches.clustering;
 
 import org.ml_methods_group.clustering.clusterers.CompositeClusterer;
 import org.ml_methods_group.clustering.clusterers.HAC;
-import org.ml_methods_group.common.*;
+import org.ml_methods_group.common.Clusterer;
+import org.ml_methods_group.common.CommonUtils;
+import org.ml_methods_group.common.Solution;
+import org.ml_methods_group.common.Wrapper;
 import org.ml_methods_group.evaluation.approaches.Approach;
 
 import java.util.function.Function;

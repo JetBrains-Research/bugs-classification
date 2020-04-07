@@ -1,7 +1,9 @@
 package org.ml_methods_group.classification.classifiers;
 
 import org.ml_methods_group.classification.ClassificationUtils;
-import org.ml_methods_group.common.*;
+import org.ml_methods_group.common.Classifier;
+import org.ml_methods_group.common.DistanceFunction;
+import org.ml_methods_group.common.MarkedClusters;
 
 import java.util.ArrayList;
 import java.util.HashMap;

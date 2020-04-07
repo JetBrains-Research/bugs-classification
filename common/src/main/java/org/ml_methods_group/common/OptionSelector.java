@@ -1,6 +1,8 @@
 package org.ml_methods_group.common;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Optional;
 
 public interface OptionSelector<V, O> {
     Optional<O> selectOption(V value);

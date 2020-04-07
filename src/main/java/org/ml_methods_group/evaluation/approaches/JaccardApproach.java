@@ -11,7 +11,7 @@ import org.ml_methods_group.common.metrics.functions.JaccardDistanceFunction;
 
 import java.util.List;
 
-import static org.ml_methods_group.evaluation.approaches.BOWApproach.*;
+import static org.ml_methods_group.common.Hashers.*;
 
 public class JaccardApproach {
     public static Approach<List<String>> getDefaultApproach(FeaturesExtractor<Solution, Changes> generator) {

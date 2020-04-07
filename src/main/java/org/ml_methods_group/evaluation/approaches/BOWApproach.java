@@ -23,9 +23,9 @@ public class BOWApproach {
 
     public static Approach<BOWVector> getDefaultApproach(int wordsLimit, Dataset train,
                                                          FeaturesExtractor<Solution, Changes> generator) {
-        return getApproach(wordsLimit, train, generator, Arrays.asList(getCodeChangeHasher(weak),
-                getCodeChangeHasher(javaTypes), getCodeChangeHasher(full), getCodeChangeHasher(extended),
-                getCodeChangeHasher(fullExtended), getCodeChangeHasher(deepExtended)));
+        return getApproach(wordsLimit, train, generator, Arrays.asList(getCodeChangeHasher(WEAK_HASHER),
+                getCodeChangeHasher(JAVA_TYPES_HASHER), getCodeChangeHasher(FULL_HASHER), getCodeChangeHasher(EXTENDED_HASHER),
+                getCodeChangeHasher(FULL_EXTENDED_HASHER), getCodeChangeHasher(DEEP_EXTENDED_HASHER)));
     }
 
     private static Approach<BOWVector> getApproach(int wordsLimit, Dataset train,

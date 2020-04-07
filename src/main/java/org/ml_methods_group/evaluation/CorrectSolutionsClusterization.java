@@ -27,7 +27,8 @@ import static org.ml_methods_group.common.serialization.ProtobufSerializationUti
 public class CorrectSolutionsClusterization {
 
     public static String[] problems = {
-            "deserialization"
+            "deserialization",
+            "loggers"
     };
 
     public static void main(String[] args) throws Exception {

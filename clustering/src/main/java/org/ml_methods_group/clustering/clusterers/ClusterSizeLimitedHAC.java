@@ -34,7 +34,7 @@ public class ClusterSizeLimitedHAC<T> extends HAC<T> {
     }
 
     protected void insertTripleIfNecessary(double distance, Community first, Community second) {
-        if (first.entities.size() > maxClusterSize / 2  || second.entities.size() > maxClusterSize / 2) {
+        if (first.entities.size() + second.entities.size() > maxClusterSize) {
             return;
         }
         super.insertTripleIfNecessary(distance, first, second);

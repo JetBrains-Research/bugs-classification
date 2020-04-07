@@ -1,4 +1,4 @@
-package org.ml_methods_group.evaluation.preparation;
+package org.ml_methods_group.evaluation;
 
 import com.github.gumtreediff.tree.ITree;
 import org.ml_methods_group.cache.HashDatabase;

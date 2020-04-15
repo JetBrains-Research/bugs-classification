@@ -16,6 +16,7 @@ public class ManyProblemsBasedChangesExtractor implements FeaturesExtractor<Solu
 
     @Override
     public Changes process(Solution value) {
-        return generatorByProblemId.get(value.getProblemId()).process(value);
+        FeaturesExtractor<Solution, Changes> oracle = generatorByProblemId.get(value.getProblemId());
+        return oracle.process(value);
     }
 }

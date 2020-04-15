@@ -1,6 +1,8 @@
 package org.ml_methods_group.common.metrics.functions;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Set;
 
 public class FunctionsUtils {
     public static int scalarProduct(int[] a, int[] b) {
@@ -11,6 +13,13 @@ public class FunctionsUtils {
         return sum;
     }
 
+    public static int scalarProduct(HashMap<Integer, Integer> countersA, HashMap<Integer, Integer> countersB) {
+        Set<Integer> intersection = countersA.keySet();
+        intersection.retainAll(countersB.keySet());
+        return intersection.stream()
+                .mapToInt(x -> countersA.get(x) * countersB.get(x))
+                .sum();
+    }
 
     public static double cosineSimilarity(double[] a, double[] b) {
         double sum = 0;

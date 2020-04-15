@@ -10,6 +10,7 @@ import org.ml_methods_group.common.extractors.BOWExtractor;
 import org.ml_methods_group.common.extractors.BOWExtractor.BOWVector;
 import org.ml_methods_group.common.extractors.HashExtractor;
 import org.ml_methods_group.common.extractors.ManyProblemsBasedChangesExtractor;
+import org.ml_methods_group.common.extractors.SparseBOWExtractor;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -36,7 +37,7 @@ public class BOWApproach {
         return new Approach<>(extractor, BOWExtractor::cosineDistance, "BOW" + wordsLimit);
     }
 
-    public static Approach<BOWVector> getManyProblemssBasedApproach(int wordsLimit,
+    public static Approach<SparseBOWExtractor.SparseBOWVector> getManyProblemsBasedApproach(
                                             Map<Dataset, FeaturesExtractor<Solution, Changes>> generatorByDataset) {
         final List<CodeChange> changes = new ArrayList<>();
         final var generatorByProblemId = new HashMap<Integer, FeaturesExtractor<Solution, Changes>>();
@@ -52,9 +53,10 @@ public class BOWApproach {
                     .flatMap(List::stream)
                     .collect(Collectors.toList()));
         }
-        final HashMap<String, Integer> dict = BOWExtractor.mostCommon(CODE_CHANGE_HASHERS, changes, wordsLimit);
-        var extractor = new ManyProblemsBasedChangesExtractor(generatorByProblemId).compose(
-                new BOWExtractor<>(dict, CODE_CHANGE_HASHERS).extend(Changes::getChanges));
-        return new Approach<>(extractor, BOWExtractor::cosineDistance, "BOW" + wordsLimit);
+        final HashMap<String, Integer> dict = SparseBOWExtractor.getDictionary(CODE_CHANGE_HASHERS, changes);
+        FeaturesExtractor<Solution, SparseBOWExtractor.SparseBOWVector> extractor =
+                new ManyProblemsBasedChangesExtractor(generatorByProblemId).compose(
+                        new SparseBOWExtractor<>(dict, CODE_CHANGE_HASHERS).extend(Changes::getChanges));
+        return new Approach<>(extractor, SparseBOWExtractor::cosineDistance, "SPARSE_BOW");
     }
 }

@@ -1,4 +1,4 @@
-package org.ml_methods_group.evaluation;
+package org.ml_methods_group.evaluation.preparation;
 
 import com.github.gumtreediff.tree.ITree;
 import org.ml_methods_group.cache.HashDatabase;
@@ -17,6 +17,7 @@ import org.ml_methods_group.common.metrics.selectors.ClosestPairSelector;
 import org.ml_methods_group.common.preparation.Unifier;
 import org.ml_methods_group.common.preparation.basic.BasicUnifier;
 import org.ml_methods_group.common.preparation.basic.MinValuePicker;
+import org.ml_methods_group.evaluation.EvaluationInfo;
 import org.ml_methods_group.evaluation.approaches.BOWApproach;
 import org.ml_methods_group.evaluation.approaches.clustering.ClusteringApproach;
 import org.ml_methods_group.evaluation.approaches.clustering.ClusteringApproachTemplate;
@@ -38,7 +39,23 @@ public class ClustersCreator {
     private final ChangeGenerator changeGenerator;
     private final DistanceFunction<Solution> metric;
 
-    public ClustersCreator() throws Exception {
+    public static final ClusteringApproachTemplate clusteringTemplate =
+            new ClusteringApproachTemplate(((dataset, generator) ->
+                    BOWApproach.getDefaultApproach(20000, dataset, generator)));
+
+    public static String[] problems = {
+            "loggers",
+            "deserialization",
+            "reflection",
+            "factorial",
+    };
+
+    public static void main(String[] argv) throws Exception {
+        var creator = new ClustersCreator();
+        creator.createGlobalClusters(problems);
+    }
+
+    public ClustersCreator() {
         this.database = new HashDatabase(EvaluationInfo.PATH_TO_CACHE);
         final ASTGenerator astGenerator = new CachedASTGenerator(new NamesASTNormalizer());
         this.changeGenerator = new BasicChangeGenerator(astGenerator);
@@ -48,6 +65,7 @@ public class ClustersCreator {
                 new MinValuePicker<>(Comparator.comparingInt(Solution::getSolutionId)));
         this.metric = new HeuristicChangesBasedDistanceFunction(changeGenerator);
     }
+
 
     public void createGlobalClusters(String[] problems) throws Exception {
         final var generatorByDataset = new HashMap<Dataset, FeaturesExtractor<Solution, Changes>>();
@@ -67,17 +85,23 @@ public class ClustersCreator {
             incorrect.addAll(train.getValues(x -> x.getVerdict() == FAIL));
         }
 
+        System.out.println(incorrect.size());
+
         // Create global clusters based on edit scripts to nearest solution from the same problem
-        final ClusteringApproach approach = new ClusteringApproach("BOW_20000_ALL_PROBLEMS",
-                BOWApproach.getManyProblemssBasedApproach(20000, generatorByDataset));
+        final ClusteringApproach approach = new ClusteringApproach(
+                "SPARSE_BOW_ALL_PROBLEMS",
+                BOWApproach.getManyProblemsBasedApproach(generatorByDataset)
+        );
         final Clusterer<Solution> clusterer = approach.getClusterer(0.3);
         Clusters<Solution> globalClusters = clusterer.buildClusters(incorrect);
         storeSolutionClusters(globalClusters, EvaluationInfo.PATH_TO_CLUSTERS.resolve("global_clusters.tmp"));
+
+        globalClusters.getClusters().stream()
+                .sorted(Comparator.<Cluster<Solution>>comparingInt(Cluster::size).reversed())
+                .collect(Collectors.toList())
+                .forEach(x -> System.out.print(x.size() + " "));
     }
 
-    public static final ClusteringApproachTemplate clusteringTemplate =
-            new ClusteringApproachTemplate(((dataset, generator) ->
-                    BOWApproach.getDefaultApproach(20000, dataset, generator)));
 
     public void createMarkedClusters(Path pathToDataset) throws Exception {
         // Collect data
@@ -135,6 +159,7 @@ public class ClustersCreator {
         System.out.println("train: " + train.getValues().size());
         System.out.println("test: " + test.getValues().size());
     }
+
 
     public void createCorrectSolutionsClusters(String[] problems) throws Exception {
         for (String problem : problems) {

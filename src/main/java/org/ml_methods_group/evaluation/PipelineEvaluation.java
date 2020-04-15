@@ -93,7 +93,8 @@ public class PipelineEvaluation {
         Path pathToTrain = pathToDataset.resolve("extended_train_tokens_dataset.csv");
         Path pathToTest = pathToDataset.resolve("extended_test_tokens_dataset.csv");
         System.out.println("Start clustering");
-        //createClusters(pathToDataset);
+        //final var clustersCreator = new ClustersCreator();
+        //clustersCreator.createMarkedClusters(pathToDataset);
         System.out.println("Clusters created and saved, starting creating datasets");
         saveDatasetsForClassification(pathToDataset, pathToTrain, pathToTest);
         System.out.println("End creating datasets, start training classification model");

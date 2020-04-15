@@ -28,7 +28,9 @@ public class CorrectSolutionsClusterization {
 
     public static String[] problems = {
             "deserialization",
-            "loggers"
+            "loggers",
+            "factorial",
+            "reflection"
     };
 
     public static void main(String[] args) throws Exception {

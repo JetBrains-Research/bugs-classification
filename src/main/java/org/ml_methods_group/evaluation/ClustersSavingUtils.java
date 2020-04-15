@@ -2,7 +2,6 @@ package org.ml_methods_group.evaluation;
 
 import com.github.gumtreediff.tree.ITree;
 import org.ml_methods_group.cache.HashDatabase;
-import org.ml_methods_group.clustering.clusterers.HAC;
 import org.ml_methods_group.common.*;
 import org.ml_methods_group.common.ast.ASTUtils;
 import org.ml_methods_group.common.ast.changes.BasicChangeGenerator;
@@ -17,8 +16,8 @@ import org.ml_methods_group.common.metrics.selectors.ClosestPairSelector;
 import org.ml_methods_group.common.preparation.Unifier;
 import org.ml_methods_group.common.preparation.basic.BasicUnifier;
 import org.ml_methods_group.common.preparation.basic.MinValuePicker;
-import org.ml_methods_group.evaluation.EvaluationInfo;
 import org.ml_methods_group.evaluation.approaches.BOWApproach;
+import org.ml_methods_group.evaluation.approaches.clustering.ClusteringApproach;
 import org.ml_methods_group.evaluation.approaches.clustering.ClusteringApproachTemplate;
 import org.ml_methods_group.testing.selectors.CacheOptionSelector;
 
@@ -31,13 +30,45 @@ import static org.ml_methods_group.common.Solution.Verdict.FAIL;
 import static org.ml_methods_group.common.Solution.Verdict.OK;
 import static org.ml_methods_group.common.serialization.ProtobufSerializationUtils.*;
 
-public class MarkedClustersSavingUtils {
+public class ClustersSavingUtils {
+
+    public static void createGlobalClusters(String[] problems) throws Exception {
+        try (final HashDatabase database = new HashDatabase(EvaluationInfo.PATH_TO_CACHE)) {
+            final ASTGenerator astGenerator = new CachedASTGenerator(new NamesASTNormalizer());
+            final ChangeGenerator changeGenerator = new BasicChangeGenerator(astGenerator);
+            final Unifier<Solution> unifier = new BasicUnifier<>(
+                    CommonUtils.compose(astGenerator::buildTree, ITree::getHash)::apply,
+                    CommonUtils.checkEquals(astGenerator::buildTree, ASTUtils::deepEquals),
+                    new MinValuePicker<>(Comparator.comparingInt(Solution::getSolutionId)));
+            final DistanceFunction<Solution> metric = new HeuristicChangesBasedDistanceFunction(changeGenerator);
+
+            final var generatorByDataset = new HashMap<Dataset, FeaturesExtractor<Solution, Changes>>();
+            final var incorrect = new ArrayList<Solution>();
+            for (String problem : problems) {
+                final Dataset train = loadDataset(EvaluationInfo.PATH_TO_DATASET.resolve(problem).resolve("train.tmp"));
+                final List<Solution> correct = train.getValues(x -> x.getVerdict() == OK);
+                final var selector = new CacheOptionSelector<>(
+                        new ClosestPairSelector<>(unifier.unify(correct), metric),
+                        database,
+                        Solution::getSolutionId,
+                        Solution::getSolutionId
+                );
+                generatorByDataset.put(train, new ChangesExtractor(changeGenerator, selector));
+                incorrect.addAll(train.getValues(x -> x.getVerdict() == FAIL));
+            }
+            final ClusteringApproach approach = new ClusteringApproach("BOW_20000_ALL_PROBLEMS",
+                    BOWApproach.getManyProblemssBasedApproach(20000, generatorByDataset));
+            final Clusterer<Solution> clusterer = approach.getClusterer(0.3);
+            Clusters<Solution> globalClusters = clusterer.buildClusters(incorrect);
+            storeSolutionClusters(globalClusters, EvaluationInfo.PATH_TO_CLUSTERS.resolve("global_clusters.tmp"));
+        }
+    }
 
     public static final ClusteringApproachTemplate clusteringTemplate =
             new ClusteringApproachTemplate(((dataset, generator) ->
                     BOWApproach.getDefaultApproach(20000, dataset, generator)));
 
-    public static void createClusters(Path datasetPath) throws Exception {
+    public static void createMarkedClusters(Path pathToDataset) throws Exception {
         try (final HashDatabase database = new HashDatabase(EvaluationInfo.PATH_TO_CACHE)) {
             final ASTGenerator astGenerator = new CachedASTGenerator(new NamesASTNormalizer());
             final ChangeGenerator changeGenerator = new BasicChangeGenerator(astGenerator);
@@ -48,10 +79,10 @@ public class MarkedClustersSavingUtils {
             final DistanceFunction<Solution> metric = new HeuristicChangesBasedDistanceFunction(changeGenerator);
 
             // Collect data
-            final SolutionMarksHolder trainHolder = loadSolutionMarksHolder(datasetPath.resolve("extended.tmp"));
-            final SolutionMarksHolder testHolder = loadSolutionMarksHolder(datasetPath.resolve("test_marks.tmp"));
-            final Dataset train = loadDataset(datasetPath.resolve("train.tmp"));
-            final Dataset test = loadDataset(datasetPath.resolve("test.tmp"));
+            final SolutionMarksHolder trainHolder = loadSolutionMarksHolder(pathToDataset.resolve("extended.tmp"));
+            final SolutionMarksHolder testHolder = loadSolutionMarksHolder(pathToDataset.resolve("test_marks.tmp"));
+            final Dataset train = loadDataset(pathToDataset.resolve("train.tmp"));
+            final Dataset test = loadDataset(pathToDataset.resolve("test.tmp"));
             final List<Solution> correct = train.getValues(x -> x.getVerdict() == OK);
             final List<Solution> incorrect = train.getValues(x -> x.getVerdict() == FAIL);
 
@@ -94,7 +125,7 @@ public class MarkedClustersSavingUtils {
                 marks.putIfAbsent(cluster, "");
             }
             final MarkedClusters<Solution, String> markedClusters = new MarkedClusters<>(marks);
-            storeMarkedClusters(markedClusters, datasetPath.resolve("clusters.tmp"));
+            storeMarkedClusters(markedClusters, pathToDataset.resolve("clusters.tmp"));
 
             // Print additional info
             System.out.println("clusters: " + clusters.getClusters().size());

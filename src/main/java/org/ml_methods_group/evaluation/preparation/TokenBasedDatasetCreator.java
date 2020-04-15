@@ -9,6 +9,7 @@ import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.ml_methods_group.common.Hashers.*;
@@ -24,6 +25,8 @@ public class TokenBasedDatasetCreator implements DatasetCreator {
                               Path datasetPath) {
         var preprocessedNeighbours = new HashMap<Integer, List<Changes>>();
         var maxTokens = new AtomicInteger(0);
+
+        long startTime = System.nanoTime();
         solutions.parallelStream().forEach(solution -> {
             List<Changes> kChanges = generator.process(solution);
             preprocessedNeighbours.put(solution.getSolutionId(), kChanges);
@@ -32,8 +35,11 @@ public class TokenBasedDatasetCreator implements DatasetCreator {
                     .max(Comparator.comparing(Integer::valueOf)).get();
             maxTokens.getAndAccumulate(tokensLength, Math::max);
         });
+        long endTime = System.nanoTime();
+        System.out.println("Time elapsed: " + TimeUnit.NANOSECONDS.toMillis(endTime - startTime));
+
         try (var out = new PrintWriter(datasetPath.toFile())) {
-            var extractor = getCodeChangeHasher(FULL_HASHER);
+            var extractor = getCodeChangeHasher(FULL_EXTENDED_HASHER);
             int tokensPerChange = extractor.getTokensCount();
             int tokensLineLength = maxTokens.get() * tokensPerChange;
             // CSV header

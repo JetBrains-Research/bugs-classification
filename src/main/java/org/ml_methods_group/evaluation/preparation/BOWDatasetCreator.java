@@ -28,8 +28,8 @@ public class BOWDatasetCreator implements DatasetCreator {
                 .map(Changes::getChanges)
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
-        this.dict = BOWExtractor.mostCommon(Hashers.codeChangeHashers, possibleChanges, wordsLimit);
-        this.extractor = new BOWExtractor<>(dict, Hashers.codeChangeHashers);
+        this.dict = BOWExtractor.mostCommon(Hashers.CODE_CHANGE_HASHERS, possibleChanges, wordsLimit);
+        this.extractor = new BOWExtractor<>(dict, Hashers.CODE_CHANGE_HASHERS);
     }
 
     @Override

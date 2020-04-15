@@ -90,8 +90,8 @@ public class PipelineEvaluation {
     public static void main(String[] args) throws Exception {
         var problem = problems.get(3);
         Path pathToDataset = EvaluationInfo.PATH_TO_DATASET.resolve(problem);
-        Path pathToTrain = pathToDataset.resolve("__train_tokens_dataset.csv");
-        Path pathToTest = pathToDataset.resolve("__test_tokens_dataset.csv");
+        Path pathToTrain = pathToDataset.resolve("extended_train_tokens_dataset.csv");
+        Path pathToTest = pathToDataset.resolve("extended_test_tokens_dataset.csv");
         System.out.println("Start clustering");
         //createClusters(pathToDataset);
         System.out.println("Clusters created and saved, starting creating datasets");
@@ -100,7 +100,8 @@ public class PipelineEvaluation {
         //runClassification(pathToTrain, pathToTest);
     }
 
-    public static void saveDatasetsForClassification(Path pathToDataset, Path pathToTrain, Path pathToTest) throws Exception {
+    public static void saveDatasetsForClassification(Path pathToDataset, Path pathToTrain, Path pathToTest)
+            throws Exception {
         try (final HashDatabase database = new HashDatabase(EvaluationInfo.PATH_TO_CACHE)) {
             final ASTGenerator astGenerator = new CachedASTGenerator(new NamesASTNormalizer());
             final ChangeGenerator changeGenerator = new BasicChangeGenerator(astGenerator);
@@ -123,20 +124,21 @@ public class PipelineEvaluation {
                     .concat(incorrectFromTrain.stream(), incorrectFromTest.stream())
                     .collect(Collectors.toList());
 
-            // Prepare centroid picker and clusters of correct solutions
-            final int minClustersCount = (int) Math.round(Math.sqrt(correctFromTrain.size()));
-            final Clusters<Solution> clusters = new Clusters<>(
-                    loadSolutionClusters(pathToDataset.resolve("sqrt-clusters-100.tmp"))
-                            .getClusters().stream()
-                            .sorted(Comparator.<Cluster<Solution>>comparingInt(Cluster::size).reversed())
-                            .collect(Collectors.toList())
-            );
-            final var picker = getCacheRepresentativesPickerFromTemplate(
-                    new CentroidPicker<>(metric), database, correctFromTrain
-            );
-            System.out.println(correctFromTrain.size());
-            clusters.getClusters().forEach(x -> System.out.print(x.size() + " "));
-            System.out.println();
+//            // Prepare centroid picker and clusters of correct solutions
+//            final int minClustersCount = (int) Math.round(Math.sqrt(unifier.unify(correctFromTrain).size()));
+//            final Clusters<Solution> clusters = new Clusters<>(
+//                    loadSolutionClusters(pathToDataset.resolve("sqrt-clusters-100.tmp"))
+//                            .getClusters().stream()
+//                            .sorted(Comparator.<Cluster<Solution>>comparingInt(Cluster::size).reversed())
+//                            .limit(minClustersCount)
+//                            .collect(Collectors.toList())
+//            );
+//            final var picker = getCacheRepresentativesPickerFromTemplate(
+//                    new CentroidPicker<>(metric), database, correctFromTrain
+//            );
+//            System.out.println(correctFromTrain.size());
+//            clusters.getClusters().forEach(x -> System.out.print(x.size() + " "));
+//            System.out.println();
 
             // Create selectors & extractors
             final var heuristicSelector = getCacheSelectorFromTemplate(
@@ -159,23 +161,20 @@ public class PipelineEvaluation {
                 trainMarksDictionary.put(solution, Collections.singletonList(flatMarks.get(solution)));
             }
 
-//            // Save test & train datasets
-//            final DatasetCreator creator = new TokenBasedDatasetCreator();
-//            long startTime = System.nanoTime();
-//            creator.createDataset(
-//                    incorrectFromTest,
-//                    generator,
-//                    testMarksDictionary,
-//                    pathToTest
-//            );
-//            long endTime = System.nanoTime();
-//            System.out.println("Time elapsed: " + TimeUnit.NANOSECONDS.toMillis(endTime - startTime));
-//            creator.createDataset(
-//                    incorrectFromTrain,
-//                    threeNearestGenerator,
-//                    trainMarksDictionary,
-//                    pathToTrain
-//            );
+            // Save test & train datasets
+            final DatasetCreator creator = new TokenBasedDatasetCreator();
+            creator.createDataset(
+                    incorrectFromTest,
+                    generator,
+                    testMarksDictionary,
+                    pathToTest
+            );
+            creator.createDataset(
+                    incorrectFromTrain,
+                    threeNearestGenerator,
+                    trainMarksDictionary,
+                    pathToTrain
+            );
         }
     }
 

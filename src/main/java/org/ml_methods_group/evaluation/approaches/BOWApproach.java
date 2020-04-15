@@ -1,5 +1,6 @@
 package org.ml_methods_group.evaluation.approaches;
 
+import io.grpc.Status;
 import org.ml_methods_group.common.Dataset;
 import org.ml_methods_group.common.FeaturesExtractor;
 import org.ml_methods_group.common.Solution;
@@ -8,10 +9,9 @@ import org.ml_methods_group.common.ast.changes.CodeChange;
 import org.ml_methods_group.common.extractors.BOWExtractor;
 import org.ml_methods_group.common.extractors.BOWExtractor.BOWVector;
 import org.ml_methods_group.common.extractors.HashExtractor;
+import org.ml_methods_group.common.extractors.ManyProblemsBasedChangesExtractor;
 
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.ml_methods_group.common.Hashers.*;
@@ -21,25 +21,40 @@ public class BOWApproach {
 
     public static final ApproachTemplate<BOWVector> TEMPLATE = (d, g) -> getDefaultApproach(20000, d, g);
 
-    public static Approach<BOWVector> getDefaultApproach(int wordsLimit, Dataset train,
+    public static Approach<BOWVector> getDefaultApproach(int wordsLimit,
+                                                         Dataset train,
                                                          FeaturesExtractor<Solution, Changes> generator) {
-        return getApproach(wordsLimit, train, generator, Arrays.asList(getCodeChangeHasher(WEAK_HASHER),
-                getCodeChangeHasher(JAVA_TYPES_HASHER), getCodeChangeHasher(FULL_HASHER), getCodeChangeHasher(EXTENDED_HASHER),
-                getCodeChangeHasher(FULL_EXTENDED_HASHER), getCodeChangeHasher(DEEP_EXTENDED_HASHER)));
-    }
-
-    private static Approach<BOWVector> getApproach(int wordsLimit, Dataset train,
-                                                   FeaturesExtractor<Solution, Changes> generator,
-                                                   List<HashExtractor<CodeChange>> extractors) {
         final List<CodeChange> changes = train.getValues(x -> x.getVerdict() == FAIL)
                 .stream()
                 .map(generator::process)
                 .map(Changes::getChanges)
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
-        final HashMap<String, Integer> dict = BOWExtractor.mostCommon(extractors, changes, wordsLimit);
+        final HashMap<String, Integer> dict = BOWExtractor.mostCommon(CODE_CHANGE_HASHERS, changes, wordsLimit);
         final FeaturesExtractor<Solution, BOWVector> extractor = generator.compose(
-                new BOWExtractor<>(dict, extractors).extend(Changes::getChanges));
+                new BOWExtractor<>(dict, CODE_CHANGE_HASHERS).extend(Changes::getChanges));
+        return new Approach<>(extractor, BOWExtractor::cosineDistance, "BOW" + wordsLimit);
+    }
+
+    public static Approach<BOWVector> getManyProblemssBasedApproach(int wordsLimit,
+                                            Map<Dataset, FeaturesExtractor<Solution, Changes>> generatorByDataset) {
+        final List<CodeChange> changes = new ArrayList<>();
+        final var generatorByProblemId = new HashMap<Integer, FeaturesExtractor<Solution, Changes>>();
+        for (var entry : generatorByDataset.entrySet()) {
+            Dataset dataset = entry.getKey();
+            FeaturesExtractor<Solution, Changes> generator = entry.getValue();
+            int problemId = dataset.getValues().get(0).getProblemId();
+            generatorByProblemId.put(problemId, generator);
+            changes.addAll(dataset.getValues(x -> x.getVerdict() == FAIL)
+                    .stream()
+                    .map(generator::process)
+                    .map(Changes::getChanges)
+                    .flatMap(List::stream)
+                    .collect(Collectors.toList()));
+        }
+        final HashMap<String, Integer> dict = BOWExtractor.mostCommon(CODE_CHANGE_HASHERS, changes, wordsLimit);
+        var extractor = new ManyProblemsBasedChangesExtractor(generatorByProblemId).compose(
+                new BOWExtractor<>(dict, CODE_CHANGE_HASHERS).extend(Changes::getChanges));
         return new Approach<>(extractor, BOWExtractor::cosineDistance, "BOW" + wordsLimit);
     }
 }

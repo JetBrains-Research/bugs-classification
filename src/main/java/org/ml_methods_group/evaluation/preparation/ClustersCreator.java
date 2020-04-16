@@ -21,6 +21,8 @@ import org.ml_methods_group.evaluation.EvaluationInfo;
 import org.ml_methods_group.evaluation.approaches.BOWApproach;
 import org.ml_methods_group.evaluation.approaches.clustering.ClusteringApproach;
 import org.ml_methods_group.evaluation.approaches.clustering.ClusteringApproachTemplate;
+import org.ml_methods_group.marking.markers.ManualClusterMarker;
+import org.ml_methods_group.marking.markers.Marker;
 import org.ml_methods_group.testing.selectors.CacheOptionSelector;
 
 import java.nio.file.Path;
@@ -51,9 +53,51 @@ public class ClustersCreator {
     };
 
     public static void main(String[] argv) throws Exception {
-        var creator = new ClustersCreator();
-        creator.createGlobalClusters(problems);
+        final List<Cluster<Solution>> clusters =
+                loadSolutionClusters(EvaluationInfo.PATH_TO_CLUSTERS.resolve("global_clusters.tmp"))
+                        .getClusters().stream()
+                        .sorted(Comparator.<Cluster<Solution>>comparingInt(Cluster::size).reversed())
+                        .limit(50)
+                        .collect(Collectors.toList());
+        SolutionMarksHolder localMarksHolder = new SolutionMarksHolder();
+        for (String problem : problems) {
+            final SolutionMarksHolder trainHolder =
+                    loadSolutionMarksHolder(EvaluationInfo.PATH_TO_DATASET.resolve(problem).resolve("extended.tmp"));
+            trainHolder.forEach(e -> {
+                Solution solution = e.getKey();
+                e.getValue().forEach(mark -> localMarksHolder.addMark(solution, mark));
+            });
+
+        }
+        storeMarkedClusters(
+                markClusters(clusters, localMarksHolder),
+                EvaluationInfo.PATH_TO_CLUSTERS.resolve("marked_global_clusters.tmp")
+        );
     }
+
+    private static MarkedClusters<Solution, String> markClusters(List<Cluster<Solution>> clusters,
+                                                                 SolutionMarksHolder localMarksHolder) {
+        final Marker<Cluster<Solution>, String> marker =
+                new ManualClusterMarker(10);
+        final Map<Cluster<Solution>, String> marks = new HashMap<>();
+        for (Cluster<Solution> cluster : clusters) {
+            Map<String, Long> counters = cluster.getElements()
+                    .stream()
+                    .map(localMarksHolder::getMarks)
+                    .map(list -> list.orElse(new ArrayList<String>()))
+                    .flatMap(List::stream)
+                    .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+            System.out.println("Local marks for current cluster: ");
+            counters.forEach((mark, cnt) -> System.out.println("    " + mark + " - " + cnt));
+            System.out.println();
+            final String mark = marker.mark(cluster);
+            if (mark != null) {
+                marks.put(cluster, mark);
+            }
+        }
+        return new MarkedClusters<>(marks);
+    }
+
 
     public ClustersCreator() {
         this.database = new HashDatabase(EvaluationInfo.PATH_TO_CACHE);

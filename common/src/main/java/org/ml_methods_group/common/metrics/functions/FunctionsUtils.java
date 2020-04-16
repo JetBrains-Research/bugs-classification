@@ -1,7 +1,9 @@
 package org.ml_methods_group.common.metrics.functions;
 
+import com.google.common.collect.Sets;
+
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 
 public class FunctionsUtils {
@@ -13,9 +15,8 @@ public class FunctionsUtils {
         return sum;
     }
 
-    public static int scalarProduct(HashMap<Integer, Integer> countersA, HashMap<Integer, Integer> countersB) {
-        Set<Integer> intersection = countersA.keySet();
-        intersection.retainAll(countersB.keySet());
+    public static int scalarProduct(Map<Integer, Integer> countersA, Map<Integer, Integer> countersB) {
+        Set<Integer> intersection = Sets.intersection(countersA.keySet(), countersB.keySet());
         return intersection.stream()
                 .mapToInt(x -> countersA.get(x) * countersB.get(x))
                 .sum();

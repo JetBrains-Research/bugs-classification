@@ -49,22 +49,20 @@ public class SparseBOWExtractor<T> implements FeaturesExtractor<List<T>, SparseB
 
     public static class SparseBOWVector {
 
-        private final HashMap<Integer, Integer> counterByChangeIndex;
+        private final Map<Integer, Integer> counterByIndex;
 
         private final double norm;
 
-        private SparseBOWVector(HashMap<Integer, Integer> counterByChangeIndex) {
-            final int squaredSum = counterByChangeIndex.values().stream()
-                    .map(x -> x * x)
-                    .reduce(0, Integer::sum);
-            this.counterByChangeIndex = counterByChangeIndex;
+        public SparseBOWVector(Map<Integer, Integer> counterByIndex) {
+            final int squaredSum = counterByIndex.values().stream().mapToInt(x -> x * x).sum();
+            this.counterByIndex = counterByIndex;
             this.norm = Math.sqrt(squaredSum);
         }
 
     }
 
     public static double cosineDistance(SparseBOWExtractor.SparseBOWVector a, SparseBOWExtractor.SparseBOWVector b) {
-        int p = FunctionsUtils.scalarProduct(a.counterByChangeIndex, b.counterByChangeIndex);
-        return a.norm == 0 || b.norm == 0 ? 1 : (1 - p / (a.norm * b.norm)) / 2;
+        int p = FunctionsUtils.scalarProduct(a.counterByIndex, b.counterByIndex);
+        return p == 0 || a.norm == 0 || b.norm == 0 ? 1 : (1 - p / (a.norm * b.norm)) / 2;
     }
 }

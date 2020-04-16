@@ -1,6 +1,5 @@
 package org.ml_methods_group.evaluation.approaches;
 
-import io.grpc.Status;
 import org.ml_methods_group.common.Dataset;
 import org.ml_methods_group.common.FeaturesExtractor;
 import org.ml_methods_group.common.Solution;
@@ -8,14 +7,16 @@ import org.ml_methods_group.common.ast.changes.Changes;
 import org.ml_methods_group.common.ast.changes.CodeChange;
 import org.ml_methods_group.common.extractors.BOWExtractor;
 import org.ml_methods_group.common.extractors.BOWExtractor.BOWVector;
-import org.ml_methods_group.common.extractors.HashExtractor;
 import org.ml_methods_group.common.extractors.ManyProblemsBasedChangesExtractor;
 import org.ml_methods_group.common.extractors.SparseBOWExtractor;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
-import static org.ml_methods_group.common.Hashers.*;
+import static org.ml_methods_group.common.Hashers.CODE_CHANGE_HASHERS;
 import static org.ml_methods_group.common.Solution.Verdict.FAIL;
 
 public class BOWApproach {

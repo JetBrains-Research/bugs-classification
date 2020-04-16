@@ -84,7 +84,6 @@ public class ClustersCreator {
             generatorByDataset.put(train, new ChangesExtractor(changeGenerator, selector));
             incorrect.addAll(train.getValues(x -> x.getVerdict() == FAIL));
         }
-
         System.out.println(incorrect.size());
 
         // Create global clusters based on edit scripts to nearest solution from the same problem
@@ -96,6 +95,7 @@ public class ClustersCreator {
         Clusters<Solution> globalClusters = clusterer.buildClusters(incorrect);
         storeSolutionClusters(globalClusters, EvaluationInfo.PATH_TO_CLUSTERS.resolve("global_clusters.tmp"));
 
+        System.out.println(globalClusters.getClusters().size());
         globalClusters.getClusters().stream()
                 .sorted(Comparator.<Cluster<Solution>>comparingInt(Cluster::size).reversed())
                 .collect(Collectors.toList())

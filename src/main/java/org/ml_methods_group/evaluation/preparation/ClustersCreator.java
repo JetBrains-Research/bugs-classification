@@ -28,6 +28,7 @@ import org.ml_methods_group.testing.selectors.CacheOptionSelector;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.function.Function;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import static org.ml_methods_group.common.Solution.Verdict.FAIL;
@@ -53,26 +54,34 @@ public class ClustersCreator {
     };
 
     public static void main(String[] argv) throws Exception {
-        final List<Cluster<Solution>> clusters =
-                loadSolutionClusters(EvaluationInfo.PATH_TO_CLUSTERS.resolve("global_clusters.tmp"))
-                        .getClusters().stream()
-                        .sorted(Comparator.<Cluster<Solution>>comparingInt(Cluster::size).reversed())
-                        .limit(50)
-                        .collect(Collectors.toList());
-        SolutionMarksHolder localMarksHolder = new SolutionMarksHolder();
-        for (String problem : problems) {
-            final SolutionMarksHolder trainHolder =
-                    loadSolutionMarksHolder(EvaluationInfo.PATH_TO_DATASET.resolve(problem).resolve("extended.tmp"));
-            trainHolder.forEach(e -> {
-                Solution solution = e.getKey();
-                e.getValue().forEach(mark -> localMarksHolder.addMark(solution, mark));
-            });
+        ClustersCreator creator = new ClustersCreator();
+        final Dataset full = loadDataset(EvaluationInfo.PATH_TO_DATASET.resolve("dataset1.tmp"));
+        creator.createGlobalClusters(full.getValues().stream()
+                .map(Solution::getProblemId)
+                .collect(Collectors.toSet())
+                .stream()
+                .map(Object::toString).toArray(String[]::new));
 
-        }
-        storeMarkedClusters(
-                markClusters(clusters, localMarksHolder),
-                EvaluationInfo.PATH_TO_CLUSTERS.resolve("marked_global_clusters.tmp")
-        );
+//        final List<Cluster<Solution>> clusters =
+//                loadSolutionClusters(EvaluationInfo.PATH_TO_CLUSTERS.resolve("global_clusters.tmp"))
+//                        .getClusters().stream()
+//                        .sorted(Comparator.<Cluster<Solution>>comparingInt(Cluster::size).reversed())
+//                        .limit(50)
+//                        .collect(Collectors.toList());
+//        SolutionMarksHolder localMarksHolder = new SolutionMarksHolder();
+//        for (String problem : problems) {
+//            final SolutionMarksHolder trainHolder =
+//                    loadSolutionMarksHolder(EvaluationInfo.PATH_TO_DATASET.resolve(problem).resolve("extended.tmp"));
+//            trainHolder.forEach(e -> {
+//                Solution solution = e.getKey();
+//                e.getValue().forEach(mark -> localMarksHolder.addMark(solution, mark));
+//            });
+//
+//        }
+//        storeMarkedClusters(
+//                markClusters(clusters, localMarksHolder),
+//                EvaluationInfo.PATH_TO_CLUSTERS.resolve("marked_global_clusters.tmp")
+//        );
     }
 
     private static MarkedClusters<Solution, String> markClusters(List<Cluster<Solution>> clusters,

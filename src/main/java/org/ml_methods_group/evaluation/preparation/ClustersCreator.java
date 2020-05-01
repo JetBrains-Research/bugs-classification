@@ -25,6 +25,7 @@ import org.ml_methods_group.marking.markers.ManualClusterMarker;
 import org.ml_methods_group.marking.markers.Marker;
 import org.ml_methods_group.testing.selectors.CacheOptionSelector;
 
+import java.lang.reflect.Array;
 import java.nio.file.Path;
 import java.util.*;
 import java.util.function.Function;
@@ -54,14 +55,6 @@ public class ClustersCreator {
     };
 
     public static void main(String[] argv) throws Exception {
-        ClustersCreator creator = new ClustersCreator();
-        final Dataset full = loadDataset(EvaluationInfo.PATH_TO_DATASET.resolve("dataset1.tmp"));
-        creator.createGlobalClusters(full.getValues().stream()
-                .map(Solution::getProblemId)
-                .collect(Collectors.toSet())
-                .stream()
-                .map(Object::toString).toArray(String[]::new));
-
 //        final List<Cluster<Solution>> clusters =
 //                loadSolutionClusters(EvaluationInfo.PATH_TO_CLUSTERS.resolve("global_clusters.tmp"))
 //                        .getClusters().stream()
@@ -117,6 +110,27 @@ public class ClustersCreator {
                 CommonUtils.checkEquals(astGenerator::buildTree, ASTUtils::deepEquals),
                 new MinValuePicker<>(Comparator.comparingInt(Solution::getSolutionId)));
         this.metric = new HeuristicChangesBasedDistanceFunction(changeGenerator);
+    }
+
+
+    public void createClusters(String problem) throws Exception {
+        final Dataset train = loadDataset(EvaluationInfo.PATH_TO_DATASET.resolve(problem).resolve("train.tmp"));
+        final List<Solution> correct = train.getValues(x -> x.getVerdict() == OK);
+        final List<Solution> incorrect = train.getValues(x -> x.getVerdict() == FAIL);
+
+        // Create clusters based on edit scripts
+        final OptionSelector<Solution, Solution> selector = new CacheOptionSelector<>(
+                new ClosestPairSelector<>(unifier.unify(correct), metric),
+                database,
+                Solution::getSolutionId,
+                Solution::getSolutionId);
+        final FeaturesExtractor<Solution, Changes> generator = new ChangesExtractor(changeGenerator, selector);
+        final Clusterer<Solution> clusterer = clusteringTemplate.createApproach(train, generator)
+                .getClusterer(0.3);
+        final Clusters<Solution> clusters = clusterer.buildClusters(incorrect);
+        storeSolutionClusters(clusters,
+                EvaluationInfo.PATH_TO_DATASET.resolve(problem).resolve("unmarked_clusters.tmp")
+        );
     }
 
 

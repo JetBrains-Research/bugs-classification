@@ -15,7 +15,7 @@ import static org.ml_methods_group.common.serialization.ProtobufSerializationUti
 public class FullDatasetEvaluation {
 
     public static void main(String[] argv) throws Exception {
-        final Dataset full = loadDataset(EvaluationInfo.PATH_TO_DATASET.resolve("dataset1.tmp"));
+        final Dataset full = loadDataset(EvaluationInfo.PATH_TO_DATASET.resolve("dataset2.tmp"));
         Set<Integer> problemIds = full.getValues().stream()
                 .map(Solution::getProblemId)
                 .collect(Collectors.toSet());

@@ -24,6 +24,7 @@ import org.ml_methods_group.evaluation.approaches.BOWApproach;
 import org.ml_methods_group.evaluation.approaches.FuzzyJaccardApproach;
 import org.ml_methods_group.evaluation.approaches.classification.ClassificationApproachTemplate;
 import org.ml_methods_group.evaluation.approaches.clustering.ClusteringApproachTemplate;
+import org.ml_methods_group.evaluation.preparation.BOWDatasetCreator;
 import org.ml_methods_group.evaluation.preparation.DatasetCreator;
 import org.ml_methods_group.evaluation.preparation.TokenBasedDatasetCreator;
 import org.ml_methods_group.marking.markers.ManualClusterMarker;
@@ -93,16 +94,16 @@ public class PipelineEvaluation {
     public static final List<String> problems = Arrays.asList("factorial", "loggers", "reflection", "deserialization");
 
     public static void main(String[] args) throws Exception {
-        var problem = problems.get(3);
+        var problem = "filter";
         Path pathToDataset = EvaluationInfo.PATH_TO_DATASET.resolve(problem);
-        Path pathToTrain = pathToDataset.resolve("extended_train_tokens_dataset.csv");
-        Path pathToTest = pathToDataset.resolve("extended_test_tokens_dataset.csv");
-        System.out.println("Start clustering");
+        Path pathToTrain = pathToDataset.resolve("train_tokens_dataset.csv");
+        Path pathToTest = pathToDataset.resolve("test_tokens_dataset.csv");
+        //System.out.println("Clustering");
         //final var clustersCreator = new ClustersCreator();
         //clustersCreator.createMarkedClusters(pathToDataset);
-        System.out.println("Clusters created and saved, starting creating datasets");
+        System.out.println("Creating datasets");
         saveDatasetsForClassification(pathToDataset, pathToTrain, pathToTest);
-        System.out.println("End creating datasets, start training classification model");
+        //System.out.println("Training classification model");
         //runClassification(pathToTrain, pathToTest);
     }
 
@@ -118,7 +119,7 @@ public class PipelineEvaluation {
             final DistanceFunction<Solution> metric = new HeuristicChangesBasedDistanceFunction(changeGenerator);
 
             // Load data
-            final SolutionMarksHolder testHolder = loadSolutionMarksHolder(pathToDataset.resolve("test_marks.tmp"));
+            final SolutionMarksHolder testHolder = loadSolutionMarksHolder(pathToDataset.resolve("test_marks_fixed.tmp"));
             final Dataset train = loadDataset(pathToDataset.resolve("train.tmp"));
             final Dataset test = loadDataset(pathToDataset.resolve("test.tmp"));
             final MarkedClusters<Solution, String> markedClusters =

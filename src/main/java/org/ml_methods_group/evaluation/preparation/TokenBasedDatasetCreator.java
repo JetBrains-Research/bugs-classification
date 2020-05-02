@@ -39,7 +39,7 @@ public class TokenBasedDatasetCreator implements DatasetCreator {
         System.out.println("Time elapsed: " + TimeUnit.NANOSECONDS.toMillis(endTime - startTime));
 
         try (var out = new PrintWriter(datasetPath.toFile())) {
-            var extractor = getCodeChangeHasher(FULL_EXTENDED_HASHER);
+            var extractor = getCodeChangeHasher(FULL_HASHER);
             int tokensPerChange = extractor.getTokensCount();
             int tokensLineLength = maxTokens.get() * tokensPerChange;
             // CSV header

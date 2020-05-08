@@ -13,24 +13,19 @@ import org.ml_methods_group.common.ast.normalization.NamesASTNormalizer;
 import org.ml_methods_group.common.extractors.ChangesExtractor;
 import org.ml_methods_group.common.extractors.KNearestNeighborsChangesExtractor;
 import org.ml_methods_group.common.metrics.functions.HeuristicChangesBasedDistanceFunction;
-import org.ml_methods_group.common.metrics.representatives.CentroidPicker;
 import org.ml_methods_group.common.metrics.selectors.ClosestPairSelector;
 import org.ml_methods_group.common.metrics.selectors.KClosestPairsSelector;
 import org.ml_methods_group.common.preparation.Unifier;
 import org.ml_methods_group.common.preparation.basic.BasicUnifier;
 import org.ml_methods_group.common.preparation.basic.MinValuePicker;
-import org.ml_methods_group.common.serialization.ProtobufSerializationUtils;
 import org.ml_methods_group.evaluation.approaches.BOWApproach;
 import org.ml_methods_group.evaluation.approaches.FuzzyJaccardApproach;
 import org.ml_methods_group.evaluation.approaches.classification.ClassificationApproachTemplate;
 import org.ml_methods_group.evaluation.approaches.clustering.ClusteringApproachTemplate;
-import org.ml_methods_group.evaluation.preparation.BOWDatasetCreator;
 import org.ml_methods_group.evaluation.preparation.DatasetCreator;
 import org.ml_methods_group.evaluation.preparation.TokenBasedDatasetCreator;
 import org.ml_methods_group.marking.markers.ManualClusterMarker;
 import org.ml_methods_group.marking.markers.Marker;
-import org.ml_methods_group.parsing.JavaCodeValidator;
-import org.ml_methods_group.parsing.ParsingUtils;
 import org.ml_methods_group.testing.BasicClassificationTester;
 import org.ml_methods_group.testing.ClassificationTester;
 import org.ml_methods_group.testing.ClassificationTestingResult;
@@ -38,11 +33,8 @@ import org.ml_methods_group.testing.representatives.CacheRepresentativesPicker;
 import org.ml_methods_group.testing.selectors.CacheManyOptionsSelector;
 import org.ml_methods_group.testing.selectors.CacheOptionSelector;
 
-import java.io.FileInputStream;
-import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -123,7 +115,7 @@ public class PipelineEvaluation {
             final Dataset train = loadDataset(pathToDataset.resolve("train.tmp"));
             final Dataset test = loadDataset(pathToDataset.resolve("test.tmp"));
             final MarkedClusters<Solution, String> markedClusters =
-                    loadMarkedClusters(pathToDataset.resolve("clusters.tmp"));
+                    loadMarkedClusters(pathToDataset.resolve("extended_clusters.tmp"));
             final List<Solution> correctFromTrain = train.getValues(x -> x.getVerdict() == OK);
             final List<Solution> incorrectFromTrain = train.getValues(x -> x.getVerdict() == FAIL);
             final List<Solution> incorrectFromTest = test.getValues(x -> x.getVerdict() == FAIL);
@@ -148,8 +140,8 @@ public class PipelineEvaluation {
 //            System.out.println();
 
             // Create selectors & extractors
-            final var heuristicSelector = getCacheSelectorFromTemplate(
-                    new KClosestPairsSelector<>(unifier.unify(correctFromTrain), metric, 1), database);
+            final var heuristicSelector =
+                    new KClosestPairsSelector<>(unifier.unify(correctFromTrain), metric, 1);
             final FeaturesExtractor<Solution, List<Changes>> generator =
                     new KNearestNeighborsChangesExtractor(changeGenerator, heuristicSelector);
             final var threeNearestSelector = getCacheSelectorFromTemplate(
@@ -176,12 +168,12 @@ public class PipelineEvaluation {
                     testMarksDictionary,
                     pathToTest
             );
-            creator.createDataset(
-                    incorrectFromTrain,
-                    threeNearestGenerator,
-                    trainMarksDictionary,
-                    pathToTrain
-            );
+//            creator.createDataset(
+//                    incorrectFromTrain,
+//                    threeNearestGenerator,
+//                    trainMarksDictionary,
+//                    pathToTrain
+//            );
         }
     }
 

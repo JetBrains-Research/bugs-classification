@@ -30,12 +30,11 @@ import static org.ml_methods_group.common.serialization.ProtobufSerializationUti
 
 public class MarkingEvaluation {
 
-    private final static Path PATH_TO_DATASET = EvaluationInfo.PATH_TO_DATASET.resolve("filter");
-    private final static Integer NUM_CLUSTERS = 50;
-    private final static Integer NUM_EXAMPLES = 10;
+    private final static Path PATH_TO_DATASET = EvaluationInfo.PATH_TO_DATASET.resolve("integral");
+    private final static Integer NUM_CLUSTERS = 100;
+    private final static Integer NUM_EXAMPLES = 5;
 
-    public static void main(String[] argv) throws Exception {
-    }
+    public static void main(String[] argv) throws Exception {}
 
     public static void markGlobalClusters(List<String> problems) throws Exception {
         final var database = new HashDatabase(EvaluationInfo.PATH_TO_CACHE);
@@ -69,6 +68,7 @@ public class MarkingEvaluation {
                 .collect(Collectors.toList());
 
         final var marks = new HashMap<Cluster<Solution>, String>();
+        final var goodClusters = new ArrayList<Cluster<Solution>>();
         try (Scanner scanner = new Scanner(System.in)) {
             for (var cluster : clusters.subList(0, Math.min(clusters.size(), NUM_CLUSTERS))) {
                 System.out.println("Next cluster (size=" + cluster.size() + "):");
@@ -106,20 +106,23 @@ public class MarkingEvaluation {
                 while (true) {
                     final String mark = scanner.nextLine();
                     if (mark.equals("-")) {
-                        marks.remove(cluster);
+                        //marks.remove(cluster);
+                        break;
                     } else if (mark.equals("+")) {
-                        System.out.println("Final mark: " + marks.get(cluster));
+                        //System.out.println("Final mark: " + marks.get(cluster));
+                        goodClusters.add(cluster);
                         break;
                     } else {
-                        marks.put(cluster, mark);
+                        //marks.put(cluster, mark);
                     }
                 }
             }
         }
+        System.out.println(goodClusters.size());
         final var marked = new MarkedClusters<>(marks);
-        ProtobufSerializationUtils.storeMarkedClusters(
-                marked,
-                EvaluationInfo.PATH_TO_CLUSTERS.resolve("marked_global_clusters.tmp")
+        ProtobufSerializationUtils.storeSolutionClusters(
+                new Clusters(goodClusters),
+                EvaluationInfo.PATH_TO_CLUSTERS.resolve("good_global_clusters.tmp")
         );
     }
 
@@ -154,15 +157,26 @@ public class MarkingEvaluation {
                 System.out.println("Next cluster (size=" + cluster.size() + "):");
                 final List<Solution> solutions = cluster.elementsCopy();
                 Collections.shuffle(solutions);
-                for (int i = 0; i < Math.min(NUM_EXAMPLES, solutions.size()); i++) {
-                    final var solution = solutions.get(i);
-                    System.out.println("    Example #" + i);
-                    System.out.println("    Session id: " + solution.getSessionId());
-                    System.out.println(solution.getCode());
-                    System.out.println();
-                    System.out.println("    Submission fix:");
-                    generator.process(solution).getChanges().forEach(System.out::println);
-                    System.out.println();
+                int start = 0;
+                while (true) {
+                    System.out.println("More?");
+                    if (scanner.nextLine().equals("+")) {
+                        int tmp = start;
+                        for (int i = start; i < Math.min(start + NUM_EXAMPLES, solutions.size()); i++) {
+                            final var solution = solutions.get(i);
+                            System.out.println("    Example #" + i);
+                            System.out.println("    Session id: " + solution.getSessionId());
+                            System.out.println(solution.getCode());
+                            System.out.println();
+                            System.out.println("    Submission fix:");
+                            generator.process(solution).getChanges().forEach(System.out::println);
+                            System.out.println();
+                            tmp++;
+                        }
+                        start = tmp;
+                    } else {
+                        break;
+                    }
                 }
                 System.out.println("---------------------------------------------------------------------------------");
                 System.out.println("Your mark:");

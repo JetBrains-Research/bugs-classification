@@ -88,8 +88,9 @@ public class MarkedClustersSavingUtils {
                     }
                     totalAmount += it.getValue();
                 }
-                if ((float) (maxCounter) / (float) (totalAmount) > 0.6)
+                if (maxCounter > 0.6 * totalAmount) {
                     marks.put(cluster, mark);
+                }
                 marks.putIfAbsent(cluster, "");
             }
             final MarkedClusters<Solution, String> markedClusters = new MarkedClusters<>(marks);

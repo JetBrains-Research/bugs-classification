@@ -12,11 +12,11 @@ import java.util.stream.Collectors;
 
 public class HAC<T> implements Clusterer<T> {
 
-    private final SortedSet<Triple> heap = new TreeSet<>();
-    private final Map<Long, Triple> triples = new HashMap<>();
-    private final Set<Community> communities = new HashSet<>();
+    protected final SortedSet<Triple> heap = new TreeSet<>();
+    protected final Map<Long, Triple> triples = new HashMap<>();
+    protected final Set<Community> communities = new HashSet<>();
     private final double distanceLimit;
-    private final int minClustersCount;
+    private int minClustersCount;
     private final DistanceFunction<T> metric;
     private int idGenerator = 0;
 
@@ -26,7 +26,12 @@ public class HAC<T> implements Clusterer<T> {
         this.metric = metric;
     }
 
-    private void init(List<T> values) {
+    protected HAC(double distanceLimit, DistanceFunction<T> metric) {
+        this.distanceLimit = distanceLimit;
+        this.metric = metric;
+    }
+
+    protected void init(List<T> values) {
         heap.clear();
         triples.clear();
         communities.clear();
@@ -76,7 +81,7 @@ public class HAC<T> implements Clusterer<T> {
         return new Clusters<>(clusters);
     }
 
-    private void mergeCommunities(Community first, Community second) {
+    protected void mergeCommunities(Community first, Community second) {
         final List<T> merged;
         if (first.entities.size() < second.entities.size()) {
             merged = second.entities;
@@ -119,7 +124,7 @@ public class HAC<T> implements Clusterer<T> {
         heap.add(triple);
     }
 
-    private void insertTripleIfNecessary(double distance, Community first, Community second) {
+    protected void insertTripleIfNecessary(double distance, Community first, Community second) {
         if (distance >= distanceLimit) {
             return;
         }
@@ -127,7 +132,7 @@ public class HAC<T> implements Clusterer<T> {
         insertTriple(triple);
     }
 
-    private void invalidateTriple(Triple triple) {
+    protected void invalidateTriple(Triple triple) {
         if (triple == null) {
             return;
         }
@@ -143,9 +148,9 @@ public class HAC<T> implements Clusterer<T> {
         return new Community(singletonList);
     }
 
-    private class Community implements Comparable<Community> {
+    protected class Community implements Comparable<Community> {
 
-        private final List<T> entities;
+        protected final List<T> entities;
         private final int id;
 
         Community(List<T> entities) {
@@ -169,11 +174,11 @@ public class HAC<T> implements Clusterer<T> {
         }
     }
 
-    private class Triple implements Comparable<Triple> {
+    protected class Triple implements Comparable<Triple> {
 
         private double distance;
-        private Community first;
-        private Community second;
+        protected Community first;
+        protected Community second;
 
         Triple(double distance, Community first, Community second) {
             this.distance = distance;

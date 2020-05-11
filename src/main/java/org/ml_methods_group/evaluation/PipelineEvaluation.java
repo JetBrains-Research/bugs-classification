@@ -13,6 +13,7 @@ import org.ml_methods_group.common.ast.normalization.NamesASTNormalizer;
 import org.ml_methods_group.common.extractors.ChangesExtractor;
 import org.ml_methods_group.common.extractors.KNearestNeighborsChangesExtractor;
 import org.ml_methods_group.common.metrics.functions.HeuristicChangesBasedDistanceFunction;
+import org.ml_methods_group.common.metrics.representatives.CentroidPicker;
 import org.ml_methods_group.common.metrics.selectors.ClosestPairSelector;
 import org.ml_methods_group.common.metrics.selectors.KClosestPairsSelector;
 import org.ml_methods_group.common.preparation.Unifier;
@@ -29,12 +30,12 @@ import org.ml_methods_group.marking.markers.Marker;
 import org.ml_methods_group.testing.BasicClassificationTester;
 import org.ml_methods_group.testing.ClassificationTester;
 import org.ml_methods_group.testing.ClassificationTestingResult;
+import org.ml_methods_group.testing.representatives.CacheRepresentativesPicker;
 import org.ml_methods_group.testing.selectors.CacheManyOptionsSelector;
 import org.ml_methods_group.testing.selectors.CacheOptionSelector;
 
 import java.nio.file.Path;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -67,18 +68,34 @@ public class PipelineEvaluation {
         );
     }
 
+    public static CacheRepresentativesPicker<Solution> getCacheRepresentativesPickerFromTemplate(
+            RepresentativesPicker<Solution> picker, Database database, List<Solution> options) throws Exception {
+        return new CacheRepresentativesPicker<Solution>(
+                picker, options, database,
+                Solution::getSolutionId,
+                Solution::getSolutionId,
+                list -> list.stream()
+                        .map(String::valueOf)
+                        .collect(Collectors.joining(",")),
+                string -> Arrays.stream(string.split(","))
+                        .map(Integer::valueOf)
+                        .collect(Collectors.toList())
+        );
+    }
+
     public static final List<String> problems = Arrays.asList("factorial", "loggers", "reflection", "deserialization");
 
     public static void main(String[] args) throws Exception {
-        var problem = problems.get(1);
+        var problem = "filter";
         Path pathToDataset = EvaluationInfo.PATH_TO_DATASET.resolve(problem);
         Path pathToTrain = pathToDataset.resolve("train_tokens_dataset.csv");
-        Path pathToTest = pathToDataset.resolve("new_test_tokens_dataset.csv");
-        System.out.println("Start clustering");
-        //createClusters(pathToDataset);
-        System.out.println("Clusters created and saved, starting creating datasets");
+        Path pathToTest = pathToDataset.resolve("test_tokens_dataset.csv");
+        //System.out.println("Clustering");
+        //final var clustersCreator = new ClustersCreator();
+        //clustersCreator.createMarkedClusters(pathToDataset);
+        System.out.println("Creating datasets");
         saveDatasetsForClassification(pathToDataset, pathToTrain, pathToTest);
-        System.out.println("End creating datasets, start training classification model");
+        //System.out.println("Training classification model");
         //runClassification(pathToTrain, pathToTest);
     }
 
@@ -94,11 +111,12 @@ public class PipelineEvaluation {
             final DistanceFunction<Solution> metric = new HeuristicChangesBasedDistanceFunction(changeGenerator);
 
             // Load data
-            final SolutionMarksHolder testHolder = loadSolutionMarksHolder(pathToDataset.resolve("test_marks.tmp"));
+            final SolutionMarksHolder testHolder =
+                    loadSolutionMarksHolder(pathToDataset.resolve("test_marks_fixed.tmp"));
             final Dataset train = loadDataset(pathToDataset.resolve("train.tmp"));
             final Dataset test = loadDataset(pathToDataset.resolve("test.tmp"));
             final MarkedClusters<Solution, String> markedClusters =
-                    loadMarkedClusters(pathToDataset.resolve("clusters.tmp"));
+                    loadMarkedClusters(pathToDataset.resolve("extended_clusters.tmp"));
             final List<Solution> correctFromTrain = train.getValues(x -> x.getVerdict() == OK);
             final List<Solution> incorrectFromTrain = train.getValues(x -> x.getVerdict() == FAIL);
             final List<Solution> incorrectFromTest = test.getValues(x -> x.getVerdict() == FAIL);
@@ -106,9 +124,21 @@ public class PipelineEvaluation {
                     .concat(incorrectFromTrain.stream(), incorrectFromTest.stream())
                     .collect(Collectors.toList());
 
-            // Create datasets
-            final var heuristicSelector = getCacheSelectorFromTemplate(
-                    new KClosestPairsSelector<>(unifier.unify(correctFromTrain), metric, 1), database);
+            // Prepare centroid picker and clusters of correct solutions
+            final int minClustersCount = (int) Math.round(Math.sqrt(unifier.unify(correctFromTrain).size()));
+            final Clusters<Solution> clusters = new Clusters<>(
+                    loadSolutionClusters(pathToDataset.resolve("sqrt-clusters-100.tmp"))
+                            .getClusters().stream()
+                            .sorted(Comparator.<Cluster<Solution>>comparingInt(Cluster::size).reversed())
+                            .limit(minClustersCount)
+                            .collect(Collectors.toList())
+            );
+            final var picker = getCacheRepresentativesPickerFromTemplate(
+                    new CentroidPicker<>(metric), database, correctFromTrain);
+
+            // Create selectors & extractors
+            final var heuristicSelector =
+                    new KClosestPairsSelector<>(unifier.unify(correctFromTrain), metric, 1);
             final FeaturesExtractor<Solution, List<Changes>> generator =
                     new KNearestNeighborsChangesExtractor(changeGenerator, heuristicSelector);
             final var threeNearestSelector = getCacheSelectorFromTemplate(
@@ -116,6 +146,7 @@ public class PipelineEvaluation {
             final FeaturesExtractor<Solution, List<Changes>> threeNearestGenerator =
                     new KNearestNeighborsChangesExtractor(changeGenerator, threeNearestSelector);
 
+            // Prepare marks
             final var testMarksDictionary = new HashMap<Solution, List<String>>();
             for (var entry : testHolder) {
                 testMarksDictionary.put(entry.getKey(), entry.getValue());
@@ -126,17 +157,14 @@ public class PipelineEvaluation {
                 trainMarksDictionary.put(solution, Collections.singletonList(flatMarks.get(solution)));
             }
 
+            // Save test & train datasets
             final DatasetCreator creator = new TokenBasedDatasetCreator();
-
-            long startTime = System.nanoTime();
             creator.createDataset(
                     incorrectFromTest,
                     generator,
                     testMarksDictionary,
                     pathToTest
             );
-            long endTime = System.nanoTime();
-            System.out.println("Time elapsed: " + TimeUnit.NANOSECONDS.toMillis(endTime - startTime));
             creator.createDataset(
                     incorrectFromTrain,
                     threeNearestGenerator,

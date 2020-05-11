@@ -10,7 +10,6 @@ public class Approach<F> {
     public final String name;
 
     public Approach(FeaturesExtractor<Solution, F> extractor, DistanceFunction<F> metric, String name) {
-//        this.extractor = new CachedFeaturesExtractor<>(extractor, Solution::getSolutionId);
         this.extractor = extractor;
         this.metric = metric;
         this.name = name;

@@ -9,13 +9,12 @@ import org.ml_methods_group.common.extractors.HashExtractor;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
 
 public class Hashers {
 
-    private static String tokensSeparator = ",";
+    private static final String TOKENS_SEPARATOR = ",";
 
-    public static String getTokensSeparator() { return tokensSeparator; }
+    public static String getTokensSeparator() { return TOKENS_SEPARATOR; }
 
     public static final HashExtractor<ChangeType> CHANGE_TYPE_HASH = HashExtractor.<ChangeType>builder()
             .append("CT")
@@ -32,19 +31,21 @@ public class Hashers {
     public static final HashExtractor<NodeState> LABEL_NODE_STATE_HASH = HashExtractor.<NodeState>builder()
             .append("LNS")
             .hashComponent(NodeState::getType, NODE_TYPE_HASH)
+            .append(TOKENS_SEPARATOR)
             .hashComponent(NodeState::getLabel)
             .build();
     public static final HashExtractor<NodeState> JAVA_TYPE_NODE_STATE_HASH = HashExtractor.<NodeState>builder()
             .append("JNS")
             .hashComponent(NodeState::getType, NODE_TYPE_HASH)
+            .append(TOKENS_SEPARATOR)
             .hashComponent(NodeState::getJavaType)
             .build();
     public static final HashExtractor<NodeState> FULL_NODE_STATE_HASH = HashExtractor.<NodeState>builder()
             .append("FNS")
             .hashComponent(NodeState::getType, NODE_TYPE_HASH)
-            .append(tokensSeparator)
+            .append(TOKENS_SEPARATOR)
             .hashComponent(NodeState::getLabel)
-            .append(tokensSeparator)
+            .append(TOKENS_SEPARATOR)
             .hashComponent(NodeState::getJavaType)
             .build();
     public static final HashExtractor<NodeContext> WEAK_HASHER = HashExtractor.<NodeContext>builder()
@@ -62,9 +63,9 @@ public class Hashers {
     public static final HashExtractor<NodeContext> FULL_HASHER = HashExtractor.<NodeContext>builder()
             .append("FCC")
             .hashComponent(NodeContext::getNode, FULL_NODE_STATE_HASH)
-            .append(tokensSeparator)
+            .append(TOKENS_SEPARATOR)
             .hashComponent(NodeContext::getParent, TYPE_ONLY_NODE_STATE_HASH)
-            .append(tokensSeparator)
+            .append(TOKENS_SEPARATOR)
             .hashComponent(NodeContext::getParentOfParent, TYPE_ONLY_NODE_STATE_HASH)
             .build();
     public static final HashExtractor<NodeContext> EXTENDED_HASHER = HashExtractor.<NodeContext>builder()
@@ -82,7 +83,9 @@ public class Hashers {
     public static final HashExtractor<NodeContext> DEEP_EXTENDED_HASHER = HashExtractor.<NodeContext>builder()
             .append("DEC")
             .hashComponent(NodeContext::getNode, JAVA_TYPE_NODE_STATE_HASH)
+            .append(TOKENS_SEPARATOR)
             .hashComponent(NodeContext::getParent, LABEL_NODE_STATE_HASH)
+            .append(TOKENS_SEPARATOR)
             .hashComponent(NodeContext::getParentOfParent, LABEL_NODE_STATE_HASH)
             .build();
 
@@ -90,15 +93,15 @@ public class Hashers {
         return HashExtractor.<CodeChange>builder()
                 .append("CCE")
                 .hashComponent(CodeChange::getChangeType, CHANGE_TYPE_HASH)
-                .append(tokensSeparator)
+                .append(TOKENS_SEPARATOR)
                 .hashComponent(CodeChange::getOriginalContext, hasher)
-                .append(tokensSeparator)
+                .append(TOKENS_SEPARATOR)
                 .hashComponent(CodeChange::getDestinationContext, hasher)
-                .append(tokensSeparator)
+                .append(TOKENS_SEPARATOR)
                 .build();
     }
 
-    public static final List<HashExtractor<CodeChange>> codeChangeHashers = Arrays.asList(
+    public static final List<HashExtractor<CodeChange>> CODE_CHANGE_HASHERS = Arrays.asList(
             getCodeChangeHasher(WEAK_HASHER),
             getCodeChangeHasher(JAVA_TYPES_HASHER),
             getCodeChangeHasher(FULL_HASHER),

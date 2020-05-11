@@ -2,11 +2,8 @@ package org.ml_methods_group.evaluation.preparation;
 
 import org.ml_methods_group.common.Dataset;
 import org.ml_methods_group.common.serialization.ProtobufSerializationUtils;
-import org.ml_methods_group.evaluation.EvaluationInfo;
 
 import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 
 import static org.ml_methods_group.evaluation.EvaluationInfo.PATH_TO_DATASET;
 

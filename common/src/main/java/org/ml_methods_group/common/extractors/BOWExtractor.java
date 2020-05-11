@@ -51,6 +51,11 @@ public class BOWExtractor<T> implements FeaturesExtractor<List<T>, BOWExtractor.
 
     public static class BOWVector {
         private final int[] counters;
+
+        public int[] getCounters() {
+            return counters;
+        }
+
         private final double norm;
         private final double normApproximation;
 

@@ -1,6 +1,9 @@
 package org.ml_methods_group.classification.classifiers;
 
-import org.ml_methods_group.common.*;
+import org.ml_methods_group.common.Classifier;
+import org.ml_methods_group.common.FeaturesExtractor;
+import org.ml_methods_group.common.MarkedClusters;
+import org.ml_methods_group.common.Wrapper;
 
 import java.util.Map;
 import java.util.Optional;

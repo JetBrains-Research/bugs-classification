@@ -15,13 +15,15 @@ import org.ml_methods_group.common.metrics.selectors.ClosestPairSelector;
 import org.ml_methods_group.common.preparation.Unifier;
 import org.ml_methods_group.common.preparation.basic.BasicUnifier;
 import org.ml_methods_group.common.preparation.basic.MinValuePicker;
-import org.ml_methods_group.evaluation.approaches.*;
-import org.ml_methods_group.evaluation.approaches.classification.ClassificationApproachTemplate;
+import org.ml_methods_group.evaluation.approaches.BOWApproach;
+import org.ml_methods_group.evaluation.approaches.FuzzyJaccardApproach;
+import org.ml_methods_group.evaluation.approaches.JaccardApproach;
+import org.ml_methods_group.evaluation.approaches.VectorizationApproach;
 import org.ml_methods_group.evaluation.approaches.classification.ClassificationApproach;
+import org.ml_methods_group.evaluation.approaches.classification.ClassificationApproachTemplate;
 import org.ml_methods_group.testing.BasicClassificationTester;
 import org.ml_methods_group.testing.ClassificationTestingResult;
 import org.ml_methods_group.testing.selectors.CacheOptionSelector;
-
 
 import java.io.PrintWriter;
 import java.nio.file.Path;

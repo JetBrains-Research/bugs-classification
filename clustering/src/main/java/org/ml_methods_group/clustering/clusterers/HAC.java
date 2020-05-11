@@ -1,8 +1,8 @@
 package org.ml_methods_group.clustering.clusterers;
 
+import org.ml_methods_group.common.Cluster;
 import org.ml_methods_group.common.Clusterer;
 import org.ml_methods_group.common.Clusters;
-import org.ml_methods_group.common.Cluster;
 import org.ml_methods_group.common.DistanceFunction;
 import org.ml_methods_group.common.parallel.ParallelContext;
 import org.ml_methods_group.common.parallel.ParallelUtils;

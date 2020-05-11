@@ -1,7 +1,5 @@
 package org.ml_methods_group.server;
 
-import org.ml_methods_group.common.Solution;
-
 public class HintRequest {
     private int problem;
     private String code;

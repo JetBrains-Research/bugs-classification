@@ -36,9 +36,9 @@ import java.nio.file.Paths;
 import java.util.*;
 import java.util.stream.Collectors;
 
+import static org.ml_methods_group.common.Hashers.*;
 import static org.ml_methods_group.common.Solution.Verdict.FAIL;
 import static org.ml_methods_group.common.Solution.Verdict.OK;
-import static org.ml_methods_group.evaluation.approaches.BOWApproach.*;
 
 public class Application {
     public static void main(String[] args) throws Exception {

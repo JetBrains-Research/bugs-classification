@@ -1,10 +1,12 @@
 package org.ml_methods_group.testing.selectors;
 
+import org.ml_methods_group.common.Database;
 import org.ml_methods_group.common.OptionSelector;
 import org.ml_methods_group.common.Repository;
-import org.ml_methods_group.common.Database;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.ToIntFunction;
 import java.util.stream.Collectors;

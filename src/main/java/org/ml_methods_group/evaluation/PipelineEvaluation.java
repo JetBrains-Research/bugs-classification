@@ -1,6 +1,7 @@
 package org.ml_methods_group.evaluation;
 
 import com.github.gumtreediff.tree.ITree;
+import com.github.javaparser.Token;
 import org.ml_methods_group.cache.HashDatabase;
 import org.ml_methods_group.common.*;
 import org.ml_methods_group.common.ast.ASTUtils;
@@ -11,8 +12,10 @@ import org.ml_methods_group.common.ast.generation.ASTGenerator;
 import org.ml_methods_group.common.ast.generation.CachedASTGenerator;
 import org.ml_methods_group.common.ast.normalization.NamesASTNormalizer;
 import org.ml_methods_group.common.extractors.ChangesExtractor;
+import org.ml_methods_group.common.extractors.KNearestNeighborsChangesExtractor;
 import org.ml_methods_group.common.metrics.functions.HeuristicChangesBasedDistanceFunction;
 import org.ml_methods_group.common.metrics.selectors.ClosestPairSelector;
+import org.ml_methods_group.common.metrics.selectors.KClosestPairsSelector;
 import org.ml_methods_group.common.preparation.Unifier;
 import org.ml_methods_group.common.preparation.basic.BasicUnifier;
 import org.ml_methods_group.common.preparation.basic.MinValuePicker;
@@ -20,21 +23,26 @@ import org.ml_methods_group.evaluation.approaches.BOWApproach;
 import org.ml_methods_group.evaluation.approaches.FuzzyJaccardApproach;
 import org.ml_methods_group.evaluation.approaches.classification.ClassificationApproachTemplate;
 import org.ml_methods_group.evaluation.approaches.clustering.ClusteringApproachTemplate;
+import org.ml_methods_group.evaluation.preparation.DatasetCreator;
+import org.ml_methods_group.evaluation.preparation.TokenBasedDatasetCreator;
 import org.ml_methods_group.marking.markers.ManualClusterMarker;
 import org.ml_methods_group.marking.markers.Marker;
 import org.ml_methods_group.testing.BasicClassificationTester;
 import org.ml_methods_group.testing.ClassificationTester;
 import org.ml_methods_group.testing.ClassificationTestingResult;
+import org.ml_methods_group.testing.selectors.CacheManyOptionsSelector;
 import org.ml_methods_group.testing.selectors.CacheOptionSelector;
 
 import java.nio.file.Path;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.ml_methods_group.common.Solution.Verdict.FAIL;
 import static org.ml_methods_group.common.Solution.Verdict.OK;
-import static org.ml_methods_group.common.serialization.ProtobufSerializationUtils.loadDataset;
-import static org.ml_methods_group.common.serialization.ProtobufSerializationUtils.loadSolutionMarksHolder;
+import static org.ml_methods_group.common.serialization.ProtobufSerializationUtils.*;
+import static org.ml_methods_group.evaluation.preparation.MarkedClustersSavingUtils.createClusters;
 
 public class PipelineEvaluation {
 
@@ -46,9 +54,118 @@ public class PipelineEvaluation {
             new ClassificationApproachTemplate(((dataset, generator) ->
                     FuzzyJaccardApproach.getDefaultApproach(generator)));
 
-    public static final String problem = "double_equality";
+    public static CacheManyOptionsSelector<Solution, Solution> getCacheSelectorFromTemplate(
+            KClosestPairsSelector<Solution> selector, Database database) throws Exception {
+        return new CacheManyOptionsSelector<Solution, Solution>(
+                selector, database,
+                Solution::getSolutionId,
+                Solution::getSolutionId,
+                list -> list.stream()
+                        .map(String::valueOf)
+                        .collect(Collectors.joining(",")),
+                string -> Arrays.stream(string.split(","))
+                        .map(Integer::valueOf)
+                        .collect(Collectors.toList())
+        );
+    }
+
+    public static final List<String> problems = Arrays.asList("factorial", "loggers", "reflection", "deserialization");
 
     public static void main(String[] args) throws Exception {
+        var problem = problems.get(2);
+        Path pathToDataset = EvaluationInfo.PATH_TO_DATASET.resolve(problem);
+        Path pathToTrain = pathToDataset.resolve("train_tokens_dataset.csv");
+        Path pathToTest = pathToDataset.resolve("test_tokens_dataset.csv");
+        System.out.println("Start clustering");
+        //createClusters(pathToDataset);
+        System.out.println("Clusters created and saved, starting creating datasets");
+        saveDatasetsForClassification(pathToDataset, pathToTrain, pathToTest);
+        System.out.println("End creating datasets, start training classification model");
+        //runClassification(pathToTrain, pathToTest);
+    }
+
+    public static void saveDatasetsForClassification(Path pathToDataset, Path pathToTrain, Path pathToTest)
+            throws Exception {
+        try (final HashDatabase database = new HashDatabase(EvaluationInfo.PATH_TO_CACHE)) {
+            final ASTGenerator astGenerator = new CachedASTGenerator(new NamesASTNormalizer());
+            final ChangeGenerator changeGenerator = new BasicChangeGenerator(astGenerator);
+            final Unifier<Solution> unifier = new BasicUnifier<>(
+                    CommonUtils.compose(astGenerator::buildTree, ITree::getHash)::apply,
+                    CommonUtils.checkEquals(astGenerator::buildTree, ASTUtils::deepEquals),
+                    new MinValuePicker<>(Comparator.comparingInt(Solution::getSolutionId)));
+            final DistanceFunction<Solution> metric = new HeuristicChangesBasedDistanceFunction(changeGenerator);
+
+            final SolutionMarksHolder testHolder = loadSolutionMarksHolder(pathToDataset.resolve("test_marks.tmp"));
+            final Dataset train = loadDataset(pathToDataset.resolve("train.tmp"));
+            final Dataset test = loadDataset(pathToDataset.resolve("test.tmp"));
+            final MarkedClusters<Solution, String> markedClusters =
+                    loadMarkedClusters(pathToDataset.resolve("clusters.tmp"));
+            final List<Solution> correctFromTrain = train.getValues(x -> x.getVerdict() == OK);
+            final List<Solution> incorrectFromTrain = train.getValues(x -> x.getVerdict() == FAIL);
+            final List<Solution> incorrectFromTest = test.getValues(x -> x.getVerdict() == FAIL);
+            final List<Solution> allIncorrect = Stream
+                    .concat(incorrectFromTrain.stream(), incorrectFromTest.stream())
+                    .collect(Collectors.toList());
+
+            // Create datasets
+            final var heuristicSelector = getCacheSelectorFromTemplate(
+                    new KClosestPairsSelector<>(unifier.unify(correctFromTrain), metric, 1), database);
+            final FeaturesExtractor<Solution, List<Changes>> generator =
+                    new KNearestNeighborsChangesExtractor(changeGenerator, heuristicSelector);
+            final var threeNearestSelector = getCacheSelectorFromTemplate(
+                    new KClosestPairsSelector<>(unifier.unify(correctFromTrain), metric, 3), database);
+            final FeaturesExtractor<Solution, List<Changes>> threeNearestGenerator =
+                    new KNearestNeighborsChangesExtractor(changeGenerator, threeNearestSelector);
+
+            final var testMarksDictionary = new HashMap<Solution, List<String>>();
+            for (var entry : testHolder) {
+                testMarksDictionary.put(entry.getKey(), entry.getValue());
+            }
+            final var trainMarksDictionary = new HashMap<Solution, List<String>>();
+            final Map<Solution, String> flatMarks = markedClusters.getFlatMarks();
+            for (var solution : incorrectFromTrain) {
+                trainMarksDictionary.put(solution, Collections.singletonList(flatMarks.get(solution)));
+            }
+
+            final DatasetCreator creator = new TokenBasedDatasetCreator();
+
+            long startTime = System.nanoTime();
+            creator.createDataset(
+                    incorrectFromTest,
+                    generator,
+                    testMarksDictionary,
+                    pathToTest
+            );
+            long endTime = System.nanoTime();
+            System.out.println("Time elapsed: " + TimeUnit.NANOSECONDS.toMillis(endTime - startTime));
+            creator.createDataset(
+                    incorrectFromTrain,
+                    threeNearestGenerator,
+                    trainMarksDictionary,
+                    pathToTrain
+            );
+        }
+    }
+
+    public static void runClassification(Path pathToTrain, Path pathToTest) throws Exception {
+        String pythonBinaryPath = EvaluationInfo.PATH_TO_PYTHON_BINARY.toString();
+        Path pythonScriptPath = EvaluationInfo.PATH_TO_PYTHON_SCRIPTS.resolve("classification.py");
+        String[] command = {pythonBinaryPath, pythonScriptPath.toString(),
+                "--train", pathToTrain.toString(), "--validate", pathToTest.toString()};
+        ProcessBuilder pb = new ProcessBuilder(command);
+        pb.redirectOutput(ProcessBuilder.Redirect.INHERIT);
+        pb.redirectError(ProcessBuilder.Redirect.INHERIT);
+        Process process = pb.start();
+        try {
+            process.waitFor();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        } finally {
+            process.destroy();
+        }
+    }
+
+    public static void runOldPipeline(String problem) throws Exception {
         try (final HashDatabase database = new HashDatabase(EvaluationInfo.PATH_TO_CACHE)) {
             final ASTGenerator astGenerator = new CachedASTGenerator(new NamesASTNormalizer());
             final ChangeGenerator changeGenerator = new BasicChangeGenerator(astGenerator);
@@ -66,19 +183,18 @@ public class PipelineEvaluation {
             final ClassificationTester<Solution, String> tester = new BasicClassificationTester<>(
                     test.getValues(x -> x.getVerdict() == FAIL),
                     (solution, mark) -> testHolder.getMarks(solution).filter(x -> x.contains(mark)).isPresent());
-            final Dataset train = dataset;
-            final List<Solution> correct = train.getValues(x -> x.getVerdict() == OK);
-            final List<Solution> incorrect = train.getValues(x -> x.getVerdict() == FAIL);
+            final List<Solution> correct = dataset.getValues(x -> x.getVerdict() == OK);
+            final List<Solution> incorrect = dataset.getValues(x -> x.getVerdict() == FAIL);
             final OptionSelector<Solution, Solution> selector = new CacheOptionSelector<>(
                     new ClosestPairSelector<>(unifier.unify(correct), metric),
                     database,
                     Solution::getSolutionId,
                     Solution::getSolutionId);
             final FeaturesExtractor<Solution, Changes> generator = new ChangesExtractor(changeGenerator, selector);
-            final Clusterer<Solution> clusterer = clusteringTemplate.createApproach(train, generator)
+            final Clusterer<Solution> clusterer = clusteringTemplate.createApproach(dataset, generator)
                     .getClusterer(0.3);
             final Clusters<Solution> clusters = clusterer.buildClusters(incorrect);
-            final Classifier<Solution, String> classifier = classificationTemplate.createApproach(train, generator)
+            final Classifier<Solution, String> classifier = classificationTemplate.createApproach(dataset, generator)
                     .getClassifier("k-nearest-15");
             classifier.train(markClusters(clusters));
             final ClassificationTestingResult result = tester.test(classifier);
@@ -89,7 +205,6 @@ public class PipelineEvaluation {
             }
         }
     }
-
 
     private static MarkedClusters<Solution, String> markClusters(Clusters<Solution> clusters) {
         final List<Cluster<Solution>> list = clusters.getClusters().stream()

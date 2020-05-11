@@ -1,7 +1,6 @@
 package org.ml_methods_group.common;
 
 import java.io.Serializable;
-import java.util.function.Function;
 
 @FunctionalInterface
 public interface FeaturesExtractor<V, F> extends Serializable {

@@ -3,7 +3,10 @@ package org.ml_methods_group.evaluation.approaches.classification;
 import org.ml_methods_group.classification.classifiers.CompositeClassifier;
 import org.ml_methods_group.classification.classifiers.KNearestNeighbors;
 import org.ml_methods_group.classification.classifiers.NearestCluster;
-import org.ml_methods_group.common.*;
+import org.ml_methods_group.common.Classifier;
+import org.ml_methods_group.common.CommonUtils;
+import org.ml_methods_group.common.Solution;
+import org.ml_methods_group.common.Wrapper;
 import org.ml_methods_group.evaluation.approaches.Approach;
 
 import java.util.function.Function;

@@ -1,12 +1,11 @@
 package org.ml_methods_group.common.metrics.functions;
 
+import org.ml_methods_group.common.DistanceFunction;
 import org.ml_methods_group.common.SimilarityMetric;
 import org.ml_methods_group.common.metrics.algorithms.AssignmentProblem;
-import org.ml_methods_group.common.DistanceFunction;
 
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static java.util.Collections.emptyList;

@@ -12,9 +12,7 @@ import java.util.List;
 
 public class Hashers {
 
-    private static final String TOKENS_SEPARATOR = ",";
-
-    public static String getTokensSeparator() { return TOKENS_SEPARATOR; }
+    public static final String TOKENS_SEPARATOR = ",";
 
     public static final HashExtractor<ChangeType> CHANGE_TYPE_HASH = HashExtractor.<ChangeType>builder()
             .append("CT")

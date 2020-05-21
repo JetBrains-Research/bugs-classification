@@ -17,6 +17,7 @@ public class OptimizedOptionSelector<V> implements ManyOptionsSelector<V, V> {
         this.metric = metric;
         this.topClusters = topClusters;
         this.representatives = clusters.getClusters().stream()
+                .filter(cluster -> !cluster.getElements().isEmpty())
                 .collect(Collectors.toMap(
                         cluster -> picker.getRepresentatives(cluster).get(0),
                         Function.identity(),

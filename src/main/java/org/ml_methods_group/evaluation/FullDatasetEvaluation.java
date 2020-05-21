@@ -3,6 +3,8 @@ package org.ml_methods_group.evaluation;
 import org.ml_methods_group.common.Dataset;
 import org.ml_methods_group.common.Solution;
 
+import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -12,6 +14,7 @@ import java.util.stream.Stream;
 import static org.ml_methods_group.common.Solution.Verdict.FAIL;
 import static org.ml_methods_group.common.Solution.Verdict.OK;
 import static org.ml_methods_group.common.serialization.ProtobufSerializationUtils.loadDataset;
+import static org.ml_methods_group.common.serialization.ProtobufSerializationUtils.storeDataset;
 
 public class FullDatasetEvaluation {
 
@@ -33,13 +36,13 @@ public class FullDatasetEvaluation {
                 List<Solution> train = Stream.concat(trainIncorrect.stream(), correct.stream())
                         .collect(Collectors.toList());
                 System.out.println(train.size() + " - " + test.size());
-//                try {
-//                    Path pathToDataset = EvaluationInfo.PATH_TO_DATASET.resolve("full").resolve(id.toString());
-//                    storeDataset(new Dataset(train), pathToDataset.resolve("train.tmp"));
-//                    storeDataset(new Dataset(test), pathToDataset.resolve("test.tmp"));
-//                } catch (IOException e) {
-//                    e.printStackTrace();
-//                }
+                try {
+                    Path pathToDataset = EvaluationInfo.PATH_TO_DATASET.resolve("full").resolve(id.toString());
+                    storeDataset(new Dataset(train), pathToDataset.resolve("train.tmp"));
+                    storeDataset(new Dataset(test), pathToDataset.resolve("test.tmp"));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
             }
         });
 

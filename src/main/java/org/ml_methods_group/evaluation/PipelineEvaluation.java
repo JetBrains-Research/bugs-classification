@@ -23,6 +23,7 @@ import org.ml_methods_group.evaluation.approaches.BOWApproach;
 import org.ml_methods_group.evaluation.approaches.FuzzyJaccardApproach;
 import org.ml_methods_group.evaluation.approaches.classification.ClassificationApproachTemplate;
 import org.ml_methods_group.evaluation.approaches.clustering.ClusteringApproachTemplate;
+import org.ml_methods_group.evaluation.preparation.ClustersCreator;
 import org.ml_methods_group.evaluation.preparation.DatasetCreator;
 import org.ml_methods_group.evaluation.preparation.TokenBasedDatasetCreator;
 import org.ml_methods_group.marking.markers.ManualClusterMarker;
@@ -90,13 +91,13 @@ public class PipelineEvaluation {
         Path pathToDataset = EvaluationInfo.PATH_TO_DATASET.resolve(problem);
         Path pathToTrain = pathToDataset.resolve("train_tokens_dataset.csv");
         Path pathToTest = pathToDataset.resolve("test_tokens_dataset.csv");
-        //System.out.println("Clustering");
-        //final var clustersCreator = new ClustersCreator();
-        //clustersCreator.createMarkedClusters(pathToDataset);
+        System.out.println("Clustering");
+        final var clustersCreator = new ClustersCreator(clusteringTemplate);
+        clustersCreator.createMarkedClusters(pathToDataset);
         System.out.println("Creating datasets");
         saveDatasetsForClassification(pathToDataset, pathToTrain, pathToTest);
-        //System.out.println("Training classification model");
-        //runClassification(pathToTrain, pathToTest);
+        System.out.println("Training classification model");
+        runClassification(pathToTrain, pathToTest);
     }
 
     public static void saveDatasetsForClassification(Path pathToDataset, Path pathToTrain, Path pathToTest)

@@ -2,13 +2,10 @@ package org.ml_methods_group.common.metrics.representatives;
 
 import org.ml_methods_group.common.Cluster;
 import org.ml_methods_group.common.DistanceFunction;
-import org.ml_methods_group.common.ManyOptionsSelector;
 import org.ml_methods_group.common.RepresentativesPicker;
 
-import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 public class CentroidPicker<V> implements RepresentativesPicker<V> {
 
@@ -20,6 +17,9 @@ public class CentroidPicker<V> implements RepresentativesPicker<V> {
 
     @Override
     public List<V> getRepresentatives(Cluster<V> values) {
+        if (values.getElements().isEmpty()) {
+            return List.of();
+        }
         double minimalTotalDistanceToOthers = Double.MAX_VALUE;
         V center = values.getElements().get(0);
         for (V current : values) {
@@ -32,7 +32,7 @@ public class CentroidPicker<V> implements RepresentativesPicker<V> {
                 center = current;
             }
         }
-        return List.of(center);
+        return Collections.singletonList(center);
     }
 
 }

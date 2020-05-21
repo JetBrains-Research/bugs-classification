@@ -37,42 +37,9 @@ public class ClustersCreator {
     private final Unifier<Solution> unifier;
     private final ChangeGenerator changeGenerator;
     private final DistanceFunction<Solution> metric;
+    public final ClusteringApproachTemplate clusteringTemplate;
 
-    public static final ClusteringApproachTemplate clusteringTemplate =
-            new ClusteringApproachTemplate(((dataset, generator) ->
-                    BOWApproach.getDefaultApproach(20000, dataset, generator)));
-
-    public static String[] problems = {
-            "loggers",
-            "deserialization",
-            "reflection",
-            "factorial",
-    };
-
-    public static void main(String[] argv) throws Exception {
-//        final List<Cluster<Solution>> clusters =
-//                loadSolutionClusters(EvaluationInfo.PATH_TO_CLUSTERS.resolve("global_clusters.tmp"))
-//                        .getClusters().stream()
-//                        .sorted(Comparator.<Cluster<Solution>>comparingInt(Cluster::size).reversed())
-//                        .limit(50)
-//                        .collect(Collectors.toList());
-//        SolutionMarksHolder localMarksHolder = new SolutionMarksHolder();
-//        for (String problem : problems) {
-//            final SolutionMarksHolder trainHolder =
-//                    loadSolutionMarksHolder(EvaluationInfo.PATH_TO_DATASET.resolve(problem).resolve("extended.tmp"));
-//            trainHolder.forEach(e -> {
-//                Solution solution = e.getKey();
-//                e.getValue().forEach(mark -> localMarksHolder.addMark(solution, mark));
-//            });
-//
-//        }
-//        storeMarkedClusters(
-//                markClusters(clusters, localMarksHolder),
-//                EvaluationInfo.PATH_TO_CLUSTERS.resolve("marked_global_clusters.tmp")
-//        );
-    }
-
-    public ClustersCreator() {
+    public ClustersCreator(ClusteringApproachTemplate clusteringTemplate) {
         final ASTGenerator astGenerator = new CachedASTGenerator(new NamesASTNormalizer());
         this.changeGenerator = new BasicChangeGenerator(astGenerator);
         this.unifier = new BasicUnifier<>(
@@ -80,6 +47,8 @@ public class ClustersCreator {
                 CommonUtils.checkEquals(astGenerator::buildTree, ASTUtils::deepEquals),
                 new MinValuePicker<>(Comparator.comparingInt(Solution::getSolutionId)));
         this.metric = new HeuristicChangesBasedDistanceFunction(changeGenerator);
+        this.clusteringTemplate = clusteringTemplate;
+
     }
 
 

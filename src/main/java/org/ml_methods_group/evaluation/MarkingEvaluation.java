@@ -34,9 +34,6 @@ public class MarkingEvaluation {
     private final static Integer NUM_CLUSTERS = 100;
     private final static Integer NUM_EXAMPLES = 5;
 
-    public static void main(String[] argv) throws Exception {
-    }
-
     public static void markGlobalClusters(List<String> problems) throws Exception {
         try (final var database = new HashDatabase(EvaluationInfo.PATH_TO_CACHE)) {
             final ASTGenerator astGenerator = new CachedASTGenerator(new NamesASTNormalizer());

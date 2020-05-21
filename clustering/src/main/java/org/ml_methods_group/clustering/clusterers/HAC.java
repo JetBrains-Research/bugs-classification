@@ -12,9 +12,9 @@ import java.util.stream.Collectors;
 
 public class HAC<T> implements Clusterer<T> {
 
-    protected final SortedSet<Triple> heap = new TreeSet<>();
-    protected final Map<Long, Triple> triples = new HashMap<>();
-    protected final Set<Community> communities = new HashSet<>();
+    private final SortedSet<Triple> heap = new TreeSet<>();
+    private final Map<Long, Triple> triples = new HashMap<>();
+    private final Set<Community> communities = new HashSet<>();
     private final double distanceLimit;
     private int minClustersCount;
     private final DistanceFunction<T> metric;
@@ -26,12 +26,7 @@ public class HAC<T> implements Clusterer<T> {
         this.metric = metric;
     }
 
-    protected HAC(double distanceLimit, DistanceFunction<T> metric) {
-        this.distanceLimit = distanceLimit;
-        this.metric = metric;
-    }
-
-    protected void init(List<T> values) {
+    private void init(List<T> values) {
         heap.clear();
         triples.clear();
         communities.clear();
@@ -81,7 +76,7 @@ public class HAC<T> implements Clusterer<T> {
         return new Clusters<>(clusters);
     }
 
-    protected void mergeCommunities(Community first, Community second) {
+    private void mergeCommunities(Community first, Community second) {
         final List<T> merged;
         if (first.entities.size() < second.entities.size()) {
             merged = second.entities;
@@ -132,7 +127,7 @@ public class HAC<T> implements Clusterer<T> {
         insertTriple(triple);
     }
 
-    protected void invalidateTriple(Triple triple) {
+    private void invalidateTriple(Triple triple) {
         if (triple == null) {
             return;
         }
@@ -174,11 +169,11 @@ public class HAC<T> implements Clusterer<T> {
         }
     }
 
-    protected class Triple implements Comparable<Triple> {
+    private class Triple implements Comparable<Triple> {
 
         private double distance;
-        protected Community first;
-        protected Community second;
+        private Community first;
+        private Community second;
 
         Triple(double distance, Community first, Community second) {
             this.distance = distance;

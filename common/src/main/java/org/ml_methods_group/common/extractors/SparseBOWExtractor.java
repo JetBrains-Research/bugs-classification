@@ -3,9 +3,7 @@ package org.ml_methods_group.common.extractors;
 import org.ml_methods_group.common.FeaturesExtractor;
 import org.ml_methods_group.common.metrics.functions.FunctionsUtils;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class SparseBOWExtractor<T> implements FeaturesExtractor<List<T>, SparseBOWExtractor.SparseBOWVector> {
 
@@ -19,7 +17,7 @@ public class SparseBOWExtractor<T> implements FeaturesExtractor<List<T>, SparseB
 
     @Override
     public SparseBOWVector process(List<T> values) {
-        final HashMap<Integer, Integer> counter = new HashMap<>();
+        final TreeMap<Integer, Integer> counter = new TreeMap<>();
         for (T value : values) {
             for (HashExtractor<T> hasher : hashers) {
                 int index = indexes.getOrDefault(hasher.process(value), -1);
@@ -49,20 +47,31 @@ public class SparseBOWExtractor<T> implements FeaturesExtractor<List<T>, SparseB
 
     public static class SparseBOWVector {
 
-        private final Map<Integer, Integer> counterByIndex;
-
+        private final List<Integer> indices = new ArrayList<>();
+        private final List<Integer> counters = new ArrayList<>();
         private final double norm;
 
-        public SparseBOWVector(Map<Integer, Integer> counterByIndex) {
+        public List<Integer> getIndices() {
+            return indices;
+        }
+
+        public List<Integer> getCounters() {
+            return counters;
+        }
+
+        public SparseBOWVector(SortedMap<Integer, Integer> counterByIndex) {
             final int squaredSum = counterByIndex.values().stream().mapToInt(x -> x * x).sum();
-            this.counterByIndex = counterByIndex;
             this.norm = Math.sqrt(squaredSum);
+            counterByIndex.forEach((key, value) -> {
+                indices.add(key);
+                counters.add(value);
+            });
         }
 
     }
 
     public static double cosineDistance(SparseBOWExtractor.SparseBOWVector a, SparseBOWExtractor.SparseBOWVector b) {
-        int p = FunctionsUtils.scalarProduct(a.counterByIndex, b.counterByIndex);
+        int p = FunctionsUtils.scalarProduct(a, b);
         return p == 0 || a.norm == 0 || b.norm == 0 ? 1 : (1 - p / (a.norm * b.norm)) / 2;
     }
 }

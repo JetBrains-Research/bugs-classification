@@ -1,10 +1,8 @@
 package org.ml_methods_group.common.metrics.functions;
 
-import com.google.common.collect.Sets;
+import org.ml_methods_group.common.extractors.SparseBOWExtractor;
 
 import java.util.Arrays;
-import java.util.Map;
-import java.util.Set;
 
 public class FunctionsUtils {
     public static int scalarProduct(int[] a, int[] b) {
@@ -15,11 +13,20 @@ public class FunctionsUtils {
         return sum;
     }
 
-    public static int scalarProduct(Map<Integer, Integer> countersA, Map<Integer, Integer> countersB) {
-        Set<Integer> intersection = Sets.intersection(countersA.keySet(), countersB.keySet());
-        return intersection.stream()
-                .mapToInt(x -> countersA.get(x) * countersB.get(x))
-                .sum();
+    public static int scalarProduct(SparseBOWExtractor.SparseBOWVector a, SparseBOWExtractor.SparseBOWVector b) {
+        int sum = 0;
+        for (int ptrA = 0, ptrB = 0; ptrA < a.getIndices().size() && ptrB < b.getIndices().size(); ) {
+            if (a.getIndices().get(ptrA) < b.getIndices().get(ptrB)) {
+                ptrA++;
+            } else if (a.getIndices().get(ptrA) > b.getIndices().get(ptrB)) {
+                ptrB++;
+            } else {
+                sum += a.getCounters().get(ptrA) * b.getCounters().get(ptrB);
+                ptrA++;
+                ptrB++;
+            }
+        }
+        return sum;
     }
 
     public static double cosineSimilarity(double[] a, double[] b) {

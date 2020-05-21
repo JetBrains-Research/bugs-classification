@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
 import static org.ml_methods_group.common.Hashers.FULL_HASHER;
@@ -27,14 +28,19 @@ public class TokenBasedDatasetCreator implements DatasetCreator {
                               FeaturesExtractor<Solution, List<Changes>> generator,
                               Map<Solution, List<String>> marksDictionary,
                               Path datasetPath) {
+        long startTime = System.nanoTime();
         Map<Integer, List<Changes>> preprocessedNeighbours = solutions.parallelStream()
                 .collect(Collectors.toMap(Solution::getSolutionId, generator::process));
+        long endTime = System.nanoTime();
+        System.out.println("Time elapsed: " + TimeUnit.NANOSECONDS.toMillis(endTime - startTime));
+
         int maxTokens = preprocessedNeighbours.values().parallelStream()
                 .flatMap(Collection::stream)
                 .map(Changes::getChanges)
                 .mapToInt(List::size)
                 .max()
                 .orElseThrow(() -> new RuntimeException("Empty tokens sequences"));
+
         try (var out = new PrintWriter(datasetPath.toFile())) {
             var extractor = getCodeChangeHasher(FULL_HASHER);
             int tokensPerChange = extractor.getTokensCount();

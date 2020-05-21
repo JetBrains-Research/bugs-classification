@@ -16,7 +16,7 @@ public class HAC<T> implements Clusterer<T> {
     private final Map<Long, Triple> triples = new HashMap<>();
     private final Set<Community> communities = new HashSet<>();
     private final double distanceLimit;
-    private final int minClustersCount;
+    private int minClustersCount;
     private final DistanceFunction<T> metric;
     private int idGenerator = 0;
 
@@ -119,7 +119,7 @@ public class HAC<T> implements Clusterer<T> {
         heap.add(triple);
     }
 
-    private void insertTripleIfNecessary(double distance, Community first, Community second) {
+    protected void insertTripleIfNecessary(double distance, Community first, Community second) {
         if (distance >= distanceLimit) {
             return;
         }
@@ -143,9 +143,9 @@ public class HAC<T> implements Clusterer<T> {
         return new Community(singletonList);
     }
 
-    private class Community implements Comparable<Community> {
+    protected class Community implements Comparable<Community> {
 
-        private final List<T> entities;
+        protected final List<T> entities;
         private final int id;
 
         Community(List<T> entities) {

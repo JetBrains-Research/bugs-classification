@@ -2,52 +2,60 @@ package org.ml_methods_group.evaluation.preparation;
 
 import org.ml_methods_group.common.Dataset;
 import org.ml_methods_group.common.Solution;
-import org.ml_methods_group.common.serialization.ProtobufSerializationUtils;
 import org.ml_methods_group.evaluation.EvaluationInfo;
-import org.ml_methods_group.parsing.JavaCodeValidator;
-import org.ml_methods_group.parsing.ParsingUtils;
 
 import java.io.IOException;
-import java.io.InputStream;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.ml_methods_group.common.Solution.Verdict.FAIL;
+import static org.ml_methods_group.common.Solution.Verdict.OK;
+import static org.ml_methods_group.common.serialization.ProtobufSerializationUtils.loadDataset;
+import static org.ml_methods_group.common.serialization.ProtobufSerializationUtils.storeDataset;
 
 public class TrainTestDatasetCreator {
+
     public static void main(String[] args) throws IOException {
-        int testSetSize = 200;
         long seed = 124345;
+        int problemId = 57810;
+        int testSize = 200;
 
         final Random random = new Random(seed);
-        final Dataset dataset;
-        try (InputStream fis = TrainTestDatasetCreator.class.getResourceAsStream("/dataset2.csv")) {
-            dataset = ParsingUtils.parse(fis, new JavaCodeValidator(), x -> true);
+        final Dataset full = loadDataset(EvaluationInfo.PATH_TO_DATASET.resolve("dataset2.tmp"));
+        List<Solution> solutions = full.getValues(x -> x.getProblemId() == problemId);
+        Map<Integer, List<Solution>> sessionById = new HashMap<>();
+        for (Solution solution : solutions) {
+            sessionById.computeIfAbsent(solution.getSessionId(), x -> new ArrayList<>()).add(solution);
         }
-        final var incorrectIds = new LinkedHashMap<Integer, Set<Integer>>();
-        final var correctIds = new LinkedHashMap<Integer, Set<Integer>>();
-        for (Solution solution : dataset.getValues()) {
-            final var tmp = solution.getVerdict() == FAIL ? incorrectIds : correctIds;
-            tmp.computeIfAbsent(solution.getProblemId(), x -> new LinkedHashSet<>())
-                    .add(solution.getSessionId());
-        }
-        final var testSet = new HashSet<Integer>();
-        for (var problemId : correctIds.keySet()) {
-            final var tmp = correctIds.getOrDefault(problemId, Collections.emptySet());
-            final var permutation = incorrectIds.get(problemId).stream()
-                    .filter(tmp::contains)
+        List<List<Solution>> sessions = new ArrayList<>(sessionById.values());
+        Collections.shuffle(sessions, random);
+        List<Solution> train = new ArrayList<>();
+        List<Solution> test = new ArrayList<>();
+        for (var session : sessions) {
+            List<Solution> correct = session.stream()
+                    .filter(x -> x.getVerdict() == OK)
                     .collect(Collectors.toList());
-            Collections.shuffle(permutation, random);
-            if (permutation.size() < testSetSize) {
-                continue;
+            List<Solution> incorrect = session.stream()
+                    .filter(x -> x.getVerdict() == FAIL)
+                    .collect(Collectors.toList());
+            long currentTestSize = test.stream().filter(x -> x.getVerdict() == FAIL).count();
+            if (currentTestSize < testSize && !incorrect.isEmpty()) {
+                test.addAll(incorrect);
+                test.addAll(correct);
+            } else {
+                train.addAll(incorrect);
+                train.addAll(correct);
             }
-            testSet.addAll(permutation.subList(0, testSetSize));
         }
-        ProtobufSerializationUtils.storeDataset(
-                dataset.filter(x -> testSet.contains(x.getSessionId())),
-                EvaluationInfo.PATH_TO_DATASET.resolve("test_dataset.tmp"));
-        ProtobufSerializationUtils.storeDataset(
-                dataset.filter(x -> !testSet.contains(x.getSessionId())),
-                EvaluationInfo.PATH_TO_DATASET.resolve("train_dataset.tmp"));
+
+        try {
+            Path pathToDataset = EvaluationInfo.PATH_TO_DATASET.resolve("filter");
+            storeDataset(new Dataset(train), pathToDataset.resolve("train.tmp"));
+            storeDataset(new Dataset(test), pathToDataset.resolve("test.tmp"));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
+
 }

@@ -1,5 +1,7 @@
 package org.ml_methods_group.common.metrics.functions;
 
+import org.ml_methods_group.common.extractors.SparseBOWExtractor;
+
 import java.util.Arrays;
 
 public class FunctionsUtils {
@@ -11,6 +13,21 @@ public class FunctionsUtils {
         return sum;
     }
 
+    public static int scalarProduct(SparseBOWExtractor.SparseBOWVector a, SparseBOWExtractor.SparseBOWVector b) {
+        int sum = 0;
+        for (int ptrA = 0, ptrB = 0; ptrA < a.getIndices().size() && ptrB < b.getIndices().size(); ) {
+            if (a.getIndices().get(ptrA) < b.getIndices().get(ptrB)) {
+                ptrA++;
+            } else if (a.getIndices().get(ptrA) > b.getIndices().get(ptrB)) {
+                ptrB++;
+            } else {
+                sum += a.getCounters().get(ptrA) * b.getCounters().get(ptrB);
+                ptrA++;
+                ptrB++;
+            }
+        }
+        return sum;
+    }
 
     public static double cosineSimilarity(double[] a, double[] b) {
         double sum = 0;

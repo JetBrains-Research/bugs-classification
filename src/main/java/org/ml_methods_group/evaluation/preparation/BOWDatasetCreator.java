@@ -16,8 +16,8 @@ import java.util.stream.Collectors;
 
 public class BOWDatasetCreator implements DatasetCreator {
 
-    private HashMap<String, Integer> dict;
-    private BOWExtractor<CodeChange> extractor;
+    private final HashMap<String, Integer> dict;
+    private final BOWExtractor<CodeChange> extractor;
 
     public BOWDatasetCreator(List<Solution> allPossibleSolutions,
                              FeaturesExtractor<Solution, List<Changes>> generator,
@@ -28,8 +28,8 @@ public class BOWDatasetCreator implements DatasetCreator {
                 .map(Changes::getChanges)
                 .flatMap(List::stream)
                 .collect(Collectors.toList());
-        this.dict = BOWExtractor.mostCommon(Hashers.codeChangeHashers, possibleChanges, wordsLimit);
-        this.extractor = new BOWExtractor<>(dict, Hashers.codeChangeHashers);
+        this.dict = BOWExtractor.mostCommon(Hashers.CODE_CHANGE_HASHERS, possibleChanges, wordsLimit);
+        this.extractor = new BOWExtractor<>(dict, Hashers.CODE_CHANGE_HASHERS);
     }
 
     @Override

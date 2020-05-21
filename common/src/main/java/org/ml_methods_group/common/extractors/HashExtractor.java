@@ -71,7 +71,7 @@ public class HashExtractor<T> implements FeaturesExtractor<T, String> {
 
         public <F> HashExtractorBuilder<T> append(String text) {
             hashers.add(x -> text);
-            if (text.equals(Hashers.getTokensSeparator())) {
+            if (text.equals(Hashers.TOKENS_SEPARATOR)) {
                 tokensCount++;
             }
             return this;

@@ -27,7 +27,6 @@ public class KClosestPairsSelector<V> implements ManyOptionsSelector<V, V> {
         for (V option : options) {
             final double currentDistance = metric.distance(value, option, kClosestDistances.get(k - 1));
             for (int i = 0; i < k; ++i) {
-                double kthDistance = kClosestDistances.get(i);
                 if (kClosestDistances.get(i) > currentDistance) {
                     kClosest.add(i, option);
                     kClosest.remove(k);
